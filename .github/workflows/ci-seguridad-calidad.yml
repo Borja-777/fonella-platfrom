@@ -1,0 +1,33 @@
+name: CI - Validación de Seguridad y Código (Fonella)
+
+on:
+  pull_request:
+    branches: [ "main", "develop" ]
+  push:
+    branches: [ "main", "develop" ]
+
+jobs:
+  validar-monorepo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verificar que no existan archivos .env comprometidos
+        run: |
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$'; then
+            echo "❌ ERROR DE SEGURIDAD: Se detectó un archivo .env en el commit."
+            exit 1
+          fi
+          echo "✅ Sin archivos .env expuestos."
+
+      - name: Validar Esquema Prisma (Backend)
+        working-directory: ./fonella-backend
+        run: |
+          npm install --no-audit --no-fund
+          npx prisma validate

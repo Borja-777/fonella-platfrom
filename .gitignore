@@ -1,0 +1,27 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Variables de entorno y secretos (NUNCA SUBIR A GITHUB)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+
+# Compilados y caché
+dist/
+build/
+.next/
+out/
+tsconfig.tsbuildinfo
+
+# Sistema Operativo y Editores
+.DS_Store
+.vscode/
+.idea/
+*.log
+npm-debug.log*

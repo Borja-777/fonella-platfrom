@@ -1,0 +1,335 @@
+// ============================================================================
+// PRISMA SCHEMA — PLATAFORMA WEB FONELLA (InnovaCode)
+// Motor: PostgreSQL | ORM: Prisma | Backend: NestJS
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// ENUMS DEL SISTEMA
+// ----------------------------------------------------------------------------
+
+enum RolUsuario {
+  FONOAUDIOLOGA
+  ASISTENTE
+}
+
+enum EstadoRegistro {
+  ACTIVO
+  INACTIVO
+}
+
+enum TipoDocumento {
+  RC // Registro Civil
+  TI // Tarjeta de Identidad
+  CC // Cédula de Ciudadanía
+  CE // Cédula de Extranjería
+  PA // Pasaporte
+}
+
+enum TipoRemision {
+  PARTICULAR
+  REMISION_EXTERNA
+}
+
+enum EstadoCita {
+  CONFIRMADA
+  ATENDIDA
+  CANCELADA_A_TIEMPO
+  CANCELADA_TARDIA
+  INASISTENCIA
+}
+
+enum EstadoHistoria {
+  BORRADOR
+  CERRADA
+}
+
+enum TipoMovimientoInventario {
+  ENTRADA_COMPRA
+  SALIDA_VENTA
+  AJUSTE_INVENTARIO
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+}
+
+// ----------------------------------------------------------------------------
+// 1. DOMINIO DE SEGURIDAD Y ACCESOS (HU-04, HU-05)
+// ----------------------------------------------------------------------------
+
+model Usuario {
+  id               String         @id @default(uuid()) @db.Uuid
+  nombreCompleto   String         @map("nombre_completo") @db.VarChar(150)
+  email            String         @unique @db.VarChar(150)
+  passwordHash     String         @map("password_hash") @db.VarChar(255)
+  rol              RolUsuario
+  registroRethus   String?        @map("registro_rethus") @db.VarChar(50)
+  firmaDigitalUrl  String?        @map("firma_digital_url") @db.VarChar(500)
+  intentosFallidos Int            @default(0) @map("intentos_fallidos")
+  bloqueadoHasta   DateTime?      @map("bloqueado_hasta")
+  estado           EstadoRegistro @default(ACTIVO)
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  // Relaciones
+  citasCreadas          Cita[]                 @relation("CitaCreadaPor")
+  historiasAbiertas     HistoriaClinica[]
+  notasFirmadas         NotaEvolucion[]
+  archivosSubidos       ArchivoAdjunto[]
+  movimientosInventario MovimientoInventario[]
+  ventasRegistradas     VentaJuguete[]
+
+  @@map("usuarios")
+}
+
+// ----------------------------------------------------------------------------
+// 2. DOMINIO DE PACIENTES Y AGENDA (HU-01, HU-02, HU-06 a HU-11, HU-20)
+// ----------------------------------------------------------------------------
+
+model Paciente {
+  id                   String         @id @default(uuid()) @db.Uuid
+  tipoDocumento        TipoDocumento  @map("tipo_documento")
+  numeroDocumento      String         @unique @map("numero_documento") @db.VarChar(30)
+  nombres              String         @db.VarChar(100)
+  apellidos            String         @db.VarChar(100)
+  fechaNacimiento      DateTime       @map("fecha_nacimiento") @db.Date
+  genero               String?        @db.VarChar(30)
+  telefonoContacto     String         @map("telefono_contacto") @db.VarChar(25)
+  email                String?        @db.VarChar(150)
+  ciudad               String         @default("Palmira") @db.VarChar(100)
+  direccion            String?        @db.VarChar(200)
+  tipoRemision         TipoRemision   @default(PARTICULAR) @map("tipo_remision")
+  institucionRemitente String?        @map("institucion_remitente") @db.VarChar(150)
+  totalFaltasTardias   Int            @default(0) @map("total_faltas_tardias")
+  estado               EstadoRegistro @default(ACTIVO)
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+
+  // Relaciones
+  acudientes      PacienteAcudiente[]
+  citas           Cita[]
+  historiaClinica HistoriaClinica?
+  comprasJuguetes VentaJuguete[]
+
+  @@index([apellidos, nombres])
+  @@map("pacientes")
+}
+
+model Acudiente {
+  id                String        @id @default(uuid()) @db.Uuid
+  tipoDocumento     TipoDocumento @map("tipo_documento")
+  numeroDocumento   String        @unique @map("numero_documento") @db.VarChar(30)
+  nombres           String        @db.VarChar(100)
+  apellidos         String        @db.VarChar(100)
+  telefonoPrincipal String        @map("telefono_principal") @db.VarChar(25)
+  telefonoRespaldo  String?       @map("telefono_respaldo") @db.VarChar(25)
+  email             String?       @db.VarChar(150)
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  // Relaciones
+  pacientes PacienteAcudiente[]
+
+  @@map("acudientes")
+}
+
+model PacienteAcudiente {
+  id          String  @id @default(uuid()) @db.Uuid
+  pacienteId  String  @map("paciente_id") @db.Uuid
+  acudienteId String  @map("acudiente_id") @db.Uuid
+  parentesco  String  @db.VarChar(50)
+  esPrincipal Boolean @default(true) @map("es_principal")
+
+  paciente  Paciente  @relation(fields: [pacienteId], references: [id])
+  acudiente Acudiente @relation(fields: [acudienteId], references: [id])
+
+  @@unique([pacienteId, acudienteId])
+  @@map("pacientes_acudientes")
+}
+
+model ServicioTerapeutico {
+  id               String         @id @default(uuid()) @db.Uuid
+  codigo           String         @unique @db.VarChar(20)
+  nombre           String         @db.VarChar(120)
+  descripcion      String         @db.Text
+  publicoObjetivo  String         @map("publico_objetivo") @db.VarChar(100)
+  duracionMinutos  Int            @default(45) @map("duracion_minutos")
+  precioReferencia Decimal        @map("precio_referencia") @db.Decimal(10, 2)
+  estado           EstadoRegistro @default(ACTIVO)
+
+  citas Cita[]
+
+  @@map("servicios_terapeuticos")
+}
+
+model Cita {
+  id                     String     @id @default(uuid()) @db.Uuid
+  pacienteId             String     @map("paciente_id") @db.Uuid
+  servicioId             String     @map("servicio_id") @db.Uuid
+  creadoPorId            String     @map("creado_por_id") @db.Uuid
+  fecha                  DateTime   @db.Date
+  horaInicio             DateTime   @map("hora_inicio")
+  horaFin                DateTime   @map("hora_fin")
+  estado                 EstadoCita @default(CONFIRMADA)
+  recordatorio24hEnviado Boolean    @default(false) @map("recordatorio_24h_enviado")
+  recordatorio2hEnviado  Boolean    @default(false) @map("recordatorio_2h_enviado")
+  motivoCancelacion      String?    @map("motivo_cancelacion") @db.Text
+  fechaCancelacion       DateTime?  @map("fecha_cancelacion")
+  createdAt              DateTime   @default(now()) @map("created_at")
+  updatedAt              DateTime   @updatedAt @map("updated_at")
+
+  paciente      Paciente            @relation(fields: [pacienteId], references: [id])
+  servicio      ServicioTerapeutico @relation(fields: [servicioId], references: [id])
+  creadoPor     Usuario             @relation("CitaCreadaPor", fields: [creadoPorId], references: [id])
+  notaEvolucion NotaEvolucion?
+
+  @@index([fecha, estado])
+  @@map("citas")
+}
+
+// ----------------------------------------------------------------------------
+// 3. DOMINIO DE HISTORIA CLÍNICA Y DOCUMENTACIÓN (HU-12 a HU-15, HU-21)
+// ----------------------------------------------------------------------------
+
+model HistoriaClinica {
+  id                      String         @id @default(uuid()) @db.Uuid
+  numeroExpediente        String         @unique @map("numero_expediente") @db.VarChar(30)
+  pacienteId              String         @unique @map("paciente_id") @db.Uuid
+  creadoPorId             String         @map("creado_por_id") @db.Uuid
+  fechaApertura           DateTime       @default(now()) @map("fecha_apertura")
+  motivoConsulta          String         @map("motivo_consulta") @db.Text
+  antecedentesPerinatales String?        @map("antecedentes_perinatales") @db.Text
+  evaluacionOfa           Json           @map("evaluacion_ofa")
+  evaluacionHabla         String?        @map("evaluacion_habla") @db.Text
+  evaluacionLenguaje      String?        @map("evaluacion_lenguaje") @db.Text
+  evaluacionVoz           String?        @map("evaluacion_voz") @db.Text
+  diagnosticoCie10Codigo  String         @map("diagnostico_cie10_codigo") @db.VarChar(15)
+  diagnosticoCie10Desc    String         @map("diagnostico_cie10_desc") @db.Text
+  planTratamiento         String         @map("plan_tratamiento") @db.Text
+  estado                  EstadoHistoria @default(CERRADA)
+  createdAt               DateTime       @default(now()) @map("created_at")
+  updatedAt               DateTime       @updatedAt @map("updated_at")
+
+  paciente        Paciente         @relation(fields: [pacienteId], references: [id])
+  creadoPor       Usuario          @relation(fields: [creadoPorId], references: [id])
+  notasEvolucion  NotaEvolucion[]
+  archivosAnexos  ArchivoAdjunto[]
+
+  @@index([diagnosticoCie10Codigo])
+  @@map("historias_clinicas")
+}
+
+model NotaEvolucion {
+  id                       String   @id @default(uuid()) @db.Uuid
+  historiaClinicaId        String   @map("historia_clinica_id") @db.Uuid
+  citaId                   String?  @unique @map("cita_id") @db.Uuid
+  creadoPorId              String   @map("creado_por_id") @db.Uuid
+  numeroSesion             Int      @map("numero_sesion")
+  fechaHoraSesion          DateTime @default(now()) @map("fecha_hora_sesion")
+  objetivoSesion           String   @map("objetivo_sesion") @db.Text
+  actividadesDesarrolladas String   @map("actividades_desarrolladas") @db.Text
+  desempenoObservado       String   @map("desempeno_observado") @db.Text
+  planCaseroTareas         String   @map("plan_casero_tareas") @db.Text
+  firmaProfesionalSnapshot String   @map("firma_profesional_snapshot") @db.VarChar(150)
+  createdAt                DateTime @default(now()) @map("created_at")
+  // Sin updatedAt por Regla de Negocio RN-06 (Inmutabilidad legal tras firma)
+
+  historiaClinica HistoriaClinica @relation(fields: [historiaClinicaId], references: [id])
+  cita            Cita?           @relation(fields: [citaId], references: [id])
+  creadoPor       Usuario         @relation(fields: [creadoPorId], references: [id])
+
+  @@map("notas_evolucion")
+}
+
+model ArchivoAdjunto {
+  id                String   @id @default(uuid()) @db.Uuid
+  historiaClinicaId String   @map("historia_clinica_id") @db.Uuid
+  subidoPorId       String   @map("subido_por_id") @db.Uuid
+  nombreOriginal    String   @map("nombre_original") @db.VarChar(255)
+  archivoUuid       String   @unique @map("archivo_uuid") @db.VarChar(100)
+  storageKey        String   @map("storage_key") @db.VarChar(500)
+  mimeType          String   @map("mime_type") @db.VarChar(50)
+  tamanoBytes       Int      @map("tamano_bytes")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  historiaClinica HistoriaClinica @relation(fields: [historiaClinicaId], references: [id])
+  subidoPor       Usuario         @relation(fields: [subidoPorId], references: [id])
+
+  @@map("archivos_adjuntos")
+}
+
+// ----------------------------------------------------------------------------
+// 4. DOMINIO DE CATÁLOGO, INVENTARIO Y VENTAS (HU-03, HU-16 a HU-19, HU-22)
+// ----------------------------------------------------------------------------
+
+model JugueteDidactico {
+  id                     String         @id @default(uuid()) @db.Uuid
+  codigoSku              String         @unique @map("codigo_sku") @db.VarChar(50)
+  nombre                 String         @db.VarChar(150)
+  descripcionTerapeutica String         @map("descripcion_terapeutica") @db.Text
+  areaEstimulacion       String         @map("area_estimulacion") @db.VarChar(100)
+  edadSugerida           String         @map("edad_sugerida") @db.VarChar(50)
+  imagenUrl              String         @map("imagen_url") @db.VarChar(500)
+  stockDisponible        Int            @default(0) @map("stock_disponible")
+  stockMinimoAlerta      Int            @default(3) @map("stock_minimo_alerta")
+  costoUnitario          Decimal        @map("costo_unitario") @db.Decimal(10, 2)
+  precioVenta            Decimal        @map("precio_venta") @db.Decimal(10, 2)
+  publicadoCatalogo      Boolean        @default(true) @map("publicado_catalogo")
+  estado                 EstadoRegistro @default(ACTIVO)
+  createdAt              DateTime       @default(now()) @map("created_at")
+  updatedAt              DateTime       @updatedAt @map("updated_at")
+
+  movimientos MovimientoInventario[]
+  ventas      VentaJuguete[]
+
+  @@map("juguetes_didacticos")
+}
+
+model MovimientoInventario {
+  id              String                   @id @default(uuid()) @db.Uuid
+  jugueteId       String                   @map("juguete_id") @db.Uuid
+  usuarioId       String                   @map("usuario_id") @db.Uuid
+  tipoMovimiento  TipoMovimientoInventario @map("tipo_movimiento")
+  cantidad        Int
+  stockAnterior   Int                      @map("stock_anterior")
+  stockResultante Int                      @map("stock_resultante")
+  observacion     String?                  @db.Text
+  createdAt       DateTime                 @default(now()) @map("created_at")
+
+  juguete JugueteDidactico @relation(fields: [jugueteId], references: [id])
+  usuario Usuario          @relation(fields: [usuarioId], references: [id])
+
+  @@map("movimientos_inventario")
+}
+
+model VentaJuguete {
+  id                    String     @id @default(uuid()) @db.Uuid
+  jugueteId             String     @map("juguete_id") @db.Uuid
+  pacienteId            String?    @map("paciente_id") @db.Uuid
+  vendidoPorId          String     @map("vendido_por_id") @db.Uuid
+  cantidad              Int
+  metodoPago            MetodoPago @default(EFECTIVO) @map("metodo_pago")
+  costoUnitarioSnapshot Decimal    @map("costo_unitario_snapshot") @db.Decimal(10, 2)
+  precioUnitarioVenta   Decimal    @map("precio_unitario_venta") @db.Decimal(10, 2)
+  totalVenta            Decimal    @map("total_venta") @db.Decimal(10, 2)
+  gananciaNeta          Decimal    @map("ganancia_neta") @db.Decimal(10, 2)
+  fechaVenta            DateTime   @default(now()) @map("fecha_venta")
+
+  juguete    JugueteDidactico @relation(fields: [jugueteId], references: [id])
+  paciente   Paciente?        @relation(fields: [pacienteId], references: [id])
+  vendidoPor Usuario          @relation(fields: [vendidoPorId], references: [id])
+
+  @@index([fechaVenta])
+  @@map("ventas_juguetes")
+}

@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fonella_postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fonella_admin
+      POSTGRES_PASSWORD: fonella_dev_password_2026
+      POSTGRES_DB: fonella_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - fonella_pgdata:/var/lib/postgresql/data
+
+volumes:
+  fonella_pgdata:
