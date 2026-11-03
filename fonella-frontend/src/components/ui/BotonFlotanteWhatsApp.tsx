@@ -8,7 +8,7 @@ interface BotonFlotanteProps {
 }
 
 export default function BotonFlotanteWhatsApp({
-  numeroTelefono = '573000000000',
+  numeroTelefono = '573104686733',
   mensajePredeterminado = 'Hola, deseo obtener más información sobre las consultas fonoaudiológicas en FONELLA.',
 }: BotonFlotanteProps) {
   const urlWhatsApp = `https://wa.me/${numeroTelefono}?text=${encodeURIComponent(mensajePredeterminado)}`;

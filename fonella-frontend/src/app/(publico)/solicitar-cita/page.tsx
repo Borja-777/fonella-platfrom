@@ -10,23 +10,37 @@ export default function SolicitarCitaPage() {
     tipoConsulta: 'Evaluación Fonoaudiológica',
     motivo: '',
   });
+  const [cargando, setCargando] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const numeroRecepcion = '573000000000';
-    
-    const mensaje = `*Solicitud de Cita - FONELLA*\n\n` +
-      `👤 *Paciente:* ${formData.nombreCompleto}\n` +
-      `📞 *Contacto:* ${formData.telefono}\n` +
-      `📋 *Servicio:* ${formData.tipoConsulta}\n` +
-      `💬 *Motivo/Detalles:* ${formData.motivo || 'N/A'}`;
+    setCargando(true);
 
-    const urlWhatsApp = `https://wa.me/${numeroRecepcion}?text=${encodeURIComponent(mensaje)}`;
-    window.open(urlWhatsApp, '_blank');
+    try {
+      await fetch('http://localhost:4000/api/v1/citas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+    } catch (err) {
+      console.error('Error al conectar con el backend:', err);
+    } finally {
+      setCargando(false);
+
+      const numeroRecepcion = '573104686733';
+      
+      const textoMensaje = `*Solicitud de Cita - FONELLA*\n\n` +
+        `*Paciente:* ${formData.nombreCompleto}\n` +
+        `*Contacto:* ${formData.telefono}\n` +
+        `*Servicio:* ${formData.tipoConsulta}\n` +
+        `*Motivo/Detalles:* ${formData.motivo || 'N/A'}`;
+
+      window.open(`https://wa.me/${numeroRecepcion}?text=${encodeURIComponent(textoMensaje)}`, '_blank');
+    }
   };
 
   return (
@@ -41,7 +55,7 @@ export default function SolicitarCitaPage() {
             Solicitar Cita Fonoaudiológica
           </h1>
           <p style={{ fontSize: '0.875rem', color: '#4A5568', marginBottom: '1.5rem' }}>
-            Completa los campos a continuación para redactar tu solicitud directa a nuestra recepción por WhatsApp.
+            Completa los campos para registrar tu solicitud y ser redirigido a recepción vía WhatsApp.
           </p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -108,19 +122,20 @@ export default function SolicitarCitaPage() {
 
             <button
               type="submit"
+              disabled={cargando}
               style={{
-                backgroundColor: '#25D366',
+                backgroundColor: cargando ? '#A0AEC0' : '#25D366',
                 color: '#ffffff',
                 fontWeight: 'bold',
                 padding: '0.75rem 1.5rem',
                 borderRadius: '0.5rem',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: cargando ? 'not-allowed' : 'pointer',
                 marginTop: '1rem',
                 fontSize: '1rem'
               }}
             >
-              Enviar Solicitud por WhatsApp 🚀
+              {cargando ? 'Enviando...' : 'Enviar Solicitud por WhatsApp'}
             </button>
           </form>
         </div>
