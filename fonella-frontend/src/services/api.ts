@@ -1,0 +1,112 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+
+export interface Usuario {
+  id: string;
+  nombreCompleto: string;
+  email: string;
+  rol: 'FONOAUDIOLOGA' | 'ASISTENTE';
+  registroRethus?: string | null;
+  estado: 'ACTIVO' | 'INACTIVO';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LoginResponse {
+  mensaje: string;
+  usuario: Usuario;
+}
+
+export const apiService = {
+  async login(email: string, password: string): Promise<LoginResponse> {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Imprescindible para cookies HttpOnly
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al iniciar sesión');
+    }
+    return data;
+  },
+
+  async getMe(): Promise<{ usuario: Usuario }> {
+    const res = await fetch(`${API_URL}/auth/me`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'No autorizado');
+    }
+    return data;
+  },
+
+  async logout(): Promise<void> {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  },
+
+  async listarPersonal(): Promise<Usuario[]> {
+    const res = await fetch(`${API_URL}/usuarios/personal`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al obtener personal');
+    }
+    return data;
+  },
+
+  async crearPersonal(datos: {
+    nombreCompleto: string;
+    email: string;
+    password: string;
+    rol: 'FONOAUDIOLOGA' | 'ASISTENTE';
+    registroRethus?: string;
+  }): Promise<{ mensaje: string; usuario: Usuario }> {
+    const res = await fetch(`${API_URL}/usuarios/personal`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al registrar personal');
+    }
+    return data;
+  },
+
+  async cambiarEstado(
+    id: string,
+    estado: 'ACTIVO' | 'INACTIVO',
+  ): Promise<{ mensaje: string; usuario: Usuario }> {
+    const res = await fetch(`${API_URL}/usuarios/personal/${id}/estado`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ estado }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al cambiar estado');
+    }
+    return data;
+  },
+};
