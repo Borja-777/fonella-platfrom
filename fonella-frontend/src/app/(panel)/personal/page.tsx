@@ -349,13 +349,13 @@ export default function PersonalPage() {
         </div>
       </div>
 
-      {/* 2. Banner de Feedback Global */}
+      {/* 2. Banner de Feedback Global con Difuminado Glassmorphism */}
       {feedback && (
         <div
-          className={`px-5 py-3.5 rounded-2xl flex items-center justify-between text-xs sm:text-sm animate-fade-in shadow-xl border backdrop-blur-md transition-all ${
+          className={`px-5 py-3.5 rounded-2xl flex items-center justify-between text-xs sm:text-sm animate-fade-in shadow-xl border backdrop-blur-lg transition-all ${
             feedback.tipo === 'exito'
-              ? 'bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 border-emerald-400/40 text-white shadow-emerald-950/20'
-              : 'bg-gradient-to-r from-rose-600 via-rose-700 to-red-700 border-rose-400/40 text-white shadow-rose-950/20'
+              ? 'bg-gradient-to-r from-emerald-600/85 via-emerald-700/85 to-teal-700/85 border-emerald-400/50 text-white shadow-emerald-950/15'
+              : 'bg-gradient-to-r from-rose-600/85 via-rose-700/85 to-red-700/85 border-rose-400/50 text-white shadow-rose-950/15'
           }`}
         >
           <div className="flex items-center gap-3">
