@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   Users,
   UserPlus,
@@ -12,26 +12,26 @@ import {
   User,
   Award,
   AlertTriangle,
-} from "lucide-react";
-import { apiService, Usuario } from "@/services/api";
+} from 'lucide-react';
+import { apiService, Usuario } from '@/services/api';
 
 export default function PersonalPage() {
   const [personal, setPersonal] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalAbierto, setModalAbierto] = useState(false);
+  const [formularioAbierto, setFormularioAbierto] = useState(false);
   const [feedback, setFeedback] = useState<{
-    tipo: "exito" | "error";
+    tipo: 'exito' | 'error';
     texto: string;
   } | null>(null);
 
   // Estados del Formulario de Creación
-  const [nombreCompleto, setNombreCompleto] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rol, setRol] = useState<"FONOAUDIOLOGA" | "ASISTENTE">("ASISTENTE");
-  const [registroRethus, setRegistroRethus] = useState("");
+  const [nombreCompleto, setNombreCompleto] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('Secretaria2026*');
+  const [rol, setRol] = useState<'FONOAUDIOLOGA' | 'ASISTENTE'>('ASISTENTE');
+  const [registroRethus, setRegistroRethus] = useState('');
   const [guardando, setGuardando] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const cargarPersonal = async () => {
     try {
@@ -40,8 +40,8 @@ export default function PersonalPage() {
       setPersonal(data);
     } catch (err: any) {
       setFeedback({
-        tipo: "error",
-        texto: err.message || "No se pudo cargar la lista de personal.",
+        tipo: 'error',
+        texto: err.message || 'No se pudo cargar la lista de personal.',
       });
     } finally {
       setLoading(false);
@@ -54,7 +54,7 @@ export default function PersonalPage() {
 
   const handleCrearPersonal = async (e: React.FormEvent) => {
     e.preventDefault();
-    setModalError(null);
+    setFormError(null);
     setGuardando(true);
 
     try {
@@ -63,38 +63,38 @@ export default function PersonalPage() {
         email,
         password,
         rol,
-        registroRethus: rol === "FONOAUDIOLOGA" ? registroRethus : undefined,
+        registroRethus: rol === 'FONOAUDIOLOGA' ? registroRethus : undefined,
       });
 
       setFeedback({
-        tipo: "exito",
+        tipo: 'exito',
         texto: `Cuenta para "${nombreCompleto}" registrada exitosamente.`,
       });
 
-      // Limpiar formulario y cerrar modal
-      setNombreCompleto("");
-      setEmail("");
-      setPassword("");
-      setRegistroRethus("");
-      setRol("ASISTENTE");
-      setModalAbierto(false);
+      // Limpiar formulario y cerrar
+      setNombreCompleto('');
+      setEmail('');
+      setPassword('Secretaria2026*');
+      setRegistroRethus('');
+      setRol('ASISTENTE');
+      setFormularioAbierto(false);
 
       // Recargar lista
       await cargarPersonal();
     } catch (err: any) {
-      setModalError(err.message || "Error al crear la cuenta.");
+      setFormError(err.message || 'Error al crear la cuenta.');
     } finally {
       setGuardando(false);
     }
   };
 
   const handleToggleEstado = async (u: Usuario) => {
-    const nuevoEstado = u.estado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
-    const accion = nuevoEstado === "INACTIVO" ? "desactivar" : "activar";
+    const nuevoEstado = u.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+    const accion = nuevoEstado === 'INACTIVO' ? 'desactivar' : 'activar';
 
     if (
       !confirm(
-        `¿Estás segura de que deseas ${accion} la cuenta de ${u.nombreCompleto}?`,
+        `¿Estás segura de que deseas ${accion} la cuenta de ${u.nombreCompleto}?`
       )
     ) {
       return;
@@ -103,13 +103,13 @@ export default function PersonalPage() {
     try {
       await apiService.cambiarEstado(u.id, nuevoEstado);
       setFeedback({
-        tipo: "exito",
+        tipo: 'exito',
         texto: `La cuenta de ${u.nombreCompleto} ahora está ${nuevoEstado}.`,
       });
       await cargarPersonal();
     } catch (err: any) {
       setFeedback({
-        tipo: "error",
+        tipo: 'error',
         texto: err.message || `No se pudo cambiar el estado de la cuenta.`,
       });
     }
@@ -117,27 +117,31 @@ export default function PersonalPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header de la Sección */}
+      {/* 1. Header de la Sección (Estilo Idéntico a la Vista Anterior) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-white/70 shadow-2xl">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-[#F5ECDD] text-[#136A7B] rounded-xl border border-[#DF9B78]/20">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-[#F5ECDD] text-[#136A7B] rounded-xl border border-[#DF9B78]/20">
               <Users className="w-6 h-6" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-[#136A7B] tracking-tight">
-              Gestión de Cuentas de Personal del Consultorio
-            </h1>
+            <div>
+              <span className="text-[10px] font-bold text-[#0AA896] uppercase tracking-wide">
+                HU-02 · Carril 1 · Control de Accesos RBAC
+              </span>
+              <h1 className="text-xl sm:text-2xl font-black text-[#136A7B] tracking-tight">
+                Gestión de Cuentas de Personal del Consultorio
+              </h1>
+            </div>
           </div>
-          <p className="text-xs text-slate-600 mt-1">
-            Crea, edita o revoca de inmediato el acceso operativo de tu
-            Secretaria / Asistente.
+          <p className="text-xs text-slate-600 mt-1 pl-12">
+            Crea, edita o revoca de inmediato el acceso operativo de tu Secretaria / Asistente.
           </p>
         </div>
 
         <button
           onClick={() => {
-            setModalError(null);
-            setModalAbierto(true);
+            setFormError(null);
+            setFormularioAbierto(!formularioAbierto);
           }}
           className="bg-[#0AA896] hover:bg-[#136A7B] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
         >
@@ -146,17 +150,17 @@ export default function PersonalPage() {
         </button>
       </div>
 
-      {/* Banner de Feedback Global */}
+      {/* 2. Banner de Feedback Global */}
       {feedback && (
         <div
           className={`p-4 rounded-xl flex items-center justify-between text-xs animate-fade-in ${
-            feedback.tipo === "exito"
-              ? "bg-[#0AA896]/10 border border-[#0AA896]/30 text-[#136A7B]"
-              : "bg-red-50 border border-red-200 text-red-800"
+            feedback.tipo === 'exito'
+              ? 'bg-[#0AA896]/10 border border-[#0AA896]/30 text-[#136A7B]'
+              : 'bg-red-50 border border-red-200 text-red-800'
           }`}
         >
           <div className="flex items-center gap-2">
-            {feedback.tipo === "exito" ? (
+            {feedback.tipo === 'exito' ? (
               <CheckCircle2 className="w-4 h-4 text-[#0AA896] shrink-0" />
             ) : (
               <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
@@ -165,14 +169,14 @@ export default function PersonalPage() {
           </div>
           <button
             onClick={() => setFeedback(null)}
-            className="text-gray-400 hover:text-gray-600 p-1"
+            className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Tabla de Personal */}
+      {/* 3. Tabla de Personal (Colores, Iconos, Fotos y Columnas Idénticas a la Vista Anterior) */}
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/70 overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-gray-500">
@@ -185,42 +189,29 @@ export default function PersonalPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] text-white text-xs uppercase font-extrabold tracking-wider shadow-sm">
-                  <th className="py-4 px-6 text-white font-extrabold">
-                    Nombre Completo
-                  </th>
-                  <th className="py-4 px-6 text-white font-extrabold">
-                    Correo Institucional
-                  </th>
-                  <th className="py-4 px-6 text-white font-extrabold">
-                    Rol RBAC
-                  </th>
-                  <th className="py-4 px-6 text-white font-extrabold">
-                    Registro ReTHUS
-                  </th>
-                  <th className="py-4 px-6 text-white font-extrabold">
-                    Estado
-                  </th>
-                  <th className="py-4 px-6 text-right text-white font-extrabold">
-                    Acción Inmediata
-                  </th>
+                <tr className="bg-gradient-to-r from-[#136A7B] to-[#0AA896] text-white text-xs uppercase font-extrabold tracking-wider shadow-sm">
+                  <th className="py-4 px-6 text-white font-extrabold">Nombre Completo</th>
+                  <th className="py-4 px-6 text-white font-extrabold">Correo Institucional</th>
+                  <th className="py-4 px-6 text-white font-extrabold">Rol RBAC</th>
+                  <th className="py-4 px-6 text-white font-extrabold">Registro ReTHUS</th>
+                  <th className="py-4 px-6 text-white font-extrabold">Estado</th>
+                  <th className="py-4 px-6 text-right text-white font-extrabold">Acción Inmediata</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {personal.map((u) => {
-                  const esAdminPrincipal =
-                    u.email === "barbara.ccucho@fonella.co";
-                  const activo = u.estado === "ACTIVO";
+                  const esAdminPrincipal = u.email === 'barbara.ccucho@fonella.co';
+                  const activo = u.estado === 'ACTIVO';
 
                   return (
                     <tr
                       key={u.id}
                       className="hover:bg-[#FAF6F0]/80 transition-colors"
                     >
-                      {/* Colaborador */}
+                      {/* Colaborador con Foto de Bárbara o Inicial */}
                       <td className="py-3.5 px-6">
                         <div className="flex items-center gap-3">
-                          {u.rol === "FONOAUDIOLOGA" ? (
+                          {u.rol === 'FONOAUDIOLOGA' ? (
                             <img
                               src="/images/barbara-avatar.jpg"
                               alt={u.nombreCompleto}
@@ -250,28 +241,24 @@ export default function PersonalPage() {
                       {/* Rol */}
                       <td className="py-3.5 px-6">
                         <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            u.rol === "FONOAUDIOLOGA"
-                              ? "bg-[#136A7B]/10 text-[#136A7B] border border-[#136A7B]/20"
-                              : "bg-[#0AA896]/10 text-[#0AA896] border border-[#0AA896]/30"
+                          className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                            u.rol === 'FONOAUDIOLOGA'
+                              ? 'bg-[#136A7B] text-white'
+                              : 'bg-[#0AA896]/15 text-[#00796B] border border-[#0AA896]/30'
                           }`}
                         >
-                          {u.rol === "FONOAUDIOLOGA"
-                            ? "Fonoaudióloga"
-                            : "Asistente / Recepción"}
+                          {u.rol === 'FONOAUDIOLOGA' ? 'Fonoaudióloga' : 'Asistente / Recepción'}
                         </span>
                       </td>
 
-                      {/* ReTHUS */}
-                      <td className="py-3.5 px-6 text-xs font-mono text-gray-600">
+                      {/* Registro ReTHUS */}
+                      <td className="py-3.5 px-6">
                         {u.registroRethus ? (
-                          <span className="bg-[#FAF6F0] px-2 py-0.5 rounded border border-[#DF9B78]/30 font-semibold text-slate-700">
+                          <span className="px-2.5 py-1 rounded-md text-[11px] font-black bg-[#FAF6F0] text-gray-800 border border-[#DF9B78]/40">
                             {u.registroRethus}
                           </span>
                         ) : (
-                          <span className="text-gray-400 italic">
-                            No aplica
-                          </span>
+                          <span className="text-xs text-gray-400 italic">No aplica</span>
                         )}
                       </td>
 
@@ -280,13 +267,13 @@ export default function PersonalPage() {
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
                             activo
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : "bg-slate-100 text-slate-600 border border-slate-200"
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-gray-100 text-gray-600 border border-gray-200'
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              activo ? "bg-emerald-500" : "bg-slate-400"
+                              activo ? 'bg-emerald-500' : 'bg-gray-400'
                             }`}
                           />
                           {u.estado}
@@ -296,19 +283,17 @@ export default function PersonalPage() {
                       {/* Acciones */}
                       <td className="py-3.5 px-6 text-right">
                         {esAdminPrincipal ? (
-                          <span className="text-xs text-gray-400 italic">
-                            Cuenta Principal
-                          </span>
+                          <span className="text-xs text-slate-400 italic">Cuenta Principal</span>
                         ) : (
                           <button
                             onClick={() => handleToggleEstado(u)}
                             className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors border cursor-pointer ${
                               activo
-                                ? "border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100"
-                                : "border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+                                ? 'border-red-200 text-red-600 hover:bg-red-50'
+                                : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
                             }`}
                           >
-                            {activo ? "Desactivar Cuenta" : "Activar Cuenta"}
+                            {activo ? 'Desactivar Cuenta' : 'Activar Cuenta'}
                           </button>
                         )}
                       </td>
@@ -321,35 +306,40 @@ export default function PersonalPage() {
         )}
       </div>
 
-      {/* MODAL DE REGISTRO DE PERSONAL (HU-02) */}
-      {modalAbierto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl border border-[#DF9B78]/30 w-full max-w-lg overflow-hidden">
-            {/* Modal Header */}
-            <div className="bg-[#F5ECDD] p-6 border-b border-[#DF9B78]/30 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-[#136A7B]" />
-                <h3 className="font-extrabold text-base text-[#136A7B]">
-                  ➕ Alta de Nueva Cuenta de Secretaria (HU-02)
-                </h3>
+      {/* 4. Formulario Desplegable Inline (Exacto a la Distribución del Prototipo) */}
+      {formularioAbierto && (
+        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-[#0AA896] p-6 space-y-4 animate-fade-in">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-[#0AA896]/15 text-[#136A7B] rounded-xl">
+                <UserPlus className="w-5 h-5 text-[#0AA896]" />
               </div>
-              <button
-                onClick={() => setModalAbierto(false)}
-                className="text-slate-500 hover:text-slate-800 p-1 rounded-lg text-xs font-bold cursor-pointer"
-              >
-                ✕ Cerrar
-              </button>
+              <div>
+                <h3 className="text-base font-extrabold text-[#136A7B]">
+                  Alta de Nueva Cuenta de Secretaria (HU-02)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Ingresa los datos para habilitar el acceso seguro de tu asistente.
+                </p>
+              </div>
             </div>
+            <button
+              onClick={() => setFormularioAbierto(false)}
+              className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-            {/* Modal Form */}
-            <form onSubmit={handleCrearPersonal} className="p-6 space-y-4">
-              {modalError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center gap-2">
-                  <ShieldAlert className="w-4 h-4 shrink-0" />
-                  <span>{modalError}</span>
-                </div>
-              )}
+          {formError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0 text-red-600" />
+              <span>{formError}</span>
+            </div>
+          )}
 
+          <form onSubmit={handleCrearPersonal} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Nombre Completo */}
               <div>
                 <label className="block text-xs font-bold text-[#136A7B] mb-1">
@@ -389,75 +379,41 @@ export default function PersonalPage() {
               {/* Password */}
               <div>
                 <label className="block text-xs font-bold text-[#136A7B] mb-1">
-                  Contraseña Inicial (mínimo 8 caracteres) *
+                  Contraseña Temporal (Bcrypt) *
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
                   <input
-                    type="password"
+                    type="text"
                     required
                     minLength={8}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Secretaria2026*"
                     className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Rol */}
-              <div>
-                <label className="block text-xs font-bold text-[#136A7B] mb-1">
-                  Rol en el Sistema *
-                </label>
-                <select
-                  value={rol}
-                  onChange={(e) => setRol(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
-                >
-                  <option value="ASISTENTE">Asistente / Recepcionista</option>
-                  <option value="FONOAUDIOLOGA">Fonoaudióloga Colega</option>
-                </select>
-              </div>
-
-              {/* ReTHUS (Condicional) */}
-              {rol === "FONOAUDIOLOGA" && (
-                <div>
-                  <label className="block text-xs font-bold text-[#136A7B] mb-1">
-                    Código ReTHUS (Salud Colombia)
-                  </label>
-                  <div className="relative">
-                    <Award className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      value={registroRethus}
-                      onChange={(e) => setRegistroRethus(e.target.value)}
-                      placeholder="RETHUS-76001XXXX"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Acciones Modal */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => setModalAbierto(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={guardando}
-                  className="bg-[#136A7B] hover:bg-[#0AA896] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all disabled:opacity-60 flex items-center gap-2 cursor-pointer"
-                >
-                  {guardando ? "Guardando..." : "Guardar Cuenta"}
-                </button>
-              </div>
-            </form>
-          </div>
+            {/* Acciones */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setFormularioAbierto(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={guardando}
+                className="bg-[#136A7B] hover:bg-[#0AA896] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all disabled:opacity-60 flex items-center gap-2 cursor-pointer"
+              >
+                {guardando ? 'Guardando...' : 'Guardar y Activar Cuenta'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>
