@@ -10,7 +10,7 @@ import {
   Package,
   LogOut,
   Clock,
-  ShieldCheck,
+  Stethoscope,
 } from 'lucide-react';
 import { apiService, Usuario } from '@/services/api';
 
@@ -46,7 +46,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-fonella-fondo flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF6F0] flex items-center justify-center">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-[#0AA896] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm font-semibold text-[#136A7B]">
@@ -69,99 +69,119 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       {/* 2. Capa de Difuminado Pastel Cálido Oficial de Fonella */}
       <div className="fixed inset-0 bg-gradient-to-br from-[#FAF6F0]/80 via-[#F5ECDD]/70 to-[#FAF6F0]/85 backdrop-blur-[2.5px] -z-10" />
 
-      {/* 3. Grid de Distribución 2 Columnas (Estilo Prototipo) */}
+      {/* 3. Grid de Distribución 2 Columnas (Sidebar Izquierdo + Área Principal Derecha) */}
       <div className="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* SIDEBAR ADMINISTRATIVO OFICIAL (Izquierda) */}
-        <aside className="lg:col-span-4 xl:col-span-3 bg-[#136A7B]/95 backdrop-blur-md text-white rounded-3xl p-6 flex flex-col justify-between shadow-2xl border border-white/20 min-h-[580px]">
+        {/* SIDEBAR CON DEGRADADO AZUL PROFUNDO A BLANCO translúcido */}
+        <aside className="lg:col-span-4 xl:col-span-3 bg-gradient-to-b from-[#094A57] via-[#106A7C] via-65% to-[#EAF5F6] text-white rounded-3xl p-6 flex flex-col justify-between shadow-2xl border border-white/40 min-h-[640px] backdrop-blur-md">
           <div className="space-y-6">
-            {/* Header Marca FONELLA */}
-            <div className="flex items-center gap-3 pb-4 border-b border-white/20">
-              <div className="w-10 h-10 rounded-2xl bg-white p-1.5 shadow-sm flex items-center justify-center shrink-0">
-                <img
-                  src="/images/barbara-avatar.jpg"
-                  alt="Dra. Bárbara Ccucho"
-                  className="w-full h-full object-cover rounded-xl"
-                />
+            {/* Header Marca FONELLA con Cápsula Crema Oficial */}
+            <div className="flex flex-col items-center pb-4 border-b border-white/20">
+              <div className="bg-[#F5ECDD] border border-[#DF9B78]/40 shadow-sm px-5 py-2 rounded-2xl flex items-center justify-center gap-1">
+                <span className="font-black text-xl tracking-wider">
+                  <span className="text-[#0AA896]">F</span>
+                  <span className="text-[#5A96C8]">O</span>
+                  <span className="text-[#0AA896]">N</span>
+                  <span className="text-[#DF9B78]">E</span>
+                  <span className="text-[#0AA896]">L</span>
+                  <span className="text-[#5A96C8]">L</span>
+                  <span className="text-[#0AA896]">A</span>
+                </span>
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-black text-lg tracking-tight text-white">
-                    FONELLA
-                  </span>
-                  <span className="text-[10px] font-bold bg-[#0AA896] text-white px-2 py-0.5 rounded-full uppercase">
-                    Sprint 1
-                  </span>
-                </div>
-                <p className="text-[10px] text-[#F5ECDD]/90">
-                  Centro Integral de Fonoaudiología
-                </p>
-              </div>
-            </div>
-
-            {/* Badge y Perfil de la Especialista */}
-            <div className="bg-white/10 rounded-2xl p-4 border border-white/15">
-              <span className="px-2.5 py-0.5 rounded-lg bg-[#0AA896] text-[10px] font-black uppercase tracking-wider text-white inline-block">
-                ROL: {usuario?.rol || 'FONOAUDIÓLOGA'}
-              </span>
-              <h3 className="text-base font-black tracking-tight text-white mt-2">
-                {usuario?.nombreCompleto || 'Dra. Bárbara Ccucho Delgado'}
-              </h3>
-              <p className="text-xs text-[#F5ECDD]/80 font-medium mt-0.5">
-                {esFonoaudiologa ? 'Administradora Principal' : 'Personal Operativo'}
+              <p className="text-[11px] text-white/90 font-medium tracking-wide mt-2">
+                Centro Integral de Fonoaudiología
               </p>
             </div>
 
-            {/* Menú de Navegación Vertical con Iconos Lucide */}
-            <nav className="space-y-2 text-xs font-bold">
+            {/* Perfil de la Especialista / Usuario Activo */}
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-xs p-3.5 rounded-2xl border border-white/20">
+              <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-md border-2 border-white/80 shrink-0">
+                <img
+                  src="/images/barbara-avatar.jpg"
+                  alt="Dra. Bárbara Ccucho Delgado"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-white leading-tight">
+                  {usuario?.nombreCompleto || 'Dra. Bárbara Ccucho Delgado'}
+                </h3>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Stethoscope className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+                    {usuario?.rol || 'FONOAUDIÓLOGA'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Menú de Navegación Vertical */}
+            <nav className="space-y-2.5 text-xs font-bold">
               {esFonoaudiologa && (
                 <Link
                   href="/personal"
-                  className={`px-3.5 py-3 rounded-2xl flex items-center justify-between transition-all ${
+                  className={`px-4 py-3.5 rounded-2xl flex items-center justify-between transition-all ${
                     pathname.startsWith('/personal')
-                      ? 'bg-[#0AA896] text-white shadow-lg'
-                      : 'text-white/80 hover:bg-white/10'
+                      ? 'bg-white text-[#0E5666] shadow-lg border border-white font-extrabold'
+                      : 'text-white hover:bg-white/15'
                   }`}
                 >
-                  <span className="flex items-center gap-2.5">
-                    <Users className="w-4 h-4 text-white" />
-                    <span>Gestión de Personal (HU-02)</span>
+                  <span className="flex items-center gap-3">
+                    <Users className="w-4 h-4 text-[#0AA896]" />
+                    <span>Gestión de Personal</span>
                   </span>
-                  <span className="w-2 h-2 rounded-full bg-white shadow-xs" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#0AA896] shadow-xs" />
                 </Link>
               )}
 
-              <div className="px-3.5 py-3 rounded-2xl text-white/50 hover:bg-white/5 cursor-not-allowed flex items-center gap-2.5">
-                <Calendar className="w-4 h-4 text-white/40" />
-                <span>Agenda Clínica (Sprint 2)</span>
+              <div className="px-4 py-3.5 rounded-2xl bg-white/15 text-white/85 flex items-center justify-between border border-white/10 cursor-not-allowed">
+                <span className="flex items-center gap-3">
+                  <Calendar className="w-4 h-4 text-white/70" />
+                  <span>Agenda Clínica</span>
+                </span>
+                <span className="text-[9px] font-semibold bg-white/20 px-2 py-0.5 rounded-full text-white/90">
+                  Próx.
+                </span>
               </div>
-              <div className="px-3.5 py-3 rounded-2xl text-white/50 hover:bg-white/5 cursor-not-allowed flex items-center gap-2.5">
-                <ClipboardList className="w-4 h-4 text-white/40" />
-                <span>Historias Clínicas (Sprint 2)</span>
+
+              <div className="px-4 py-3.5 rounded-2xl bg-white/15 text-white/85 flex items-center justify-between border border-white/10 cursor-not-allowed">
+                <span className="flex items-center gap-3">
+                  <ClipboardList className="w-4 h-4 text-white/70" />
+                  <span>Historias Clínicas</span>
+                </span>
+                <span className="text-[9px] font-semibold bg-white/20 px-2 py-0.5 rounded-full text-white/90">
+                  Próx.
+                </span>
               </div>
-              <div className="px-3.5 py-3 rounded-2xl text-white/50 hover:bg-white/5 cursor-not-allowed flex items-center gap-2.5">
-                <Package className="w-4 h-4 text-white/40" />
-                <span>Inventario Juguetes (Sprint 3)</span>
+
+              <div className="px-4 py-3.5 rounded-2xl bg-white/15 text-white/85 flex items-center justify-between border border-white/10 cursor-not-allowed">
+                <span className="flex items-center gap-3">
+                  <Package className="w-4 h-4 text-white/70" />
+                  <span>Inventario Juguetes</span>
+                </span>
+                <span className="text-[9px] font-semibold bg-white/20 px-2 py-0.5 rounded-full text-white/90">
+                  Próx.
+                </span>
               </div>
             </nav>
           </div>
 
-          {/* Footer Inactividad y Logout */}
-          <div className="mt-8 pt-5 border-t border-white/20">
-            <div className="flex items-center gap-2 text-[11px] text-[#F5ECDD]/90 mb-3">
+          {/* Footer del Sidebar: Indicador de Seguridad y Botón Rojo Destacado */}
+          <div className="mt-8 pt-5 border-t border-[#136A7B]/20">
+            <div className="flex items-center justify-center gap-2 text-[11px] font-semibold text-[#0E5666] mb-3">
               <Clock className="w-3.5 h-3.5 text-[#0AA896] animate-pulse" />
-              <span>Cierre automático por inactividad: 30m (HU-04)</span>
+              <span>Cierre automático por inactividad: 30m</span>
             </div>
             <button
               onClick={handleLogout}
-              className="w-full py-2.5 rounded-xl bg-white/15 hover:bg-rose-600 text-white text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4 text-white" />
               <span>Cerrar Sesión Segura</span>
             </button>
           </div>
         </aside>
 
-        {/* ÁREA PRINCIPAL (Derecha) */}
+        {/* ÁREA PRINCIPAL DERECHA */}
         <main className="lg:col-span-8 xl:col-span-9">
           {children}
         </main>

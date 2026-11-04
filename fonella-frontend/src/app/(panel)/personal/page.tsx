@@ -12,13 +12,15 @@ import {
   User,
   Award,
   AlertTriangle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { apiService, Usuario } from '@/services/api';
 
 export default function PersonalPage() {
   const [personal, setPersonal] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
-  const [formularioAbierto, setFormularioAbierto] = useState(false);
+  const [modalAbierto, setModalAbierto] = useState(false);
   const [feedback, setFeedback] = useState<{
     tipo: 'exito' | 'error';
     texto: string;
@@ -27,7 +29,8 @@ export default function PersonalPage() {
   // Estados del Formulario de Creación
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('Secretaria2026*');
+  const [password, setPassword] = useState('');
+  const [mostrarPassword, setMostrarPassword] = useState(false);
   const [rol, setRol] = useState<'FONOAUDIOLOGA' | 'ASISTENTE'>('ASISTENTE');
   const [registroRethus, setRegistroRethus] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -71,13 +74,13 @@ export default function PersonalPage() {
         texto: `Cuenta para "${nombreCompleto}" registrada exitosamente.`,
       });
 
-      // Limpiar formulario y cerrar
+      // Limpiar formulario y cerrar modal
       setNombreCompleto('');
       setEmail('');
-      setPassword('Secretaria2026*');
+      setPassword('');
       setRegistroRethus('');
       setRol('ASISTENTE');
-      setFormularioAbierto(false);
+      setModalAbierto(false);
 
       // Recargar lista
       await cargarPersonal();
@@ -117,31 +120,28 @@ export default function PersonalPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Header de la Sección (Estilo Idéntico a la Vista Anterior) */}
+      {/* 1. Header Card Principal */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-white/70 shadow-2xl">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-[#F5ECDD] text-[#136A7B] rounded-xl border border-[#DF9B78]/20">
-              <Users className="w-6 h-6" />
+            <div className="p-2.5 bg-[#F5ECDD] text-[#136A7B] rounded-xl border border-[#DF9B78]/30">
+              <Users className="w-6 h-6 text-[#136A7B]" />
             </div>
             <div>
-              <span className="text-[10px] font-bold text-[#0AA896] uppercase tracking-wide">
-                HU-02 · Carril 1 · Control de Accesos RBAC
-              </span>
               <h1 className="text-xl sm:text-2xl font-black text-[#136A7B] tracking-tight">
                 Gestión de Cuentas de Personal del Consultorio
               </h1>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Crea, edita o revoca de inmediato el acceso operativo de tu Secretaria / Asistente.
+              </p>
             </div>
           </div>
-          <p className="text-xs text-slate-600 mt-1 pl-12">
-            Crea, edita o revoca de inmediato el acceso operativo de tu Secretaria / Asistente.
-          </p>
         </div>
 
         <button
           onClick={() => {
             setFormError(null);
-            setFormularioAbierto(!formularioAbierto);
+            setModalAbierto(true);
           }}
           className="bg-[#0AA896] hover:bg-[#136A7B] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
         >
@@ -176,7 +176,7 @@ export default function PersonalPage() {
         </div>
       )}
 
-      {/* 3. Tabla de Personal (Colores, Iconos, Fotos y Columnas Idénticas a la Vista Anterior) */}
+      {/* 3. Tabla de Personal con Cabecera Naranja Terracota Fonella */}
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/70 overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-gray-500">
@@ -189,7 +189,7 @@ export default function PersonalPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="bg-gradient-to-r from-[#136A7B] to-[#0AA896] text-white text-xs uppercase font-extrabold tracking-wider shadow-sm">
+                <tr className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] text-white text-xs uppercase font-extrabold tracking-wider shadow-sm">
                   <th className="py-4 px-6 text-white font-extrabold">Nombre Completo</th>
                   <th className="py-4 px-6 text-white font-extrabold">Correo Institucional</th>
                   <th className="py-4 px-6 text-white font-extrabold">Rol RBAC</th>
@@ -306,114 +306,162 @@ export default function PersonalPage() {
         )}
       </div>
 
-      {/* 4. Formulario Desplegable Inline (Exacto a la Distribución del Prototipo) */}
-      {formularioAbierto && (
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-[#0AA896] p-6 space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-[#0AA896]/15 text-[#136A7B] rounded-xl">
-                <UserPlus className="w-5 h-5 text-[#0AA896]" />
-              </div>
-              <div>
-                <h3 className="text-base font-extrabold text-[#136A7B]">
-                  Alta de Nueva Cuenta de Secretaria (HU-02)
+      {/* 4. Modal "Añadir Nueva Cuenta de Secretaria" con Cabecera Naranja y Botón Rojo de Cerrar */}
+      {modalAbierto && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-[3px] z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-white/60">
+            {/* Cabecera Naranja Terracota con Título y Botón Rojo de Cerrar */}
+            <div className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] px-6 py-4 flex items-center justify-between text-white shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl">
+                  <UserPlus className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-base font-black tracking-tight text-white">
+                  Añadir Nueva Cuenta de Secretaria
                 </h3>
-                <p className="text-xs text-slate-500">
-                  Ingresa los datos para habilitar el acceso seguro de tu asistente.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setFormularioAbierto(false)}
-              className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {formError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 shrink-0 text-red-600" />
-              <span>{formError}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleCrearPersonal} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Nombre Completo */}
-              <div>
-                <label className="block text-xs font-bold text-[#136A7B] mb-1">
-                  Nombre Completo *
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    required
-                    value={nombreCompleto}
-                    onChange={(e) => setNombreCompleto(e.target.value)}
-                    placeholder="Ej: Valeria Ríos"
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
-                  />
-                </div>
               </div>
 
-              {/* Email */}
-              <div>
-                <label className="block text-xs font-bold text-[#136A7B] mb-1">
-                  Correo Electrónico *
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="valeria.recepcion@fonella.co"
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div>
-                <label className="block text-xs font-bold text-[#136A7B] mb-1">
-                  Contraseña Temporal (Bcrypt) *
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    required
-                    minLength={8}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Secretaria2026*"
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Acciones */}
-            <div className="flex items-center justify-end gap-3 pt-2">
+              {/* Botón Rojo Bonito de Cerrar */}
               <button
                 type="button"
-                onClick={() => setFormularioAbierto(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                onClick={() => setModalAbierto(false)}
+                className="bg-red-500 hover:bg-red-600 active:scale-95 text-white px-3.5 py-1 rounded-full text-xs font-black shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={guardando}
-                className="bg-[#136A7B] hover:bg-[#0AA896] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all disabled:opacity-60 flex items-center gap-2 cursor-pointer"
-              >
-                {guardando ? 'Guardando...' : 'Guardar y Activar Cuenta'}
+                <span>✕</span>
+                <span>Cerrar</span>
               </button>
             </div>
-          </form>
+
+            {/* Cuerpo del Formulario */}
+            <div className="p-6 space-y-4">
+              {formError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 shrink-0 text-red-600" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleCrearPersonal} className="space-y-4">
+                {/* Nombre Completo */}
+                <div>
+                  <label className="block text-xs font-bold text-[#136A7B] mb-1">
+                    Nombre Completo *
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                    <input
+                      type="text"
+                      required
+                      value={nombreCompleto}
+                      onChange={(e) => setNombreCompleto(e.target.value)}
+                      placeholder="Ej: Valeria Ríos"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-bold text-[#136A7B] mb-1">
+                    Correo Electrónico *
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="valeria.recepcion@fonella.co"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Password con botón mostrar/ocultar */}
+                <div>
+                  <label className="block text-xs font-bold text-[#136A7B] mb-1">
+                    Contraseña Inicial (mínimo 8 caracteres) *
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                    <input
+                      type={mostrarPassword ? 'text' : 'password'}
+                      required
+                      minLength={8}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setMostrarPassword(!mostrarPassword)}
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 cursor-pointer"
+                    >
+                      {mostrarPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Rol */}
+                <div>
+                  <label className="block text-xs font-bold text-[#136A7B] mb-1">
+                    Rol en el Sistema *
+                  </label>
+                  <select
+                    value={rol}
+                    onChange={(e) => setRol(e.target.value as any)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
+                  >
+                    <option value="ASISTENTE">Asistente / Recepcionista</option>
+                    <option value="FONOAUDIOLOGA">Fonoaudióloga Colega</option>
+                  </select>
+                </div>
+
+                {/* ReTHUS (Condicional si es Fonoaudióloga) */}
+                {rol === 'FONOAUDIOLOGA' && (
+                  <div>
+                    <label className="block text-xs font-bold text-[#136A7B] mb-1">
+                      Código ReTHUS (Salud Colombia)
+                    </label>
+                    <div className="relative">
+                      <Award className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                      <input
+                        type="text"
+                        value={registroRethus}
+                        onChange={(e) => setRegistroRethus(e.target.value)}
+                        placeholder="RETHUS-76001XXXX"
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Acciones del Modal */}
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setModalAbierto(false)}
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors border border-slate-200 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={guardando}
+                    className="bg-[#136A7B] hover:bg-[#0AA896] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-60 flex items-center gap-2 cursor-pointer"
+                  >
+                    {guardando ? 'Guardando...' : 'Guardar Cuenta'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       )}
     </div>
