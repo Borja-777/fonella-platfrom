@@ -61,7 +61,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen w-full flex overflow-x-hidden bg-[#FAF6F0]">
-      {/* 1. SIDEBAR ADMINISTRATIVO: Pegado a la izquierda, sin esquinas redondeadas externas (Full Height) */}
+      {/* 1. SIDEBAR ADMINISTRATIVO: Pegado a la izquierda, full height */}
       <aside className="w-72 lg:w-80 shrink-0 h-screen sticky top-0 bg-gradient-to-b from-[#094A57] via-[#106A7C] via-65% to-[#EAF5F6] text-white flex flex-col justify-between p-6 border-r border-[#136A7B]/20 shadow-2xl z-30">
         <div className="space-y-6">
           {/* Header Marca FONELLA con Cápsula Crema Oficial */}
@@ -155,7 +155,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           </nav>
         </div>
 
-        {/* Footer del Sidebar: Indicador de Inactividad y Botón Rojo de Salida */}
+        {/* Footer del Sidebar */}
         <div className="mt-8 pt-5 border-t border-[#136A7B]/20">
           <div className="flex items-center justify-center gap-2 text-[11px] font-semibold text-[#0E5666] mb-3">
             <Clock className="w-3.5 h-3.5 text-[#0AA896] animate-pulse" />
@@ -171,22 +171,22 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* 2. ÁREA DE CONTENIDO PRINCIPAL: Expansiva y Adaptable */}
+      {/* 2. ÁREA DE CONTENIDO PRINCIPAL: Fondo visible y perfectamente encuadrado */}
       <div className="flex-1 min-w-0 relative flex flex-col min-h-screen">
-        {/* Fondo Fotográfico Clínico: Enfocado a la derecha del sidebar, reducido y posicionado para ver a Bárbara y la niña */}
+        {/* Capa de Fotografía Clínica Oficial con Bárbara y la Niña enfrente */}
         <div
-          className="fixed inset-y-0 right-0 left-72 lg:left-80 bg-no-repeat -z-20 filter brightness-95"
+          className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none filter brightness-95"
           style={{
             backgroundImage: "url('/images/panel-bg.jpg')",
-            backgroundSize: "contain",
-            backgroundPosition: "center 20%",
+            backgroundPosition: "center 12%",
           }}
         />
-        {/* Difuminado sutil y traslúcido para dar protagonismo a los rostros de Bárbara y la niña */}
-        <div className="fixed inset-y-0 right-0 left-72 lg:left-80 bg-gradient-to-br from-[#FAF6F0]/65 via-[#F5ECDD]/50 to-[#FAF6F0]/70 backdrop-blur-[1px] -z-10" />
 
-        {/* Contenedor Fluido con Margen Inteligente */}
-        <main className="flex-1 w-full p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto">
+        {/* Capa de Difuminado Suave que permite ver con claridad la sesión */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#FAF6F0]/75 via-[#F5ECDD]/60 to-[#FAF6F0]/80 backdrop-blur-[1.5px] pointer-events-none" />
+
+        {/* Contenido por encima de las capas con z-10 */}
+        <main className="relative z-10 flex-1 w-full p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto">
           {children}
         </main>
       </div>
