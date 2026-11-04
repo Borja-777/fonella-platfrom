@@ -26,7 +26,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         const data = await apiService.getMe();
         setUsuario(data.usuario);
       } catch (err) {
-        router.push('/login');
+        router.replace('/login');
       } finally {
         setLoading(false);
       }
@@ -34,13 +34,30 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     cargarSesion();
   }, [router]);
 
+  // Desactivar y anular el botón 'Atrás' del navegador dentro del panel clínico
+  useEffect(() => {
+    // 1. Agregar un nuevo estado en el historial
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = (event: PopStateEvent) => {
+      // 2. Al pulsar 'Atrás' en el navegador, se vuelve a empujar el estado actual impidiendo retroceder
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [pathname]);
+
   const handleLogout = async () => {
     try {
       await apiService.logout();
       document.cookie = 'fonella_rol=; path=/; max-age=0';
-      router.push('/login');
+      window.location.replace('/login');
     } catch {
-      router.push('/login');
+      window.location.replace('/login');
     }
   };
 
