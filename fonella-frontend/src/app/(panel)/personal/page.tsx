@@ -17,13 +17,19 @@ import {
   Pencil,
   Camera,
   Trash2,
+  Archive,
+  Check,
+  RotateCcw,
 } from 'lucide-react';
 import { apiService, Usuario } from '@/services/api';
+
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/;
 
 export default function PersonalPage() {
   const [personal, setPersonal] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [modalArchivadosAbierto, setModalArchivadosAbierto] = useState(false);
   const [modoModal, setModoModal] = useState<'crear' | 'editar'>('crear');
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
 
@@ -108,9 +114,31 @@ export default function PersonalPage() {
     reader.readAsDataURL(file);
   };
 
+  const validarPasswordComplejidad = (pass: string) => {
+    return PASSWORD_REGEX.test(pass);
+  };
+
   const handleGuardar = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+
+    // Validación de contraseña según el modo
+    if (modoModal === 'crear') {
+      if (!validarPasswordComplejidad(password)) {
+        setFormError(
+          'La contraseña no cumple los requisitos: mínimo 8 caracteres, al menos 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial.'
+        );
+        return;
+      }
+    } else if (password.trim().length > 0) {
+      if (!validarPasswordComplejidad(password)) {
+        setFormError(
+          'La nueva contraseña debe contener mínimo 8 caracteres, al menos 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial.'
+        );
+        return;
+      }
+    }
+
     setGuardando(true);
 
     try {
@@ -180,6 +208,57 @@ export default function PersonalPage() {
     }
   };
 
+  const handleOcultarCuenta = async (u: Usuario) => {
+    if (
+      !confirm(
+        `¿Deseas ocultar del panel la cuenta inactiva de ${u.nombreCompleto}? Podrás restaurarla en cualquier momento desde "Cuentas Archivadas".`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await apiService.actualizarPersonal(u.id, { ocultoEnPanel: true });
+      setFeedback({
+        tipo: 'exito',
+        texto: `Cuenta de ${u.nombreCompleto} archivada. Puedes restaurarla desde el botón "Cuentas Archivadas".`,
+      });
+      await cargarPersonal();
+    } catch (err: any) {
+      setFeedback({
+        tipo: 'error',
+        texto: err.message || 'No se pudo ocultar la cuenta.',
+      });
+    }
+  };
+
+  const handleRestaurarCuenta = async (u: Usuario) => {
+    try {
+      await apiService.actualizarPersonal(u.id, { ocultoEnPanel: false });
+      setFeedback({
+        tipo: 'exito',
+        texto: `Cuenta de ${u.nombreCompleto} restaurada exitosamente al panel principal.`,
+      });
+      await cargarPersonal();
+    } catch (err: any) {
+      setFeedback({
+        tipo: 'error',
+        texto: err.message || 'No se pudo restaurar la cuenta.',
+      });
+    }
+  };
+
+  // Cuentas visibles en panel y cuentas archivadas
+  const personalVisible = personal.filter((u) => !u.ocultoEnPanel);
+  const personalArchivado = personal.filter((u) => u.ocultoEnPanel);
+
+  // Verificadores de complejidad de contraseña en tiempo real
+  const passLongitudOk = password.length >= 8;
+  const passMayusculaOk = /[A-Z]/.test(password);
+  const passMinusculaOk = /[a-z]/.test(password);
+  const passNumeroOk = /\d/.test(password);
+  const passEspecialOk = /[^a-zA-Z0-9]/.test(password);
+
   return (
     <div className="space-y-6 w-full">
       {/* 1. Header Card Principal */}
@@ -198,13 +277,30 @@ export default function PersonalPage() {
           </div>
         </div>
 
-        <button
-          onClick={abrirModalCrear}
-          className="bg-[#0AA896] hover:bg-[#136A7B] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>+ Registrar Nueva Secretaria</span>
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Botón de Cuentas Archivadas / Ocultas */}
+          <button
+            onClick={() => setModalArchivadosAbierto(true)}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center gap-2 cursor-pointer border ${
+              personalArchivado.length > 0
+                ? 'bg-amber-50/80 border-amber-300 text-amber-900 hover:bg-amber-100'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+            title="Ver cuentas inactivas archivadas u ocultas"
+          >
+            <Archive className="w-4 h-4 text-[#136A7B]" />
+            <span>Cuentas Archivadas ({personalArchivado.length})</span>
+          </button>
+
+          {/* Botón de Registrar Nueva Secretaria */}
+          <button
+            onClick={abrirModalCrear}
+            className="bg-[#0AA896] hover:bg-[#136A7B] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>+ Registrar Nueva Secretaria</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. Banner de Feedback Global */}
@@ -233,7 +329,7 @@ export default function PersonalPage() {
         </div>
       )}
 
-      {/* 3. Tabla de Personal con Acciones Completas (Editar + Activar/Desactivar) */}
+      {/* 3. Tabla de Personal con Acciones Completas */}
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/70 overflow-hidden w-full">
         {loading ? (
           <div className="p-16 text-center text-gray-500">
@@ -247,28 +343,28 @@ export default function PersonalPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] text-white text-[11px] sm:text-xs uppercase font-extrabold tracking-wider shadow-sm">
-                  <th className="py-4 px-6 font-extrabold whitespace-nowrap min-w-[280px]">
+                  <th className="py-4 px-5 font-extrabold whitespace-nowrap">
                     Nombre Completo
                   </th>
-                  <th className="py-4 px-6 font-extrabold whitespace-nowrap min-w-[220px]">
+                  <th className="py-4 px-5 font-extrabold whitespace-nowrap">
                     Correo Institucional
                   </th>
-                  <th className="py-4 px-6 font-extrabold whitespace-nowrap min-w-[170px]">
+                  <th className="py-4 px-4 font-extrabold whitespace-nowrap">
                     Rol RBAC
                   </th>
-                  <th className="py-4 px-6 font-extrabold whitespace-nowrap min-w-[150px]">
+                  <th className="py-4 px-4 font-extrabold whitespace-nowrap">
                     Registro ReTHUS
                   </th>
-                  <th className="py-4 px-6 font-extrabold whitespace-nowrap min-w-[130px]">
+                  <th className="py-4 px-4 font-extrabold whitespace-nowrap">
                     Estado
                   </th>
-                  <th className="py-4 px-6 text-right font-extrabold whitespace-nowrap min-w-[220px]">
+                  <th className="py-4 px-5 text-right font-extrabold whitespace-nowrap">
                     Acción Inmediata
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {personal.map((u) => {
+                {personalVisible.map((u) => {
                   const esAdminPrincipal = u.email === 'barbara.ccucho@fonella.co';
                   const activo = u.estado === 'ACTIVO';
                   const fotoUrl = u.fotoPerfilUrl || (u.rol === 'FONOAUDIOLOGA' ? '/images/barbara-avatar.jpg' : null);
@@ -279,7 +375,7 @@ export default function PersonalPage() {
                       className="hover:bg-[#FAF6F0]/80 transition-colors"
                     >
                       {/* Colaborador con Foto o Inicial */}
-                      <td className="py-4 px-6">
+                      <td className="py-4 px-5">
                         <div className="flex items-center gap-3.5">
                           {fotoUrl ? (
                             <img
@@ -304,12 +400,12 @@ export default function PersonalPage() {
                       </td>
 
                       {/* Correo Institucional */}
-                      <td className="py-4 px-6 font-medium text-slate-700 whitespace-nowrap">
+                      <td className="py-4 px-5 font-medium text-slate-700 whitespace-nowrap">
                         {u.email}
                       </td>
 
                       {/* Rol RBAC */}
-                      <td className="py-4 px-6 whitespace-nowrap">
+                      <td className="py-4 px-4 whitespace-nowrap">
                         <span
                           className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold ${
                             u.rol === 'FONOAUDIOLOGA'
@@ -322,7 +418,7 @@ export default function PersonalPage() {
                       </td>
 
                       {/* Registro ReTHUS */}
-                      <td className="py-4 px-6 whitespace-nowrap">
+                      <td className="py-4 px-4 whitespace-nowrap">
                         {u.registroRethus ? (
                           <span className="px-2.5 py-1 rounded-md text-[11px] font-black bg-[#FAF6F0] text-gray-800 border border-[#DF9B78]/40 shadow-xs">
                             {u.registroRethus}
@@ -333,7 +429,7 @@ export default function PersonalPage() {
                       </td>
 
                       {/* Estado */}
-                      <td className="py-4 px-6 whitespace-nowrap">
+                      <td className="py-4 px-4 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
                             activo
@@ -350,8 +446,8 @@ export default function PersonalPage() {
                         </span>
                       </td>
 
-                      {/* Acciones Inmediatas (Editar + Activar/Desactivar) */}
-                      <td className="py-4 px-6 text-right whitespace-nowrap">
+                      {/* Acciones Inmediatas (Editar + Activar/Desactivar + Ocultar) */}
+                      <td className="py-4 px-5 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
                           {/* Botón Editar para todos (incluida Bárbara) */}
                           <button
@@ -363,22 +459,35 @@ export default function PersonalPage() {
                             <span>Editar</span>
                           </button>
 
-                          {/* Botón Activar / Desactivar (o etiqueta Cuenta Principal) */}
+                          {/* Botón Activar / Desactivar (o etiqueta Cuenta Titular) */}
                           {esAdminPrincipal ? (
                             <span className="text-[11px] text-slate-400 italic pl-1">
                               Cuenta Titular
                             </span>
                           ) : (
-                            <button
-                              onClick={() => handleToggleEstado(u)}
-                              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors border cursor-pointer ${
-                                activo
-                                  ? 'border-red-200 text-red-600 hover:bg-red-50'
-                                  : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
-                              }`}
-                            >
-                              {activo ? 'Desactivar' : 'Activar'}
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleToggleEstado(u)}
+                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors border cursor-pointer ${
+                                  activo
+                                    ? 'border-red-200 text-red-600 hover:bg-red-50'
+                                    : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                                }`}
+                              >
+                                {activo ? 'Desactivar' : 'Activar'}
+                              </button>
+
+                              {/* Ícono de Ojo Ocultar: Solo para cuentas desactivadas */}
+                              {!activo && (
+                                <button
+                                  onClick={() => handleOcultarCuenta(u)}
+                                  className="p-1.5 rounded-lg border border-slate-300 text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer bg-white shadow-xs"
+                                  title="Ocultar esta cuenta inactiva del panel principal"
+                                >
+                                  <EyeOff className="w-3.5 h-3.5 text-slate-500 hover:text-slate-800" />
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
@@ -524,22 +633,21 @@ export default function PersonalPage() {
                   </div>
                 </div>
 
-                {/* Contraseña */}
+                {/* Contraseña con Regla de Complejidad */}
                 <div>
                   <label className="block text-xs font-bold text-[#136A7B] mb-1">
                     {modoModal === 'crear'
-                      ? 'Contraseña Inicial (mínimo 8 caracteres) *'
-                      : 'Nueva Contraseña (opcional, mínimo 8 caracteres)'}
+                      ? 'Contraseña Segura *'
+                      : 'Nueva Contraseña (opcional)'}
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
                     <input
                       type={mostrarPassword ? 'text' : 'password'}
                       required={modoModal === 'crear'}
-                      minLength={8}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder={modoModal === 'crear' ? '••••••••' : 'Dejar en blanco para conservar la actual'}
+                      placeholder={modoModal === 'crear' ? 'Ej: Fonella2026*' : 'Dejar en blanco para conservar la actual'}
                       className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
                     />
                     <button
@@ -554,6 +662,35 @@ export default function PersonalPage() {
                       )}
                     </button>
                   </div>
+
+                  {/* Checklist visual de requisitos de contraseña */}
+                  {(modoModal === 'crear' || password.length > 0) && (
+                    <div className="mt-2.5 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-[11px]">
+                      <p className="font-bold text-slate-700">Requisitos de contraseña:</p>
+                      <div className="grid grid-cols-2 gap-1 text-slate-600">
+                        <div className={`flex items-center gap-1.5 ${passLongitudOk ? 'text-emerald-700 font-semibold' : ''}`}>
+                          <Check className={`w-3.5 h-3.5 ${passLongitudOk ? 'text-emerald-600' : 'text-slate-300'}`} />
+                          <span>Mínimo 8 caracteres</span>
+                        </div>
+                        <div className={`flex items-center gap-1.5 ${passMayusculaOk ? 'text-emerald-700 font-semibold' : ''}`}>
+                          <Check className={`w-3.5 h-3.5 ${passMayusculaOk ? 'text-emerald-600' : 'text-slate-300'}`} />
+                          <span>1 letra Mayúscula</span>
+                        </div>
+                        <div className={`flex items-center gap-1.5 ${passMinusculaOk ? 'text-emerald-700 font-semibold' : ''}`}>
+                          <Check className={`w-3.5 h-3.5 ${passMinusculaOk ? 'text-emerald-600' : 'text-slate-300'}`} />
+                          <span>1 letra Minúscula</span>
+                        </div>
+                        <div className={`flex items-center gap-1.5 ${passNumeroOk ? 'text-emerald-700 font-semibold' : ''}`}>
+                          <Check className={`w-3.5 h-3.5 ${passNumeroOk ? 'text-emerald-600' : 'text-slate-300'}`} />
+                          <span>1 Número</span>
+                        </div>
+                        <div className={`col-span-2 flex items-center gap-1.5 ${passEspecialOk ? 'text-emerald-700 font-semibold' : ''}`}>
+                          <Check className={`w-3.5 h-3.5 ${passEspecialOk ? 'text-emerald-600' : 'text-slate-300'}`} />
+                          <span>1 Carácter especial (!@#$%^&*...)</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Rol */}
@@ -613,6 +750,118 @@ export default function PersonalPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Modal para Cuentas Archivadas / Ocultas */}
+      {modalArchivadosAbierto && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-[3px] z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-white/60">
+            {/* Cabecera Naranja Terracota con Botón Rojo Cerrar */}
+            <div className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] px-6 py-4 flex items-center justify-between text-white shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl">
+                  <Archive className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight text-white">
+                    Cuentas de Personal Archivadas
+                  </h3>
+                  <p className="text-[11px] text-white/80">
+                    Cuentas inactivas que fueron ocultadas del panel de control
+                  </p>
+                </div>
+              </div>
+
+              {/* Botón Rojo Bonito de Cerrar */}
+              <button
+                type="button"
+                onClick={() => setModalArchivadosAbierto(false)}
+                className="bg-red-500 hover:bg-red-600 active:scale-95 text-white px-3.5 py-1 rounded-full text-xs font-black shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>✕</span>
+                <span>Cerrar</span>
+              </button>
+            </div>
+
+            {/* Contenido del Modal de Archivados */}
+            <div className="p-6 max-h-[75vh] overflow-y-auto">
+              {personalArchivado.length === 0 ? (
+                <div className="text-center py-12 px-4">
+                  <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
+                    <Archive className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-800">
+                    No hay cuentas archivadas
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    Cuando desactives una cuenta en el panel principal, aparecerá el ícono de ojo para ocultarla y archivarla aquí.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50">
+                  {personalArchivado.map((u) => {
+                    const fotoUrl = u.fotoPerfilUrl || (u.rol === 'FONOAUDIOLOGA' ? '/images/barbara-avatar.jpg' : null);
+
+                    return (
+                      <div
+                        key={u.id}
+                        className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white hover:bg-[#FAF6F0]/60 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          {fotoUrl ? (
+                            <img
+                              src={fotoUrl}
+                              alt={u.nombreCompleto}
+                              className="w-10 h-10 rounded-full object-cover border border-[#136A7B]/20 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                              {u.nombreCompleto.charAt(0)}
+                            </div>
+                          )}
+
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-slate-900 text-sm">
+                                {u.nombreCompleto}
+                              </p>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600 border border-gray-200">
+                                Inactivo
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              {u.email} • <span className="font-medium text-[#136A7B]">{u.rol === 'FONOAUDIOLOGA' ? 'Fonoaudióloga' : 'Asistente'}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Botón Restaurar al Panel */}
+                        <button
+                          onClick={() => handleRestaurarCuenta(u)}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#136A7B] hover:bg-[#0AA896] text-white shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                          title="Restaurar y volver a mostrar en el panel principal"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Restaurar al Panel</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setModalArchivadosAbierto(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors border border-slate-200 cursor-pointer"
+                >
+                  Entendido
+                </button>
+              </div>
             </div>
           </div>
         </div>

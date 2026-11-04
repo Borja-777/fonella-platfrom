@@ -5,6 +5,8 @@ import {
   IsOptional,
   IsString,
   MinLength,
+  Matches,
+  IsBoolean,
 } from "class-validator";
 import { RolUsuario } from "@prisma/client";
 
@@ -21,6 +23,13 @@ export class ActualizarPersonalDto {
   @IsOptional()
   @IsString({ message: "La contraseña debe ser una cadena de texto." })
   @MinLength(8, { message: "La contraseña debe contener al menos 8 caracteres." })
+  @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/,
+    {
+      message:
+        "La contraseña debe contener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial (!@#$%...).",
+    },
+  )
   password?: string;
 
   @IsOptional()
@@ -36,4 +45,8 @@ export class ActualizarPersonalDto {
   @IsOptional()
   @IsString({ message: "La URL de la foto de perfil debe ser una cadena de texto." })
   fotoPerfilUrl?: string;
+
+  @IsOptional()
+  @IsBoolean({ message: "El estado de oculto debe ser un valor booleano." })
+  ocultoEnPanel?: boolean;
 }

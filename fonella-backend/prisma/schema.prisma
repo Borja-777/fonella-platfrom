@@ -76,6 +76,7 @@ model Usuario {
   rol              RolUsuario
   registroRethus   String?        @map("registro_rethus") @db.VarChar(50)
   fotoPerfilUrl    String?        @map("foto_perfil_url") @db.Text
+  ocultoEnPanel    Boolean        @default(false) @map("oculto_en_panel")
   firmaDigitalUrl  String?        @map("firma_digital_url") @db.VarChar(500)
   intentosFallidos Int            @default(0) @map("intentos_fallidos")
   bloqueadoHasta   DateTime?      @map("bloqueado_hasta")

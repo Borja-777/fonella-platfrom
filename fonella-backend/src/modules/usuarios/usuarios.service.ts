@@ -44,6 +44,8 @@ export class UsuariosService {
         passwordHash,
         rol: dto.rol,
         registroRethus: dto.registroRethus?.trim() || null,
+        fotoPerfilUrl: dto.fotoPerfilUrl || null,
+        ocultoEnPanel: false,
         estado: EstadoRegistro.ACTIVO,
       },
       select: {
@@ -53,6 +55,7 @@ export class UsuariosService {
         rol: true,
         registroRethus: true,
         fotoPerfilUrl: true,
+        ocultoEnPanel: true,
         estado: true,
         createdAt: true,
       },
@@ -76,6 +79,7 @@ export class UsuariosService {
         rol: true,
         registroRethus: true,
         fotoPerfilUrl: true,
+        ocultoEnPanel: true,
         estado: true,
         createdAt: true,
         updatedAt: true,
@@ -87,7 +91,7 @@ export class UsuariosService {
   }
 
   /**
-   * Actualiza la información de una cuenta de personal (incluyendo foto de perfil)
+   * Actualiza la información de una cuenta de personal (incluyendo foto de perfil y visibilidad)
    */
   async actualizarPersonal(id: string, dto: ActualizarPersonalDto) {
     // 1. Verificar si el usuario existe
@@ -115,11 +119,18 @@ export class UsuariosService {
       }
     }
 
-    // 3. Regla de seguridad: Si es la Dra. Bárbara, no se le puede degradar el rol
-    if (usuario.email === "barbara.ccucho@fonella.co" && dto.rol && dto.rol !== "FONOAUDIOLOGA") {
-      throw new BadRequestException(
-        "La cuenta principal de la Dra. Bárbara Ccucho debe mantener el rol de FONOAUDIOLOGA.",
-      );
+    // 3. Regla de seguridad: Si es la Dra. Bárbara, no se le puede degradar el rol ni ocultar
+    if (usuario.email === "barbara.ccucho@fonella.co") {
+      if (dto.rol && dto.rol !== "FONOAUDIOLOGA") {
+        throw new BadRequestException(
+          "La cuenta principal de la Dra. Bárbara Ccucho debe mantener el rol de FONOAUDIOLOGA.",
+        );
+      }
+      if (dto.ocultoEnPanel === true) {
+        throw new BadRequestException(
+          "No es posible ocultar la cuenta titular de la dirección clínica.",
+        );
+      }
     }
 
     // 4. Preparar datos a actualizar
@@ -140,6 +151,9 @@ export class UsuariosService {
     if (dto.fotoPerfilUrl !== undefined) {
       datosActualizacion.fotoPerfilUrl = dto.fotoPerfilUrl;
     }
+    if (dto.ocultoEnPanel !== undefined) {
+      datosActualizacion.ocultoEnPanel = dto.ocultoEnPanel;
+    }
     if (dto.password && dto.password.trim().length >= 8) {
       datosActualizacion.passwordHash = await bcrypt.hash(dto.password, 10);
     }
@@ -155,6 +169,7 @@ export class UsuariosService {
         rol: true,
         registroRethus: true,
         fotoPerfilUrl: true,
+        ocultoEnPanel: true,
         estado: true,
         updatedAt: true,
       },
@@ -201,6 +216,7 @@ export class UsuariosService {
         email: true,
         rol: true,
         fotoPerfilUrl: true,
+        ocultoEnPanel: true,
         estado: true,
         updatedAt: true,
       },

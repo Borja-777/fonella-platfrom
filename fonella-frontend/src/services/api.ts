@@ -7,6 +7,7 @@ export interface Usuario {
   rol: 'FONOAUDIOLOGA' | 'ASISTENTE';
   registroRethus?: string | null;
   fotoPerfilUrl?: string | null;
+  ocultoEnPanel?: boolean;
   estado: 'ACTIVO' | 'INACTIVO';
   createdAt?: string;
   updatedAt?: string;
@@ -101,6 +102,7 @@ export const apiService = {
       rol?: 'FONOAUDIOLOGA' | 'ASISTENTE';
       registroRethus?: string;
       fotoPerfilUrl?: string;
+      ocultoEnPanel?: boolean;
     },
   ): Promise<{ mensaje: string; usuario: Usuario }> {
     const res = await fetch(`${API_URL}/usuarios/personal/${id}`, {
