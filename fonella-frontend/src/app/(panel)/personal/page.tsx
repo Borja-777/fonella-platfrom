@@ -119,22 +119,20 @@ export default function PersonalPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* 1. Header Card Principal */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-white/70 shadow-2xl">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-[#F5ECDD] text-[#136A7B] rounded-xl border border-[#DF9B78]/30">
-              <Users className="w-6 h-6 text-[#136A7B]" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-[#136A7B] tracking-tight">
-                Gestión de Cuentas de Personal del Consultorio
-              </h1>
-              <p className="text-xs text-slate-600 mt-0.5">
-                Crea, edita o revoca de inmediato el acceso operativo de tu Secretaria / Asistente.
-              </p>
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-white/70 shadow-xl">
+        <div className="flex items-center gap-3.5">
+          <div className="p-3 bg-[#F5ECDD] text-[#136A7B] rounded-2xl border border-[#DF9B78]/30 shadow-xs shrink-0">
+            <Users className="w-6 h-6 text-[#136A7B]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-[#136A7B] tracking-tight">
+              Gestión de Cuentas de Personal del Consultorio
+            </h1>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Crea, edita o revoca de inmediato el acceso operativo de tu Secretaria / Asistente.
+            </p>
           </div>
         </div>
 
@@ -143,7 +141,7 @@ export default function PersonalPage() {
             setFormError(null);
             setModalAbierto(true);
           }}
-          className="bg-[#0AA896] hover:bg-[#136A7B] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+          className="bg-[#0AA896] hover:bg-[#136A7B] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
           <span>+ Registrar Nueva Secretaria</span>
@@ -153,9 +151,9 @@ export default function PersonalPage() {
       {/* 2. Banner de Feedback Global */}
       {feedback && (
         <div
-          className={`p-4 rounded-xl flex items-center justify-between text-xs animate-fade-in ${
+          className={`p-4 rounded-xl flex items-center justify-between text-xs animate-fade-in shadow-sm ${
             feedback.tipo === 'exito'
-              ? 'bg-[#0AA896]/10 border border-[#0AA896]/30 text-[#136A7B]'
+              ? 'bg-[#0AA896]/15 border border-[#0AA896]/30 text-[#094A57]'
               : 'bg-red-50 border border-red-200 text-red-800'
           }`}
         >
@@ -165,7 +163,7 @@ export default function PersonalPage() {
             ) : (
               <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
             )}
-            <span className="font-semibold">{feedback.texto}</span>
+            <span className="font-bold">{feedback.texto}</span>
           </div>
           <button
             onClick={() => setFeedback(null)}
@@ -176,26 +174,38 @@ export default function PersonalPage() {
         </div>
       )}
 
-      {/* 3. Tabla de Personal con Cabecera Naranja Terracota Fonella */}
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/70 overflow-hidden">
+      {/* 3. Tabla de Personal: Perfectamente Organizada y Espaciosa (Idéntica a la Imagen 3) */}
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/70 overflow-hidden w-full">
         {loading ? (
-          <div className="p-12 text-center text-gray-500">
+          <div className="p-16 text-center text-gray-500">
             <div className="w-8 h-8 border-4 border-[#0AA896] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
             <p className="text-xs font-semibold text-[#136A7B]">
               Cargando cuentas de personal desde PostgreSQL...
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] text-white text-xs uppercase font-extrabold tracking-wider shadow-sm">
-                  <th className="py-4 px-6 text-white font-extrabold">Nombre Completo</th>
-                  <th className="py-4 px-6 text-white font-extrabold">Correo Institucional</th>
-                  <th className="py-4 px-6 text-white font-extrabold">Rol RBAC</th>
-                  <th className="py-4 px-6 text-white font-extrabold">Registro ReTHUS</th>
-                  <th className="py-4 px-6 text-white font-extrabold">Estado</th>
-                  <th className="py-4 px-6 text-right text-white font-extrabold">Acción Inmediata</th>
+                <tr className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] text-white text-[11px] sm:text-xs uppercase font-extrabold tracking-wider shadow-sm">
+                  <th className="py-4 px-6 font-extrabold whitespace-nowrap min-w-[280px]">
+                    Nombre Completo
+                  </th>
+                  <th className="py-4 px-6 font-extrabold whitespace-nowrap min-w-[220px]">
+                    Correo Institucional
+                  </th>
+                  <th className="py-4 px-6 font-extrabold whitespace-nowrap min-w-[170px]">
+                    Rol RBAC
+                  </th>
+                  <th className="py-4 px-6 font-extrabold whitespace-nowrap min-w-[150px]">
+                    Registro ReTHUS
+                  </th>
+                  <th className="py-4 px-6 font-extrabold whitespace-nowrap min-w-[130px]">
+                    Estado
+                  </th>
+                  <th className="py-4 px-6 text-right font-extrabold whitespace-nowrap min-w-[170px]">
+                    Acción Inmediata
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
@@ -209,41 +219,41 @@ export default function PersonalPage() {
                       className="hover:bg-[#FAF6F0]/80 transition-colors"
                     >
                       {/* Colaborador con Foto de Bárbara o Inicial */}
-                      <td className="py-3.5 px-6">
-                        <div className="flex items-center gap-3">
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3.5">
                           {u.rol === 'FONOAUDIOLOGA' ? (
                             <img
                               src="/images/barbara-avatar.jpg"
                               alt={u.nombreCompleto}
-                              className="w-9 h-9 rounded-full object-cover border border-[#136A7B]/30 shadow-xs ring-1 ring-emerald-50"
+                              className="w-10 h-10 rounded-full object-cover border border-[#136A7B]/30 shadow-xs ring-2 ring-emerald-50 shrink-0"
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs bg-[#DF9B78]/15 text-[#B86E47] border border-[#DF9B78]/30">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm bg-[#DF9B78]/15 text-[#B86E47] border border-[#DF9B78]/30 shrink-0">
                               {u.nombreCompleto.charAt(0)}
                             </div>
                           )}
-                          <div>
-                            <p className="font-bold text-gray-900">
+                          <div className="min-w-0">
+                            <p className="font-bold text-gray-900 text-sm whitespace-nowrap">
                               {u.nombreCompleto}
                             </p>
-                            <p className="text-[10px] text-gray-400 font-mono">
+                            <p className="text-[10px] text-gray-400 font-mono mt-0.5 whitespace-nowrap">
                               ID: {u.id.slice(0, 8)}...
                             </p>
                           </div>
                         </div>
                       </td>
 
-                      {/* Email */}
-                      <td className="py-3.5 px-6 font-medium text-slate-700">
+                      {/* Correo Institucional */}
+                      <td className="py-4 px-6 font-medium text-slate-700 whitespace-nowrap">
                         {u.email}
                       </td>
 
-                      {/* Rol */}
-                      <td className="py-3.5 px-6">
+                      {/* Rol RBAC */}
+                      <td className="py-4 px-6 whitespace-nowrap">
                         <span
-                          className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                          className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold ${
                             u.rol === 'FONOAUDIOLOGA'
-                              ? 'bg-[#136A7B] text-white'
+                              ? 'bg-[#136A7B] text-white shadow-xs'
                               : 'bg-[#0AA896]/15 text-[#00796B] border border-[#0AA896]/30'
                           }`}
                         >
@@ -252,9 +262,9 @@ export default function PersonalPage() {
                       </td>
 
                       {/* Registro ReTHUS */}
-                      <td className="py-3.5 px-6">
+                      <td className="py-4 px-6 whitespace-nowrap">
                         {u.registroRethus ? (
-                          <span className="px-2.5 py-1 rounded-md text-[11px] font-black bg-[#FAF6F0] text-gray-800 border border-[#DF9B78]/40">
+                          <span className="px-2.5 py-1 rounded-md text-[11px] font-black bg-[#FAF6F0] text-gray-800 border border-[#DF9B78]/40 shadow-xs">
                             {u.registroRethus}
                           </span>
                         ) : (
@@ -262,10 +272,10 @@ export default function PersonalPage() {
                         )}
                       </td>
 
-                      {/* Estado */}
-                      <td className="py-3.5 px-6">
+                      {/* Estado con Indicador Pulsante */}
+                      <td className="py-4 px-6 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
                             activo
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : 'bg-gray-100 text-gray-600 border border-gray-200'
@@ -281,13 +291,13 @@ export default function PersonalPage() {
                       </td>
 
                       {/* Acciones */}
-                      <td className="py-3.5 px-6 text-right">
+                      <td className="py-4 px-6 text-right whitespace-nowrap">
                         {esAdminPrincipal ? (
                           <span className="text-xs text-slate-400 italic">Cuenta Principal</span>
                         ) : (
                           <button
                             onClick={() => handleToggleEstado(u)}
-                            className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors border cursor-pointer ${
+                            className={`text-xs font-bold px-3.5 py-1.5 rounded-lg transition-colors border cursor-pointer ${
                               activo
                                 ? 'border-red-200 text-red-600 hover:bg-red-50'
                                 : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
