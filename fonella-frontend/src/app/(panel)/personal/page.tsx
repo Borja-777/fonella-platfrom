@@ -102,14 +102,60 @@ export default function PersonalPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setFormError('La fotografía no debe superar 5 MB.');
+    // Validación estricta de formato (JPG / PNG)
+    const formatosValidos = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!formatosValidos.includes(file.type.toLowerCase())) {
+      setFormError('Formato no compatible. Solo se permiten imágenes en formato JPG o PNG.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
+    // Validación de tamaño máximo (10 MB)
+    const MAX_MB = 10;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      setFormError(`La fotografía seleccionada supera el límite máximo de ${MAX_MB} MB.`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setFormError(null);
+
     const reader = new FileReader();
     reader.onload = () => {
-      setFotoPreview(reader.result as string);
+      const img = new Image();
+      img.onload = () => {
+        // Redimensionar suavemente a un máx de 1200px para almacenamiento óptimo sin perder calidad
+        const maxDim = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const formatoSalida = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+          const dataUrl = canvas.toDataURL(formatoSalida, 0.90);
+          setFotoPreview(dataUrl);
+        } else {
+          setFotoPreview(reader.result as string);
+        }
+      };
+      img.onerror = () => {
+        setFormError('No se pudo procesar la imagen seleccionada.');
+      };
+      img.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   };
@@ -306,23 +352,26 @@ export default function PersonalPage() {
       {/* 2. Banner de Feedback Global */}
       {feedback && (
         <div
-          className={`p-4 rounded-xl flex items-center justify-between text-xs animate-fade-in shadow-sm ${
+          className={`px-5 py-3.5 rounded-2xl flex items-center justify-between text-xs sm:text-sm animate-fade-in shadow-xl border backdrop-blur-md transition-all ${
             feedback.tipo === 'exito'
-              ? 'bg-[#0AA896]/15 border border-[#0AA896]/30 text-[#094A57]'
-              : 'bg-red-50 border border-red-200 text-red-800'
+              ? 'bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 border-emerald-400/40 text-white shadow-emerald-950/20'
+              : 'bg-gradient-to-r from-rose-600 via-rose-700 to-red-700 border-rose-400/40 text-white shadow-rose-950/20'
           }`}
         >
-          <div className="flex items-center gap-2">
-            {feedback.tipo === 'exito' ? (
-              <CheckCircle2 className="w-4 h-4 text-[#0AA896] shrink-0" />
-            ) : (
-              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-            )}
-            <span className="font-bold">{feedback.texto}</span>
+          <div className="flex items-center gap-3">
+            <div className="p-1 bg-white/20 rounded-lg shrink-0">
+              {feedback.tipo === 'exito' ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-100" />
+              ) : (
+                <AlertTriangle className="w-5 h-5 text-rose-100" />
+              )}
+            </div>
+            <span className="font-extrabold tracking-wide">{feedback.texto}</span>
           </div>
           <button
             onClick={() => setFeedback(null)}
-            className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+            className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+            title="Cerrar notificación"
           >
             <X className="w-4 h-4" />
           </button>
@@ -564,14 +613,14 @@ export default function PersonalPage() {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       className="absolute -bottom-1.5 -right-1.5 p-1.5 bg-[#136A7B] hover:bg-[#0AA896] text-white rounded-xl shadow-md transition-all cursor-pointer"
-                      title="Subir nueva foto"
+                      title="Subir fotografía (JPG o PNG, máx. 10 MB)"
                     >
                       <Camera className="w-3.5 h-3.5" />
                     </button>
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/jpg"
                       onChange={handleSeleccionarFoto}
                       className="hidden"
                     />
@@ -581,8 +630,11 @@ export default function PersonalPage() {
                     <p className="text-xs font-bold text-[#136A7B]">
                       Fotografía de Perfil
                     </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      Haz clic en el ícono de cámara para subir una foto desde tu equipo.
+                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                      Formatos: <span className="font-bold text-slate-700">JPG o PNG</span>. Máximo: <span className="font-bold text-[#136A7B]">10 MB</span>.
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      Haz clic en la cámara para seleccionar la imagen.
                     </p>
                     {fotoPreview && (
                       <button
