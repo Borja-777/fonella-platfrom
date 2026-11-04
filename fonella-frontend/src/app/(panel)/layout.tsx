@@ -60,7 +60,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const esFonoaudiologa = usuario?.rol === 'FONOAUDIOLOGA';
 
   return (
-    <div className="min-h-screen w-full flex overflow-x-hidden">
+    <div className="min-h-screen w-full flex overflow-x-hidden bg-[#FAF6F0]">
       {/* 1. SIDEBAR ADMINISTRATIVO: Pegado a la izquierda, sin esquinas redondeadas externas (Full Height) */}
       <aside className="w-72 lg:w-80 shrink-0 h-screen sticky top-0 bg-gradient-to-b from-[#094A57] via-[#106A7C] via-65% to-[#EAF5F6] text-white flex flex-col justify-between p-6 border-r border-[#136A7B]/20 shadow-2xl z-30">
         <div className="space-y-6">
@@ -171,14 +171,19 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* 2. ÁREA DE CONTENIDO PRINCIPAL: Expansiva y Adaptable (15" a 24"+) */}
+      {/* 2. ÁREA DE CONTENIDO PRINCIPAL: Expansiva y Adaptable */}
       <div className="flex-1 min-w-0 relative flex flex-col min-h-screen">
-        {/* Fondo Fotográfico Clínico con Difuminado Suave */}
+        {/* Fondo Fotográfico Clínico: Enfocado a la derecha del sidebar, reducido y posicionado para ver a Bárbara y la niña */}
         <div
-          className="fixed inset-0 bg-cover bg-center bg-no-repeat -z-20 filter brightness-95"
-          style={{ backgroundImage: "url('/images/panel-bg.jpg')" }}
+          className="fixed inset-y-0 right-0 left-72 lg:left-80 bg-no-repeat -z-20 filter brightness-95"
+          style={{
+            backgroundImage: "url('/images/panel-bg.jpg')",
+            backgroundSize: "contain",
+            backgroundPosition: "center 20%",
+          }}
         />
-        <div className="fixed inset-0 bg-gradient-to-br from-[#FAF6F0]/85 via-[#F5ECDD]/75 to-[#FAF6F0]/90 backdrop-blur-[2.5px] -z-10" />
+        {/* Difuminado sutil y traslúcido para dar protagonismo a los rostros de Bárbara y la niña */}
+        <div className="fixed inset-y-0 right-0 left-72 lg:left-80 bg-gradient-to-br from-[#FAF6F0]/65 via-[#F5ECDD]/50 to-[#FAF6F0]/70 backdrop-blur-[1px] -z-10" />
 
         {/* Contenedor Fluido con Margen Inteligente */}
         <main className="flex-1 w-full p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto">
