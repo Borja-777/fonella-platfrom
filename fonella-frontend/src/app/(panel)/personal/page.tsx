@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Users,
   UserPlus,
@@ -14,6 +14,9 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
+  Pencil,
+  Camera,
+  Trash2,
 } from 'lucide-react';
 import { apiService, Usuario } from '@/services/api';
 
@@ -21,20 +24,26 @@ export default function PersonalPage() {
   const [personal, setPersonal] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [modoModal, setModoModal] = useState<'crear' | 'editar'>('crear');
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
+
   const [feedback, setFeedback] = useState<{
     tipo: 'exito' | 'error';
     texto: string;
   } | null>(null);
 
-  // Estados del Formulario de Creación
+  // Estados del Formulario
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [rol, setRol] = useState<'FONOAUDIOLOGA' | 'ASISTENTE'>('ASISTENTE');
   const [registroRethus, setRegistroRethus] = useState('');
+  const [fotoPreview, setFotoPreview] = useState<string>('');
   const [guardando, setGuardando] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const cargarPersonal = async () => {
     try {
@@ -55,37 +64,90 @@ export default function PersonalPage() {
     cargarPersonal();
   }, []);
 
-  const handleCrearPersonal = async (e: React.FormEvent) => {
+  const abrirModalCrear = () => {
+    setModoModal('crear');
+    setUsuarioSeleccionado(null);
+    setNombreCompleto('');
+    setEmail('');
+    setPassword('');
+    setRol('ASISTENTE');
+    setRegistroRethus('');
+    setFotoPreview('');
+    setFormError(null);
+    setMostrarPassword(false);
+    setModalAbierto(true);
+  };
+
+  const abrirModalEditar = (u: Usuario) => {
+    setModoModal('editar');
+    setUsuarioSeleccionado(u);
+    setNombreCompleto(u.nombreCompleto);
+    setEmail(u.email);
+    setPassword('');
+    setRol(u.rol);
+    setRegistroRethus(u.registroRethus || '');
+    setFotoPreview(u.fotoPerfilUrl || (u.rol === 'FONOAUDIOLOGA' ? '/images/barbara-avatar.jpg' : ''));
+    setFormError(null);
+    setMostrarPassword(false);
+    setModalAbierto(true);
+  };
+
+  const handleSeleccionarFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError('La fotografía no debe superar 5 MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGuardar = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
     setGuardando(true);
 
     try {
-      await apiService.crearPersonal({
-        nombreCompleto,
-        email,
-        password,
-        rol,
-        registroRethus: rol === 'FONOAUDIOLOGA' ? registroRethus : undefined,
-      });
+      if (modoModal === 'crear') {
+        await apiService.crearPersonal({
+          nombreCompleto,
+          email,
+          password,
+          rol,
+          registroRethus: rol === 'FONOAUDIOLOGA' ? registroRethus : undefined,
+          fotoPerfilUrl: fotoPreview || undefined,
+        });
 
-      setFeedback({
-        tipo: 'exito',
-        texto: `Cuenta para "${nombreCompleto}" registrada exitosamente.`,
-      });
+        setFeedback({
+          tipo: 'exito',
+          texto: `Cuenta para "${nombreCompleto}" registrada exitosamente.`,
+        });
+      } else if (usuarioSeleccionado) {
+        await apiService.actualizarPersonal(usuarioSeleccionado.id, {
+          nombreCompleto,
+          email,
+          password: password.trim() ? password : undefined,
+          rol: usuarioSeleccionado.email === 'barbara.ccucho@fonella.co' ? 'FONOAUDIOLOGA' : rol,
+          registroRethus: rol === 'FONOAUDIOLOGA' ? registroRethus : undefined,
+          fotoPerfilUrl: fotoPreview || '',
+        });
 
-      // Limpiar formulario y cerrar modal
-      setNombreCompleto('');
-      setEmail('');
-      setPassword('');
-      setRegistroRethus('');
-      setRol('ASISTENTE');
+        setFeedback({
+          tipo: 'exito',
+          texto: `Información de "${nombreCompleto}" actualizada correctamente.`,
+        });
+      }
+
       setModalAbierto(false);
-
-      // Recargar lista
       await cargarPersonal();
     } catch (err: any) {
-      setFormError(err.message || 'Error al crear la cuenta.');
+      setFormError(err.message || 'Error al procesar la solicitud.');
     } finally {
       setGuardando(false);
     }
@@ -137,10 +199,7 @@ export default function PersonalPage() {
         </div>
 
         <button
-          onClick={() => {
-            setFormError(null);
-            setModalAbierto(true);
-          }}
+          onClick={abrirModalCrear}
           className="bg-[#0AA896] hover:bg-[#136A7B] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
@@ -174,7 +233,7 @@ export default function PersonalPage() {
         </div>
       )}
 
-      {/* 3. Tabla de Personal: Perfectamente Organizada y Espaciosa (Idéntica a la Imagen 3) */}
+      {/* 3. Tabla de Personal con Acciones Completas (Editar + Activar/Desactivar) */}
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/70 overflow-hidden w-full">
         {loading ? (
           <div className="p-16 text-center text-gray-500">
@@ -203,7 +262,7 @@ export default function PersonalPage() {
                   <th className="py-4 px-6 font-extrabold whitespace-nowrap min-w-[130px]">
                     Estado
                   </th>
-                  <th className="py-4 px-6 text-right font-extrabold whitespace-nowrap min-w-[170px]">
+                  <th className="py-4 px-6 text-right font-extrabold whitespace-nowrap min-w-[220px]">
                     Acción Inmediata
                   </th>
                 </tr>
@@ -212,20 +271,21 @@ export default function PersonalPage() {
                 {personal.map((u) => {
                   const esAdminPrincipal = u.email === 'barbara.ccucho@fonella.co';
                   const activo = u.estado === 'ACTIVO';
+                  const fotoUrl = u.fotoPerfilUrl || (u.rol === 'FONOAUDIOLOGA' ? '/images/barbara-avatar.jpg' : null);
 
                   return (
                     <tr
                       key={u.id}
                       className="hover:bg-[#FAF6F0]/80 transition-colors"
                     >
-                      {/* Colaborador con Foto de Bárbara o Inicial */}
+                      {/* Colaborador con Foto o Inicial */}
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3.5">
-                          {u.rol === 'FONOAUDIOLOGA' ? (
+                          {fotoUrl ? (
                             <img
-                              src="/images/barbara-avatar.jpg"
+                              src={fotoUrl}
                               alt={u.nombreCompleto}
-                              className="w-10 h-10 rounded-full object-cover border border-[#136A7B]/30 shadow-xs ring-2 ring-emerald-50 shrink-0"
+                              className="w-10 h-10 rounded-full object-cover border border-[#136A7B]/30 shadow-xs ring-2 ring-emerald-50 shrink-0 bg-white"
                             />
                           ) : (
                             <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm bg-[#DF9B78]/15 text-[#B86E47] border border-[#DF9B78]/30 shrink-0">
@@ -272,7 +332,7 @@ export default function PersonalPage() {
                         )}
                       </td>
 
-                      {/* Estado con Indicador Pulsante */}
+                      {/* Estado */}
                       <td className="py-4 px-6 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
@@ -290,22 +350,37 @@ export default function PersonalPage() {
                         </span>
                       </td>
 
-                      {/* Acciones */}
+                      {/* Acciones Inmediatas (Editar + Activar/Desactivar) */}
                       <td className="py-4 px-6 text-right whitespace-nowrap">
-                        {esAdminPrincipal ? (
-                          <span className="text-xs text-slate-400 italic">Cuenta Principal</span>
-                        ) : (
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Botón Editar para todos (incluida Bárbara) */}
                           <button
-                            onClick={() => handleToggleEstado(u)}
-                            className={`text-xs font-bold px-3.5 py-1.5 rounded-lg transition-colors border cursor-pointer ${
-                              activo
-                                ? 'border-red-200 text-red-600 hover:bg-red-50'
-                                : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
-                            }`}
+                            onClick={() => abrirModalEditar(u)}
+                            className="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-[#136A7B] transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs bg-white"
+                            title="Editar información y fotografía"
                           >
-                            {activo ? 'Desactivar Cuenta' : 'Activar Cuenta'}
+                            <Pencil className="w-3.5 h-3.5 text-[#136A7B]" />
+                            <span>Editar</span>
                           </button>
-                        )}
+
+                          {/* Botón Activar / Desactivar (o etiqueta Cuenta Principal) */}
+                          {esAdminPrincipal ? (
+                            <span className="text-[11px] text-slate-400 italic pl-1">
+                              Cuenta Titular
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleToggleEstado(u)}
+                              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors border cursor-pointer ${
+                                activo
+                                  ? 'border-red-200 text-red-600 hover:bg-red-50'
+                                  : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                              }`}
+                            >
+                              {activo ? 'Desactivar' : 'Activar'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -316,18 +391,26 @@ export default function PersonalPage() {
         )}
       </div>
 
-      {/* 4. Modal "Añadir Nueva Cuenta de Secretaria" con Cabecera Naranja y Botón Rojo de Cerrar */}
+      {/* 4. Modal para Añadir o Editar Cuenta de Personal */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-[3px] z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-white/60">
-            {/* Cabecera Naranja Terracota con Título y Botón Rojo de Cerrar */}
+            {/* Cabecera Naranja Terracota con Título Dinámico y Botón Rojo de Cerrar */}
             <div className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] px-6 py-4 flex items-center justify-between text-white shadow-sm">
               <div className="flex items-center gap-2.5">
                 <div className="p-1.5 bg-white/20 rounded-xl">
-                  <UserPlus className="w-5 h-5 text-white" />
+                  {modoModal === 'crear' ? (
+                    <UserPlus className="w-5 h-5 text-white" />
+                  ) : (
+                    <Pencil className="w-5 h-5 text-white" />
+                  )}
                 </div>
                 <h3 className="text-base font-black tracking-tight text-white">
-                  Añadir Nueva Cuenta de Secretaria
+                  {modoModal === 'crear'
+                    ? 'Añadir Nueva Cuenta de Secretaria'
+                    : usuarioSeleccionado?.email === 'barbara.ccucho@fonella.co'
+                    ? 'Editar Perfil Profesional (Dra. Bárbara)'
+                    : `Editar Cuenta de ${usuarioSeleccionado?.nombreCompleto}`}
                 </h3>
               </div>
 
@@ -343,7 +426,7 @@ export default function PersonalPage() {
             </div>
 
             {/* Cuerpo del Formulario */}
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 max-h-[85vh] overflow-y-auto">
               {formError && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
                   <ShieldAlert className="w-4 h-4 shrink-0 text-red-600" />
@@ -351,7 +434,60 @@ export default function PersonalPage() {
                 </div>
               )}
 
-              <form onSubmit={handleCrearPersonal} className="space-y-4">
+              <form onSubmit={handleGuardar} className="space-y-4">
+                {/* 1.2 Sección para Subir / Cambiar Fotografía de Perfil */}
+                <div className="flex items-center gap-4 p-3.5 bg-[#FAF6F0] rounded-2xl border border-[#DF9B78]/30">
+                  <div className="relative group shrink-0">
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-sm border-2 border-[#136A7B]/40 bg-white flex items-center justify-center">
+                      {fotoPreview ? (
+                        <img
+                          src={fotoPreview}
+                          alt="Foto Perfil"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-[#DF9B78]/20 flex items-center justify-center text-[#B86E47] font-black text-xl">
+                          {nombreCompleto ? nombreCompleto.charAt(0) : 'U'}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute -bottom-1.5 -right-1.5 p-1.5 bg-[#136A7B] hover:bg-[#0AA896] text-white rounded-xl shadow-md transition-all cursor-pointer"
+                      title="Subir nueva foto"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleSeleccionarFoto}
+                      className="hidden"
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-[#136A7B]">
+                      Fotografía de Perfil
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Haz clic en el ícono de cámara para subir una foto desde tu equipo.
+                    </p>
+                    {fotoPreview && (
+                      <button
+                        type="button"
+                        onClick={() => setFotoPreview('')}
+                        className="text-[11px] text-rose-600 hover:underline font-semibold mt-1 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Quitar fotografía</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 {/* Nombre Completo */}
                 <div>
                   <label className="block text-xs font-bold text-[#136A7B] mb-1">
@@ -370,7 +506,7 @@ export default function PersonalPage() {
                   </div>
                 </div>
 
-                {/* Email */}
+                {/* Correo Electrónico */}
                 <div>
                   <label className="block text-xs font-bold text-[#136A7B] mb-1">
                     Correo Electrónico *
@@ -388,20 +524,22 @@ export default function PersonalPage() {
                   </div>
                 </div>
 
-                {/* Password con botón mostrar/ocultar */}
+                {/* Contraseña */}
                 <div>
                   <label className="block text-xs font-bold text-[#136A7B] mb-1">
-                    Contraseña Inicial (mínimo 8 caracteres) *
+                    {modoModal === 'crear'
+                      ? 'Contraseña Inicial (mínimo 8 caracteres) *'
+                      : 'Nueva Contraseña (opcional, mínimo 8 caracteres)'}
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
                     <input
                       type={mostrarPassword ? 'text' : 'password'}
-                      required
+                      required={modoModal === 'crear'}
                       minLength={8}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder={modoModal === 'crear' ? '••••••••' : 'Dejar en blanco para conservar la actual'}
                       className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
                     />
                     <button
@@ -425,15 +563,16 @@ export default function PersonalPage() {
                   </label>
                   <select
                     value={rol}
+                    disabled={usuarioSeleccionado?.email === 'barbara.ccucho@fonella.co'}
                     onChange={(e) => setRol(e.target.value as any)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white disabled:bg-slate-100 disabled:text-slate-500"
                   >
                     <option value="ASISTENTE">Asistente / Recepcionista</option>
                     <option value="FONOAUDIOLOGA">Fonoaudióloga Colega</option>
                   </select>
                 </div>
 
-                {/* ReTHUS (Condicional si es Fonoaudióloga) */}
+                {/* ReTHUS (Condicional) */}
                 {rol === 'FONOAUDIOLOGA' && (
                   <div>
                     <label className="block text-xs font-bold text-[#136A7B] mb-1">
@@ -466,7 +605,11 @@ export default function PersonalPage() {
                     disabled={guardando}
                     className="bg-[#136A7B] hover:bg-[#0AA896] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-60 flex items-center gap-2 cursor-pointer"
                   >
-                    {guardando ? 'Guardando...' : 'Guardar Cuenta'}
+                    {guardando
+                      ? 'Guardando...'
+                      : modoModal === 'crear'
+                      ? 'Guardar Cuenta'
+                      : 'Guardar Cambios'}
                   </button>
                 </div>
               </form>

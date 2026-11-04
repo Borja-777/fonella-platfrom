@@ -82,12 +82,12 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             </p>
           </div>
 
-          {/* Perfil de la Especialista */}
+          {/* Perfil de la Especialista / Usuario con Foto Dinámica */}
           <div className="flex items-center gap-3 bg-white/10 backdrop-blur-xs p-3.5 rounded-2xl border border-white/20 shadow-xs">
-            <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-md border-2 border-white/80 shrink-0">
+            <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-md border-2 border-white/80 shrink-0 bg-white">
               <img
-                src="/images/barbara-avatar.jpg"
-                alt="Dra. Bárbara Ccucho Delgado"
+                src={usuario?.fotoPerfilUrl || '/images/barbara-avatar.jpg'}
+                alt={usuario?.nombreCompleto || 'Dra. Bárbara Ccucho Delgado'}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -171,7 +171,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* 2. ÁREA DE CONTENIDO PRINCIPAL: Fondo visible y perfectamente encuadrado */}
+      {/* 2. ÁREA DE CONTENIDO PRINCIPAL */}
       <div className="flex-1 min-w-0 relative flex flex-col min-h-screen">
         {/* Capa de Fotografía Clínica Oficial con Bárbara y la Niña enfrente */}
         <div
@@ -182,7 +182,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           }}
         />
 
-        {/* Capa de Difuminado Suave que permite ver con claridad la sesión */}
+        {/* Capa de Difuminado Suave */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#FAF6F0]/75 via-[#F5ECDD]/60 to-[#FAF6F0]/80 backdrop-blur-[1.5px] pointer-events-none" />
 
         {/* Contenido por encima de las capas con z-10 */}

@@ -6,6 +6,7 @@ export interface Usuario {
   email: string;
   rol: 'FONOAUDIOLOGA' | 'ASISTENTE';
   registroRethus?: string | null;
+  fotoPerfilUrl?: string | null;
   estado: 'ACTIVO' | 'INACTIVO';
   createdAt?: string;
   updatedAt?: string;
@@ -73,6 +74,7 @@ export const apiService = {
     password: string;
     rol: 'FONOAUDIOLOGA' | 'ASISTENTE';
     registroRethus?: string;
+    fotoPerfilUrl?: string;
   }): Promise<{ mensaje: string; usuario: Usuario }> {
     const res = await fetch(`${API_URL}/usuarios/personal`, {
       method: 'POST',
@@ -86,6 +88,33 @@ export const apiService = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Error al registrar personal');
+    }
+    return data;
+  },
+
+  async actualizarPersonal(
+    id: string,
+    datos: {
+      nombreCompleto?: string;
+      email?: string;
+      password?: string;
+      rol?: 'FONOAUDIOLOGA' | 'ASISTENTE';
+      registroRethus?: string;
+      fotoPerfilUrl?: string;
+    },
+  ): Promise<{ mensaje: string; usuario: Usuario }> {
+    const res = await fetch(`${API_URL}/usuarios/personal/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al actualizar información');
     }
     return data;
   },

@@ -9,6 +9,7 @@ import { EstadoRegistro } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CrearPersonalDto } from "./dto/crear-personal.dto";
 import { ActualizarEstadoDto } from "./dto/actualizar-estado.dto";
+import { ActualizarPersonalDto } from "./dto/actualizar-personal.dto";
 
 @Injectable()
 export class UsuariosService {
@@ -16,7 +17,6 @@ export class UsuariosService {
 
   /**
    * Registra una nueva cuenta de personal (asistente o fonoaudióloga)
-   * HU-02: Creación de Cuentas de Personal
    */
   async crearPersonal(dto: CrearPersonalDto) {
     const emailNormalizado = dto.email.toLowerCase().trim();
@@ -28,7 +28,7 @@ export class UsuariosService {
 
     if (usuarioExistente) {
       throw new ConflictException(
-        "Ya existe un usuario registrado con este correo electrónico (HU-02).",
+        "Ya existe un usuario registrado con este correo electrónico.",
       );
     }
 
@@ -52,6 +52,7 @@ export class UsuariosService {
         email: true,
         rol: true,
         registroRethus: true,
+        fotoPerfilUrl: true,
         estado: true,
         createdAt: true,
       },
@@ -65,7 +66,6 @@ export class UsuariosService {
 
   /**
    * Obtiene la lista completa de personal administrativo y clínico
-   * HU-02: Listado sin exponer hashes de contraseñas
    */
   async listarPersonal() {
     return this.prisma.usuario.findMany({
@@ -75,6 +75,7 @@ export class UsuariosService {
         email: true,
         rol: true,
         registroRethus: true,
+        fotoPerfilUrl: true,
         estado: true,
         createdAt: true,
         updatedAt: true,
@@ -86,8 +87,87 @@ export class UsuariosService {
   }
 
   /**
+   * Actualiza la información de una cuenta de personal (incluyendo foto de perfil)
+   */
+  async actualizarPersonal(id: string, dto: ActualizarPersonalDto) {
+    // 1. Verificar si el usuario existe
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException("El usuario especificado no existe.");
+    }
+
+    // 2. Si se cambia el email, validar que no esté en uso por otro usuario
+    let emailNormalizado: string | undefined = undefined;
+    if (dto.email) {
+      emailNormalizado = dto.email.toLowerCase().trim();
+      if (emailNormalizado !== usuario.email) {
+        const usuarioConMismoEmail = await this.prisma.usuario.findUnique({
+          where: { email: emailNormalizado },
+        });
+        if (usuarioConMismoEmail && usuarioConMismoEmail.id !== id) {
+          throw new ConflictException(
+            "El correo electrónico especificado ya se encuentra en uso por otro colaborador.",
+          );
+        }
+      }
+    }
+
+    // 3. Regla de seguridad: Si es la Dra. Bárbara, no se le puede degradar el rol
+    if (usuario.email === "barbara.ccucho@fonella.co" && dto.rol && dto.rol !== "FONOAUDIOLOGA") {
+      throw new BadRequestException(
+        "La cuenta principal de la Dra. Bárbara Ccucho debe mantener el rol de FONOAUDIOLOGA.",
+      );
+    }
+
+    // 4. Preparar datos a actualizar
+    const datosActualizacion: any = {};
+
+    if (dto.nombreCompleto) {
+      datosActualizacion.nombreCompleto = dto.nombreCompleto.trim();
+    }
+    if (emailNormalizado) {
+      datosActualizacion.email = emailNormalizado;
+    }
+    if (dto.rol) {
+      datosActualizacion.rol = dto.rol;
+    }
+    if (dto.registroRethus !== undefined) {
+      datosActualizacion.registroRethus = dto.registroRethus ? dto.registroRethus.trim() : null;
+    }
+    if (dto.fotoPerfilUrl !== undefined) {
+      datosActualizacion.fotoPerfilUrl = dto.fotoPerfilUrl;
+    }
+    if (dto.password && dto.password.trim().length >= 8) {
+      datosActualizacion.passwordHash = await bcrypt.hash(dto.password, 10);
+    }
+
+    // 5. Ejecutar la actualización en PostgreSQL
+    const usuarioActualizado = await this.prisma.usuario.update({
+      where: { id },
+      data: datosActualizacion,
+      select: {
+        id: true,
+        nombreCompleto: true,
+        email: true,
+        rol: true,
+        registroRethus: true,
+        fotoPerfilUrl: true,
+        estado: true,
+        updatedAt: true,
+      },
+    });
+
+    return {
+      mensaje: `La información de ${usuarioActualizado.nombreCompleto} ha sido actualizada exitosamente.`,
+      usuario: usuarioActualizado,
+    };
+  }
+
+  /**
    * Activa o desactiva una cuenta (Soft-delete)
-   * HU-02: Desactivación de Asistentes
    */
   async cambiarEstado(id: string, dto: ActualizarEstadoDto) {
     // 1. Verificar si el usuario existe
@@ -120,6 +200,7 @@ export class UsuariosService {
         nombreCompleto: true,
         email: true,
         rol: true,
+        fotoPerfilUrl: true,
         estado: true,
         updatedAt: true,
       },
