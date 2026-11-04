@@ -307,41 +307,41 @@ export default function PersonalPage() {
 
   return (
     <div className="space-y-6 w-full">
-      {/* 1. Header Card Principal */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-white/70 shadow-xl">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3 bg-[#F5ECDD] text-[#136A7B] rounded-2xl border border-[#DF9B78]/30 shadow-xs shrink-0">
-            <Users className="w-6 h-6 text-[#136A7B]" />
+      {/* 1. Header Card Principal Responsivo */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5 bg-white/95 backdrop-blur-md p-4 sm:p-5 lg:p-6 rounded-2xl border border-white/70 shadow-xl">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 sm:p-3 bg-[#F5ECDD] text-[#136A7B] rounded-2xl border border-[#DF9B78]/30 shadow-xs shrink-0">
+            <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#136A7B]" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-[#136A7B] tracking-tight">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-black text-[#136A7B] tracking-tight">
               Gestión de Cuentas de Personal del Consultorio
             </h1>
-            <p className="text-xs text-slate-600 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">
               Crea, edita o revoca de inmediato el acceso operativo de tu Secretaria / Asistente.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
           {/* Botón de Cuentas Archivadas / Ocultas */}
           <button
             onClick={() => setModalArchivadosAbierto(true)}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center gap-2 cursor-pointer border ${
+            className={`px-3 sm:px-3.5 py-2 rounded-xl font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer border ${
               personalArchivado.length > 0
                 ? 'bg-amber-50/80 border-amber-300 text-amber-900 hover:bg-amber-100'
                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
             title="Ver cuentas inactivas archivadas u ocultas"
           >
-            <Archive className="w-4 h-4 text-[#136A7B]" />
+            <Archive className="w-3.5 h-3.5 text-[#136A7B]" />
             <span>Cuentas Archivadas ({personalArchivado.length})</span>
           </button>
 
           {/* Botón de Registrar Nueva Secretaria */}
           <button
             onClick={abrirModalCrear}
-            className="bg-[#0AA896] hover:bg-[#136A7B] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            className="bg-[#0AA896] hover:bg-[#136A7B] text-white px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             <span>+ Registrar Nueva Secretaria</span>
@@ -378,7 +378,7 @@ export default function PersonalPage() {
         </div>
       )}
 
-      {/* 3. Tabla de Personal con Acciones Completas */}
+      {/* 3. Tabla de Personal con Acciones Completas y Totalmente Responsive */}
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/70 overflow-hidden w-full">
         {loading ? (
           <div className="p-16 text-center text-gray-500">
@@ -391,28 +391,28 @@ export default function PersonalPage() {
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] text-white text-[11px] sm:text-xs uppercase font-extrabold tracking-wider shadow-sm">
-                  <th className="py-4 px-5 font-extrabold whitespace-nowrap">
+                <tr className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] text-white text-[10.5px] sm:text-xs uppercase font-extrabold tracking-wider shadow-sm">
+                  <th className="py-3 px-3 sm:px-4 font-extrabold whitespace-nowrap">
                     Nombre Completo
                   </th>
-                  <th className="py-4 px-5 font-extrabold whitespace-nowrap">
+                  <th className="py-3 px-3 sm:px-4 font-extrabold whitespace-nowrap">
                     Correo Institucional
                   </th>
-                  <th className="py-4 px-4 font-extrabold whitespace-nowrap">
+                  <th className="py-3 px-2 sm:px-3 font-extrabold whitespace-nowrap">
                     Rol RBAC
                   </th>
-                  <th className="py-4 px-4 font-extrabold whitespace-nowrap">
+                  <th className="py-3 px-2 sm:px-3 font-extrabold whitespace-nowrap">
                     Registro ReTHUS
                   </th>
-                  <th className="py-4 px-4 font-extrabold whitespace-nowrap">
+                  <th className="py-3 px-2 sm:px-3 font-extrabold whitespace-nowrap">
                     Estado
                   </th>
-                  <th className="py-4 px-5 text-right font-extrabold whitespace-nowrap">
+                  <th className="py-3 px-3 sm:px-4 text-right font-extrabold whitespace-nowrap">
                     Acción Inmediata
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
+              <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
                 {personalVisible.map((u) => {
                   const esAdminPrincipal = u.email === 'barbara.ccucho@fonella.co';
                   const activo = u.estado === 'ACTIVO';
@@ -424,24 +424,24 @@ export default function PersonalPage() {
                       className="hover:bg-[#FAF6F0]/80 transition-colors"
                     >
                       {/* Colaborador con Foto o Inicial */}
-                      <td className="py-4 px-5">
-                        <div className="flex items-center gap-3.5">
+                      <td className="py-3 px-3 sm:px-4">
+                        <div className="flex items-center gap-2.5 sm:gap-3">
                           {fotoUrl ? (
                             <img
                               src={fotoUrl}
                               alt={u.nombreCompleto}
-                              className="w-10 h-10 rounded-full object-cover border border-[#136A7B]/30 shadow-xs ring-2 ring-emerald-50 shrink-0 bg-white"
+                              className="w-9 h-9 rounded-full object-cover border border-[#136A7B]/30 shadow-xs ring-2 ring-emerald-50 shrink-0 bg-white"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm bg-[#DF9B78]/15 text-[#B86E47] border border-[#DF9B78]/30 shrink-0">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs bg-[#DF9B78]/15 text-[#B86E47] border border-[#DF9B78]/30 shrink-0">
                               {u.nombreCompleto.charAt(0)}
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-bold text-gray-900 text-sm whitespace-nowrap">
+                            <p className="font-bold text-gray-900 text-xs sm:text-sm whitespace-nowrap">
                               {u.nombreCompleto}
                             </p>
-                            <p className="text-[10px] text-gray-400 font-mono mt-0.5 whitespace-nowrap">
+                            <p className="text-[9.5px] text-gray-400 font-mono mt-0.5 whitespace-nowrap">
                               ID: {u.id.slice(0, 8)}...
                             </p>
                           </div>
@@ -449,14 +449,14 @@ export default function PersonalPage() {
                       </td>
 
                       {/* Correo Institucional */}
-                      <td className="py-4 px-5 font-medium text-slate-700 whitespace-nowrap">
+                      <td className="py-3 px-3 sm:px-4 font-medium text-slate-700 text-xs sm:text-sm whitespace-nowrap">
                         {u.email}
                       </td>
 
                       {/* Rol RBAC */}
-                      <td className="py-4 px-4 whitespace-nowrap">
+                      <td className="py-3 px-2 sm:px-3 whitespace-nowrap">
                         <span
-                          className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold ${
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] sm:text-[10.5px] font-bold ${
                             u.rol === 'FONOAUDIOLOGA'
                               ? 'bg-[#136A7B] text-white shadow-xs'
                               : 'bg-[#0AA896]/15 text-[#00796B] border border-[#0AA896]/30'
@@ -467,20 +467,20 @@ export default function PersonalPage() {
                       </td>
 
                       {/* Registro ReTHUS */}
-                      <td className="py-4 px-4 whitespace-nowrap">
+                      <td className="py-3 px-2 sm:px-3 whitespace-nowrap">
                         {u.registroRethus ? (
-                          <span className="px-2.5 py-1 rounded-md text-[11px] font-black bg-[#FAF6F0] text-gray-800 border border-[#DF9B78]/40 shadow-xs">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-black bg-[#FAF6F0] text-gray-800 border border-[#DF9B78]/40 shadow-xs">
                             {u.registroRethus}
                           </span>
                         ) : (
-                          <span className="text-xs text-gray-400 italic">No aplica</span>
+                          <span className="text-[11px] text-gray-400 italic">No aplica</span>
                         )}
                       </td>
 
                       {/* Estado */}
-                      <td className="py-4 px-4 whitespace-nowrap">
+                      <td className="py-3 px-2 sm:px-3 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-semibold ${
                             activo
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : 'bg-gray-100 text-gray-600 border border-gray-200'
@@ -496,12 +496,12 @@ export default function PersonalPage() {
                       </td>
 
                       {/* Acciones Inmediatas (Editar + Activar/Desactivar + Ocultar) */}
-                      <td className="py-4 px-5 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5 sm:gap-2">
                           {/* Botón Editar para todos (incluida Bárbara) */}
                           <button
                             onClick={() => abrirModalEditar(u)}
-                            className="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-[#136A7B] transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs bg-white"
+                            className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-[#136A7B] transition-colors flex items-center gap-1 cursor-pointer shadow-xs bg-white"
                             title="Editar información y fotografía"
                           >
                             <Pencil className="w-3.5 h-3.5 text-[#136A7B]" />
@@ -517,7 +517,7 @@ export default function PersonalPage() {
                             <>
                               <button
                                 onClick={() => handleToggleEstado(u)}
-                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors border cursor-pointer ${
+                                className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors border cursor-pointer ${
                                   activo
                                     ? 'border-red-200 text-red-600 hover:bg-red-50'
                                     : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'

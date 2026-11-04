@@ -26,11 +26,11 @@ export default function LoginPage() {
       // Guardamos la cookie de rol para el middleware de Next.js
       document.cookie = `fonella_rol=${data.usuario.rol}; path=/; max-age=86400; SameSite=Strict`;
 
-      // Redirigir reemplazando el historial para anular el botón 'Atrás' hacia el login
+      // Redirigir según el rol
       if (data.usuario.rol === 'FONOAUDIOLOGA') {
-        router.replace('/personal');
+        router.push('/personal');
       } else {
-        router.replace('/agenda');
+        router.push('/agenda');
       }
     } catch (err: any) {
       const mensaje = err.message || 'Error inesperado al iniciar sesión';
