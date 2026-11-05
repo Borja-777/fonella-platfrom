@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prototipo Interactivo Sprint 1 — FONELLA (InnovaCode)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --fonella-primario: #136A7B;
+      --fonella-turquesa: #0AA896;
+      --fonella-secundario: #DF9B78;
+      --fonella-cielo: #5A96C8;
+      --fonella-crema: #F5ECDD;
+      --fonella-fondo: #FAF6F0;
+      --fonella-whatsapp: #25D366;
+    }
+    body {
+      background-color: #FAF6F0;
+      color: #1E293B;
+      transition: background-color 0.25s ease;
+    }
+    /* MODO PALETA ANTERIOR (4 COLORES: #136A7B, #DF9B78, #F8FAFC, #25D366) */
+    body.theme-anterior {
+      background-color: #F8FAFC !important;
+    }
+    body.theme-anterior .bg-\[\#F5ECDD\],
+    body.theme-anterior .bg-\[\#F5ECDD\]\/60,
+    body.theme-anterior .bg-\[\#F5ECDD\]\/70 {
+      background-color: #F8FAFC !important;
+    }
+    body.theme-anterior .text-\[\#0AA896\],
+    body.theme-anterior .text-\[\#5A96C8\] {
+      color: #136A7B !important;
+    }
+    body.theme-anterior .bg-\[\#0AA896\],
+    body.theme-anterior .bg-\[\#5A96C8\] {
+      background-color: #136A7B !important;
+    }
+    body.theme-anterior svg {
+      stroke: #136A7B !important;
+    }
+    body.theme-anterior svg circle {
+      fill: #136A7B !important;
+    }
+    .font-cursive-slogan {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-style: italic;
+    }
+    .pulse-wa {
+      box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+      animation: pulseWhatsapp 2s infinite;
+    }
+    @keyframes pulseWhatsapp {
+      0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+      70% { box-shadow: 0 0 0 14px rgba(37, 211, 102, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+    }
+  </style>
+</head>
+<body class="antialiased pb-24">
+
+  <!-- BARRA SUPERIOR DE CONTROL DEL PROTOTIPO (SPRINT 1 - 22 PTS) -->
+  <header class="sticky top-0 z-50 bg-[#136A7B] text-white shadow-lg border-b border-[#0AA896]/40">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <span class="px-2.5 py-1 rounded-md bg-[#0AA896] text-white font-bold text-xs tracking-wide uppercase">
+          Sprint 1 · 22 SP
+        </span>
+        <div>
+          <h1 class="text-sm font-bold leading-tight">Prototipo Interactivo UI/UX — Consultorio FONELLA</h1>
+          <p class="text-xs text-[#F5ECDD]/90">Paleta Oficial Dra. Bárbara Ccucho Delgado · Equipo InnovaCode</p>
+        </div>
+      </div>
+
+      <!-- Selector de Pantallas por Carril -->
+      <nav class="flex flex-wrap items-center gap-1.5" id="proto-nav">
+        <button onclick="switchTab('publico')" id="tab-btn-publico"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-[#F5ECDD] text-[#136A7B] shadow-sm">
+          1. Portal y Catálogos (HU-05/06/07/08)
+        </button>
+        <button onclick="switchTab('cita')" id="tab-btn-cita"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white/10 text-white hover:bg-white/20">
+          2. Cita Asistida WhatsApp (HU-09)
+        </button>
+        <button onclick="switchTab('login')" id="tab-btn-login"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white/10 text-white hover:bg-white/20">
+          3. Login Admin (HU-01)
+        </button>
+        <button onclick="switchTab('personal')" id="tab-btn-personal"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white/10 text-white hover:bg-white/20">
+          4. Gestión Personal (HU-02)
+        </button>
+        <button onclick="switchTab('tokens')" id="tab-btn-tokens"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-[#DF9B78] text-[#136A7B] font-bold hover:opacity-90">
+          🎨 Paleta & Tailwind
+        </button>
+        <button onclick="togglePaletteTheme()" id="btn-toggle-palette"
+          class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-300 text-slate-900 hover:bg-amber-200 shadow-sm border border-white/40"
+          title="Haz clic para comparar el prototipo con la paleta anterior de 4 colores (#F8FAFC) vs la paleta del folleto (#F5ECDD)">
+          🔄 Ver Paleta Anterior (#F8FAFC)
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =================================================================== -->
+  <!-- VISTA 1: PORTAL PÚBLICO, PERFIL, SERVICIOS Y JUGUETES (HU-05, 06, 07, 08) -->
+  <!-- =================================================================== -->
+  <main id="view-publico" class="block">
+
+    <!-- Navbar Pública de FONELLA -->
+    <div class="bg-[#F5ECDD] border-b border-[#DF9B78]/30">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+        <!-- Logo Oficial FONELLA recreado fielmente al folleto -->
+        <div class="flex items-center gap-3">
+          <div class="flex items-center font-extrabold text-3xl tracking-wider select-none">
+            <span class="text-[#0AA896]">F</span>
+            <!-- Isotipo de Oreja/Oído en Azul Cielo -->
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#5A96C8]" title="Isotipo Oído Fonella">
+              <svg class="w-7 h-8" viewBox="0 0 28 32" fill="none" stroke="#5A96C8" stroke-width="2.4">
+                <path d="M8 12C8 6.5 12.5 3 17.5 3C22.5 3 25 7 25 12.5C25 18.5 20 20.5 18 24.5C16.8 26.8 14.5 29 11.5 29C8.5 29 7 26.5 7 24" stroke-linecap="round"/>
+                <path d="M12 12.5C12 9.5 14.5 7.5 17.5 7.5C20 7.5 21.5 9.5 21.5 12C21.5 15 18.5 16.5 16.5 19" stroke-linecap="round"/>
+                <circle cx="13.5" cy="16.5" r="2" fill="#5A96C8"/>
+              </svg>
+            </span>
+            <span class="text-[#0AA896]">N</span>
+            <span class="text-[#5A96C8]">E</span>
+            <span class="text-[#DF9B78]">L</span>
+            <span class="text-[#0AA896]">L</span>
+            <span class="text-[#5A96C8]">A</span>
+          </div>
+          <div class="hidden sm:block border-l-2 border-[#0AA896]/40 pl-3">
+            <p class="text-xs font-bold text-[#136A7B]">Dra. Bárbara Ccucho Delgado</p>
+            <p class="text-xs font-semibold text-[#0AA896] tracking-wide">FONOAUDIÓLOGA</p>
+          </div>
+        </div>
+
+        <!-- Enlaces del Portal -->
+        <div class="flex items-center gap-3">
+          <a href="#seccion-servicios" class="text-xs font-semibold text-[#136A7B] hover:text-[#0AA896] px-2 py-1">Servicios Clínicos</a>
+          <a href="#seccion-juguetes" class="text-xs font-semibold text-[#136A7B] hover:text-[#0AA896] px-2 py-1">Juguetes Didácticos</a>
+          <button onclick="switchTab('cita')" class="px-4 py-2 rounded-full bg-[#0AA896] hover:bg-[#136A7B] text-white text-xs font-bold shadow-sm transition">
+            Agendar Cita
+          </button>
+          <button onclick="switchTab('login')" class="px-3 py-2 rounded-full border border-[#136A7B]/30 text-[#136A7B] hover:bg-[#136A7B] hover:text-white text-xs font-semibold transition">
+            Acceso Personal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO SECTION + PERFIL PROFESIONAL (HU-05) inspirado en el Folleto Oficial -->
+    <section class="relative overflow-hidden bg-[#F5ECDD] pt-8 pb-16 border-b border-[#DF9B78]/30">
+      <!-- Decoración orgánica Terracota superior derecha (como en el folleto) -->
+      <div class=" absolute -top-12 -right-12 w-56 h-56 rounded-full bg-[#DF9B78]/45 pointer-events-none"></div>
+      <!-- Decoración ola Azul Petróleo inferior izquierda -->
+      <div class="absolute bottom-0 left-0 w-full h-3 bg-[#136A7B]"></div>
+
+      <div class="max-w-6xl mx-auto px-4 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <!-- Columna Izquierda: Identidad y Propuesta de Valor -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-[#0AA896]/40 text-[#136A7B] text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-[#0AA896]"></span>
+            HU-05 · Consultorio Fonoaudiológico Especializado
+          </div>
+
+          <div class="space-y-1">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-[#136A7B] leading-tight">
+              Bárbara Ccucho Delgado
+            </h2>
+            <p class="text-lg font-extrabold text-[#0AA896] tracking-wide uppercase">
+              FONOAUDIÓLOGA CLÍNICA Y NEURODESARROLLO
+            </p>
+            <p class="text-xl text-[#DF9B78] font-cursive-slogan font-semibold pt-1">
+              “Comunicación que Transforma”
+            </p>
+          </div>
+
+          <!-- Línea divisoria con corazón turquesa idéntica al afiche -->
+          <div class="flex items-center gap-3 py-1 max-w-md">
+            <div class="flex-1 h-0.5 bg-[#0AA896]/50"></div>
+            <span class="text-[#0AA896] text-base">♥</span>
+            <div class="flex-1 h-0.5 bg-[#0AA896]/50"></div>
+          </div>
+
+          <p class="text-sm text-slate-700 leading-relaxed max-w-xl">
+            Acompañamiento integral y cálido en evaluación, diagnóstico e intervención del lenguaje, habla, voz, deglución y neurodesarrollo infantil y adulto. 
+            <strong class="text-[#136A7B]">Hablamos contigo en cada etapa de tu vida.</strong>
+          </p>
+
+          <!-- Credenciales Clínicas Oficiales (HU-05) -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div class="bg-white/90 p-3 rounded-xl border border-[#136A7B]/15 shadow-sm">
+              <span class="text-xs font-bold text-[#0AA896] uppercase">Registro RETHUS</span>
+              <p class="text-sm font-extrabold text-[#136A7B] mt-0.5">Verificado MinSalud</p>
+              <p class="text-xs text-slate-500">Habilitación Clínica Activa</p>
+            </div>
+            <div class="bg-white/90 p-3 rounded-xl border border-[#136A7B]/15 shadow-sm">
+              <span class="text-xs font-bold text-[#DF9B78] uppercase">Duración Estándar</span>
+              <p class="text-sm font-extrabold text-[#136A7B] mt-0.5">45 Minutos / Sesión</p>
+              <p class="text-xs text-slate-500">+ 15 min receso clínico</p>
+            </div>
+            <div class="bg-white/90 p-3 rounded-xl border border-[#136A7B]/15 shadow-sm">
+              <span class="text-xs font-bold text-[#5A96C8] uppercase">Enfoque Clínico</span>
+              <p class="text-sm font-extrabold text-[#136A7B] mt-0.5">Pediátrico y Adulto</p>
+              <p class="text-xs text-slate-500">Atención personalizada</p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-3 pt-3">
+            <button onclick="switchTab('cita')" class="px-5 py-3 rounded-xl bg-[#136A7B] hover:bg-[#0AA896] text-white text-sm font-bold shadow-md transition flex items-center gap-2">
+              <span>📅 Solicitar Cita Asistida (HU-09)</span>
+            </button>
+            <a href="#seccion-juguetes" class="px-5 py-3 rounded-xl bg-white hover:bg-[#DF9B78]/20 text-[#136A7B] border border-[#136A7B]/20 text-sm font-bold transition">
+              🧸 Ver Juguetes Didácticos (HU-07)
+            </a>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Tarjeta Resumen Estilo Folleto Fonella -->
+        <div class="lg:col-span-5">
+          <div class="bg-white rounded-2xl p-6 shadow-xl border-2 border-[#0AA896]/30 relative">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-[#DF9B78]">Perfil Verificado · HU-05</span>
+                <h3 class="text-lg font-extrabold text-[#136A7B]">Áreas de Especialidad Clínica</h3>
+              </div>
+              <div class="w-11 h-11 rounded-full bg-[#F5ECDD] flex items-center justify-center text-[#136A7B] font-extrabold text-lg border border-[#DF9B78]">
+                BC
+              </div>
+            </div>
+
+            <ul class="space-y-3 text-sm">
+              <li class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full bg-[#136A7B] text-white flex items-center justify-center text-xs font-bold shrink-0">💬</span>
+                <span class="font-medium text-slate-800">Evaluación e intervención del lenguaje y del habla</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full bg-[#0AA896] text-white flex items-center justify-center text-xs font-bold shrink-0">✨</span>
+                <span class="font-medium text-slate-800">Estimulación temprana y primera infancia</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full bg-[#5A96C8] text-white flex items-center justify-center text-xs font-bold shrink-0">📖</span>
+                <span class="font-medium text-slate-800">Procesos de Lectoescritura y aprendizaje</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full bg-[#DF9B78] text-white flex items-center justify-center text-xs font-bold shrink-0">🗣️</span>
+                <span class="font-medium text-slate-800">Voz y comunicación funcional</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full bg-[#136A7B] text-white flex items-center justify-center text-xs font-bold shrink-0">👄</span>
+                <span class="font-medium text-slate-800">Terapia Miofuncional y deglución</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full bg-[#0AA896] text-white flex items-center justify-center text-xs font-bold shrink-0">🧠</span>
+                <span class="font-medium text-slate-800">Terapia ABA y neurodesarrollo</span>
+              </li>
+            </ul>
+
+            <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs font-cursive-slogan text-[#DF9B78] font-bold text-base">Hablamos contigo ♥</span>
+              <span class="text-xs font-semibold text-[#0AA896]">en cada etapa de tu vida.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN HU-06: CATÁLOGO DE SERVICIOS CLÍNICOS -->
+    <section id="seccion-servicios" class="max-w-6xl mx-auto px-4 py-12">
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
+        <div>
+          <span class="px-3 py-1 rounded-full bg-[#0AA896]/15 text-[#0AA896] text-xs font-bold uppercase tracking-wider">
+            HU-06 · Catálogo Clínico Oficial
+          </span>
+          <h3 class="text-2xl font-extrabold text-[#136A7B] mt-2">Servicios Terapéuticos FONELLA</h3>
+          <p class="text-sm text-slate-600">Todas nuestras sesiones tienen una duración estandarizada de <strong>45 minutos</strong>.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="services-grid">
+        <!-- Generado dinámicamente por JS con las 6 terapias del folleto -->
+      </div>
+    </section>
+
+    <!-- SECCIÓN HU-07: CATÁLOGO DE JUGUETES DIDÁCTICOS -->
+    <section id="seccion-juguetes" class="bg-[#F5ECDD]/60 border-t border-b border-[#DF9B78]/30 py-12">
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+          <div>
+            <span class="px-3 py-1 rounded-full bg-[#DF9B78]/30 text-[#136A7B] text-xs font-bold uppercase tracking-wider">
+              HU-07 · Apoyo Terapéutico en Casa
+            </span>
+            <h3 class="text-2xl font-extrabold text-[#136A7B] mt-2">Vitrina de Juguetes Didácticos</h3>
+            <p class="text-sm text-slate-600">Material seleccionado por la Dra. Bárbara para reforzar las terapias de habla, lenguaje y neurodesarrollo.</p>
+          </div>
+
+          <!-- Filtros de Categoría -->
+          <div class="flex flex-wrap gap-1.5" id="toy-filters">
+            <button onclick="filterToys('TODOS')" data-cat="TODOS" class="toy-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-[#136A7B] text-white">Todos</button>
+            <button onclick="filterToys('HABLA')" data-cat="HABLA" class="toy-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-[#136A7B] border border-[#136A7B]/20">Habla y Lenguaje</button>
+            <button onclick="filterToys('MIOFUNCIONAL')" data-cat="MIOFUNCIONAL" class="toy-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-[#136A7B] border border-[#136A7B]/20">Miofuncional</button>
+            <button onclick="filterToys('ABA')" data-cat="ABA" class="toy-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-[#136A7B] border border-[#136A7B]/20">ABA y Cognitivo</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" id="toys-grid">
+          <!-- Renderizado por JS -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- =================================================================== -->
+  <!-- VISTA 2: FORMULARIO DINÁMICO ASISTIDO PARA CITA -> WHATSAPP (HU-09) -->
+  <!-- =================================================================== -->
+  <section id="view-cita" class="hidden max-w-4xl mx-auto px-4 py-10">
+    <div class="bg-white rounded-2xl shadow-xl border border-[#136A7B]/15 overflow-hidden">
+      <div class="bg-[#136A7B] text-white p-6 flex items-center justify-between">
+        <div>
+          <span class="px-2.5 py-0.5 rounded bg-[#0AA896] text-xs font-bold uppercase">HU-09 · Carril 3</span>
+          <h2 class="text-xl font-extrabold mt-1">Solicitud Asistida de Cita Fonoaudiológica</h2>
+          <p class="text-xs text-[#F5ECDD]">Completa los datos para estructurar tu mensaje clínico directo al WhatsApp del consultorio.</p>
+        </div>
+        <button onclick="switchTab('publico')" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg">
+          ← Volver al Portal
+        </button>
+      </div>
+
+      <div class="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Columna Formulario -->
+        <div class="lg:col-span-7 space-y-4">
+          <!-- Selector Tipo de Paciente -->
+          <div>
+            <label class="block text-xs font-bold text-[#136A7B] uppercase mb-2">1. ¿Para quién es la valoración o terapia?</label>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" onclick="setPatientType('MENOR')" id="btn-tipo-menor"
+                class="p-3 rounded-xl border-2 border-[#0AA896] bg-[#0AA896]/10 text-[#136A7B] text-left transition">
+                <div class="font-extrabold text-sm">👶 Niño / Adolescente</div>
+                <div class="text-xs text-slate-600">Requiere datos de Acudiente</div>
+              </button>
+              <button type="button" onclick="setPatientType('ADULTO')" id="btn-tipo-adulto"
+                class="p-3 rounded-xl border-2 border-slate-200 bg-white text-slate-700 text-left transition">
+                <div class="font-extrabold text-sm">🧑 Paciente Adulto</div>
+                <div class="text-xs text-slate-500">Agenda a nombre propio</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Campos condicionales Acudiente (Solo si es menor) -->
+          <div id="box-acudiente" class="p-4 rounded-xl bg-[#F5ECDD]/70 border border-[#DF9B78]/50 space-y-3">
+            <div class="text-xs font-bold text-[#136A7B] flex items-center gap-1.5">
+              <span>👨‍👩‍👧 Datos del Acudiente Responsable (Regla Pediátrica)</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre del Acudiente *</label>
+                <input id="inp-acudiente" oninput="updateWaPreview()" type="text" value="Carolina Mendoza"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:border-[#0AA896]" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Parentesco *</label>
+                <select id="inp-parentesco" onchange="updateWaPreview()"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:border-[#0AA896]">
+                  <option value="Madre">Madre</option>
+                  <option value="Padre">Padre</option>
+                  <option value="Abuelo/a">Abuelo/a</option>
+                  <option value="Tutor Legal">Tutor Legal</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Datos del Paciente -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-slate-700 mb-1" id="lbl-paciente">Nombre del Niño/a (Paciente) *</label>
+              <input id="inp-paciente" oninput="updateWaPreview()" type="text" value="Matías Gómez Mendoza"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:border-[#0AA896]" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Edad *</label>
+              <input id="inp-edad" oninput="updateWaPreview()" type="text" value="4 años"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:border-[#0AA896]" />
+            </div>
+          </div>
+
+          <!-- Servicio y Jornada -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">2. Servicio Clínico de Interés *</label>
+              <select id="inp-servicio" onchange="updateWaPreview()"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:border-[#0AA896]">
+                <option value="Evaluación e intervención del lenguaje y del habla">Evaluación del lenguaje y habla</option>
+                <option value="Estimulación temprana">Estimulación temprana</option>
+                <option value="Lectoescritura">Lectoescritura</option>
+                <option value="Voz y comunicación">Voz y comunicación</option>
+                <option value="Terapia Miofuncional">Terapia Miofuncional</option>
+                <option value="Terapia ABA y neurodesarrollo">Terapia ABA y neurodesarrollo</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">3. Jornada Preferida *</label>
+              <select id="inp-jornada" onchange="updateWaPreview()"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:border-[#0AA896]">
+                <option value="Mañana (8:00 a.m. - 12:00 m.)">Mañana (8:00 a.m. - 12:00 m.)</option>
+                <option value="Tarde (2:00 p.m. - 6:00 p.m.)">Tarde (2:00 p.m. - 6:00 p.m.)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">4. Breve motivo de consulta</label>
+            <textarea id="inp-motivo" oninput="updateWaPreview()" rows="2"
+              class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:border-[#0AA896]">Presenta dificultad para pronunciar los fonemas /r/ y /s/ y queremos valoración inicial.</textarea>
+          </div>
+        </div>
+
+        <!-- Columna Vista Previa de WhatsApp en Tiempo Real -->
+        <div class="lg:col-span-5 flex flex-col justify-between bg-[#ECE5DD] rounded-2xl p-4 border border-slate-300">
+          <div>
+            <div class="flex items-center gap-2.5 bg-[#075E54] text-white px-3.5 py-2.5 rounded-t-xl -mx-4 -mt-4 mb-4">
+              <div class="w-8 h-8 rounded-full bg-[#0AA896] flex items-center justify-center font-bold text-xs">FN</div>
+              <div>
+                <div class="text-xs font-bold">Consultorio FONELLA · Recepción</div>
+                <div class="text-xs text-emerald-200">En línea · Respuesta asistida</div>
+              </div>
+            </div>
+
+            <p class="text-xs text-slate-600 mb-2 font-semibold">Vista previa del mensaje autogenerado (`wa.me`):</p>
+            <div class="bg-[#DCF8C6] text-slate-800 p-3.5 rounded-xl rounded-tl-none shadow-sm text-xs whitespace-pre-line leading-relaxed border border-emerald-200" id="wa-preview-bubble">
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-300/80 space-y-2">
+            <a id="wa-link-cta" href="#" target="_blank" rel="noopener noreferrer"
+              class="w-full py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#1EBE5D] text-white font-extrabold text-sm shadow-md flex items-center justify-center gap-2 transition">
+              <span>📲 Enviar Solicitud por WhatsApp</span>
+            </a>
+            <p class="text-xs text-slate-600 text-center">Usa `encodeURIComponent()` previniendo caracteres rotos.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- VISTA 3: LOGIN ADMINISTRATIVO CON PROTECCIÓN FUERZA BRUTA (HU-01)   -->
+  <!-- =================================================================== -->
+  <section id="view-login" class="hidden max-w-md mx-auto px-4 py-12">
+    <div class="bg-white rounded-2xl shadow-xl border-2 border-[#136A7B]/15 overflow-hidden">
+      <div class="bg-[#F5ECDD] p-6 text-center border-b border-[#DF9B78]/30">
+        <div class="inline-flex items-center font-extrabold text-2xl tracking-wider mb-1">
+          <span class="text-[#0AA896]">F</span>
+          <span class="text-[#5A96C8]">O</span>
+          <span class="text-[#0AA896]">N</span>
+          <span class="text-[#5A96C8]">E</span>
+          <span class="text-[#DF9B78]">L</span>
+          <span class="text-[#0AA896]">L</span>
+          <span class="text-[#5A96C8]">A</span>
+        </div>
+        <h2 class="text-lg font-extrabold text-[#136A7B]">Portal Clínico y Administrativo</h2>
+        <p class="text-xs text-slate-600">HU-01 · Autenticación Segura con Cookie JWT HttpOnly</p>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <!-- Banner de Estado de Seguridad / Intentos -->
+        <div id="login-alert" class="p-3 rounded-xl bg-[#0AA896]/10 border border-[#0AA896]/30 text-xs text-[#136A7B]">
+          <strong>Seguridad Activa:</strong> La cuenta se bloquea temporalmente por <strong>15 minutos</strong> tras <strong>5 intentos fallidos</strong> consecutivos.
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-[#136A7B] uppercase mb-1">Correo Institucional</label>
+          <input id="login-email" type="email" value="barbara.ccucho@fonella.com"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B]" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-[#136A7B] uppercase mb-1">Contraseña</label>
+          <input id="login-pass" type="password" value="AdminFonella2026!"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B]" />
+        </div>
+
+        <button id="btn-submit-login" onclick="simulateLoginSuccess()"
+          class="w-full py-3 rounded-xl bg-[#136A7B] hover:bg-[#0AA896] text-white font-bold text-sm shadow-md transition">
+          Iniciar Sesión Segura
+        </button>
+
+        <!-- Simulador Interactivo de Criterios de Aceptación HU-01 -->
+        <div class="pt-4 border-t border-slate-200 space-y-2">
+          <p class="text-xs font-bold text-slate-500 uppercase">🧪 Simulador de Criterios de Aceptación (HU-01):</p>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="simulateFailedAttempt()" class="px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-semibold">
+              ❌ Simular Clave Errónea (<span id="fail-count">0</span>/5)
+            </button>
+            <button onclick="resetLoginLock()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">
+              🔄 Reiniciar Contador
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- VISTA 4: PANEL DE GESTIÓN DE PERSONAL / SECRETARIA (HU-02)          -->
+  <!-- =================================================================== -->
+  <section id="view-personal" class="hidden max-w-6xl mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Sidebar Administrativo -->
+      <aside class="lg:col-span-3 bg-[#136A7B] text-white rounded-2xl p-5 flex flex-col justify-between shadow-lg">
+        <div class="space-y-6">
+          <div class="border-b border-white/15 pb-4">
+            <span class="px-2 py-0.5 rounded bg-[#0AA896] text-xs font-bold">ROL: FONOAUDIÓLOGA</span>
+            <h3 class="text-base font-extrabold mt-2">Dra. Bárbara Ccucho</h3>
+            <p class="text-xs text-[#F5ECDD]/80">Administradora Principal</p>
+          </div>
+
+          <nav class="space-y-1.5 text-xs font-semibold">
+            <div class="px-3 py-2.5 rounded-xl bg-[#0AA896] text-white flex items-center justify-between">
+              <span>👩‍💼 Gestión de Personal (HU-02)</span>
+              <span>●</span>
+            </div>
+            <div class="px-3 py-2.5 rounded-xl text-white/75 hover:bg-white/10 cursor-pointer">
+              📅 Agenda Clínica (Sprint 2)
+            </div>
+            <div class="px-3 py-2.5 rounded-xl text-white/75 hover:bg-white/10 cursor-pointer">
+              📋 Historias Clínicas (Sprint 2)
+            </div>
+            <div class="px-3 py-2.5 rounded-xl text-white/75 hover:bg-white/10 cursor-pointer">
+              🧸 Inventario Juguetes (Sprint 3)
+            </div>
+          </nav>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-white/15">
+          <p class="text-xs text-[#F5ECDD]/80 mb-2">⏱️ Cierre automático por inactividad: 30m (HU-04)</p>
+          <button onclick="switchTab('login')" class="w-full py-2 rounded-lg bg-white/10 hover:bg-rose-600 text-white text-xs font-bold transition">
+            Cerrar Sesión Segura
+          </button>
+        </div>
+      </aside>
+
+      <!-- Área Principal CRUD de Personal -->
+      <div class="lg:col-span-9 space-y-5">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-[#136A7B]/15 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <span class="text-xs font-bold text-[#0AA896] uppercase">HU-02 · Carril 1 · Control de Accesos RBAC</span>
+            <h2 class="text-xl font-extrabold text-[#136A7B]">Gestión de Cuentas de Personal del Consultorio</h2>
+            <p class="text-xs text-slate-600">Crea, edita o revoca de inmediato el acceso operativo de tu Secretaria / Asistente.</p>
+          </div>
+          <button onclick="toggleModalPersonal(true)"
+            class="px-4 py-2.5 rounded-xl bg-[#0AA896] hover:bg-[#136A7B] text-white text-xs font-bold shadow-sm transition">
+            + Registrar Nueva Secretaria
+          </button>
+        </div>
+
+        <!-- Tabla de Personal -->
+        <div class="bg-white rounded-2xl shadow-sm border border-[#136A7B]/15 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-[#F5ECDD] text-[#136A7B] text-xs uppercase font-bold border-b border-[#DF9B78]/30">
+                  <th class="py-3.5 px-4">Nombre Completo</th>
+                  <th class="py-3.5 px-4">Correo Institucional</th>
+                  <th class="py-3.5 px-4">Rol RBAC</th>
+                  <th class="py-3.5 px-4">Estado</th>
+                  <th class="py-3.5 px-4 text-right">Acción Inmediata</th>
+                </tr>
+              </thead>
+              <tbody id="staff-table-body" class="divide-y divide-slate-100 text-sm">
+                <!-- Renderizado por JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Modal de Crear Nueva Secretaria -->
+        <div id="modal-personal" class="hidden bg-[#F5ECDD] p-5 rounded-2xl border-2 border-[#0AA896] shadow-lg space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-extrabold text-[#136A7B]">➕ Alta de Nueva Cuenta de Secretaria (HU-02)</h3>
+            <button onclick="toggleModalPersonal(false)" class="text-xs font-bold text-slate-600 hover:text-slate-900">✕ Cerrar</button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-[#136A7B] mb-1">Nombre Completo *</label>
+              <input id="new-staff-name" type="text" placeholder="Ej: Valeria Ríos"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#136A7B] mb-1">Correo Electrónico *</label>
+              <input id="new-staff-email" type="email" placeholder="valeria.recepcion@fonella.com"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#136A7B] mb-1">Contraseña Temporal (Bcrypt) *</label>
+              <input id="new-staff-pass" type="text" value="Secretaria2026*"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white" />
+            </div>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button onclick="toggleModalPersonal(false)" class="px-4 py-2 rounded-lg bg-white text-slate-700 text-xs font-bold">Cancelar</button>
+            <button onclick="addStaffMember()" class="px-4 py-2 rounded-lg bg-[#136A7B] text-white text-xs font-bold">Guardar y Activar Cuenta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- VISTA 5: SISTEMA DE DISEÑO Y PALETA OFICIAL TAILWIND CSS            -->
+  <!-- =================================================================== -->
+  <section id="view-tokens" class="hidden max-w-5xl mx-auto px-4 py-10 space-y-6">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-[#136A7B]/15">
+      <span class="px-2.5 py-1 rounded bg-[#DF9B78]/30 text-[#136A7B] text-xs font-bold uppercase">Identidad Visual Oficial</span>
+      <h2 class="text-2xl font-extrabold text-[#136A7B] mt-2">Paleta de Colores Oficial — Consultorio FONELLA</h2>
+      <p class="text-sm text-slate-600 mt-1">Extraída directamente del folleto oficial proporcionado por la Dra. Bárbara Ccucho Delgado y sincronizada en `tailwind.config.ts`.</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+        <div class="p-4 rounded-xl border border-slate-200 bg-white space-y-2">
+          <div class="h-20 rounded-lg bg-[#136A7B] flex items-end p-2.5 text-white font-bold text-xs">#136A7B</div>
+          <div class="font-extrabold text-sm text-[#136A7B]">Teal Clínico Profundo (`primario`)</div>
+          <p class="text-xs text-slate-600">Texto "Bárbara Ccucho Delgado", íconos de terapias, ola inferior y encabezados clínicos.</p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-white space-y-2">
+          <div class="h-20 rounded-lg bg-[#0AA896] flex items-end p-2.5 text-white font-bold text-xs">#0AA896</div>
+          <div class="font-extrabold text-sm text-[#0AA896]">Turquesa Esmeralda (`turquesa`)</div>
+          <p class="text-xs text-slate-600">Letras F, N, L del logo, título "FONOAUDIÓLOGA", corazones, badges de stock disponible y botones de acción.</p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-white space-y-2">
+          <div class="h-20 rounded-lg bg-[#DF9B78] flex items-end p-2.5 text-[#136A7B] font-bold text-xs">#DF9B78</div>
+          <div class="font-extrabold text-sm text-[#DF9B78]">Terracota Cálido (`secundario`)</div>
+          <p class="text-xs text-slate-600">Letra L del logo, eslogan "Comunicación que Transforma", curva superior derecha y acentos pediátricos.</p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-white space-y-2">
+          <div class="h-20 rounded-lg bg-[#5A96C8] flex items-end p-2.5 text-white font-bold text-xs">#5A96C8</div>
+          <div class="font-extrabold text-sm text-[#5A96C8]">Azul Cielo Suave (`cielo`)</div>
+          <p class="text-xs text-slate-600">Letras E, A e isotipo del oído en el logo FONELLA, etiquetas informativas y apoyo visual.</p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-white space-y-2">
+          <div class="h-20 rounded-lg bg-[#F5ECDD] border border-[#DF9B78]/40 flex items-end p-2.5 text-[#136A7B] font-bold text-xs">#F5ECDD</div>
+          <div class="font-extrabold text-sm text-[#136A7B]">Crema Cálido / Arena (`crema`)</div>
+          <p class="text-xs text-slate-600">Color de fondo principal del afiche de Fonella, utilizado en el Hero, navbar pública y secciones cálidas.</p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-white space-y-2">
+          <div class="h-20 rounded-lg bg-[#25D366] flex items-end p-2.5 text-white font-bold text-xs">#25D366</div>
+          <div class="font-extrabold text-sm text-emerald-700">Verde Conversión (`whatsapp`)</div>
+          <p class="text-xs text-slate-600">Exclusivo para el botón flotante permanente (`HU-08`) y envío del formulario asistido (`HU-09`).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOTÓN FLOTANTE PERMANENTE DE WHATSAPP (HU-08) -->
+  <button onclick="switchTab('cita')" title="HU-08: Botón Flotante Permanente de WhatsApp"
+    class="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-[#25D366] hover:bg-[#1EBE5D] text-white font-extrabold text-xs shadow-xl pulse-wa transition">
+    <span class="text-base">💬</span>
+    <span>Agendar por WhatsApp</span>
+  </button>
+
+  <script>
+    // Datos Oficiales de Servicios Terapéuticos (del Folleto de la Dra. Bárbara)
+    const SERVICIOS_FONELLA = [
+      {
+        id: 'lenguaje',
+        icono: '💬',
+        color: '#136A7B',
+        nombre: 'Evaluación e intervención del lenguaje y del habla',
+        duracion: '45 min',
+        precio: '$95.000 COP',
+        publico: 'Niños y Adultos',
+        desc: 'Diagnóstico clínico y rehabilitación de trastornos fonológicos, retraso del lenguaje y articulación.'
+      },
+      {
+        id: 'estimulacion',
+        icono: '✨',
+        color: '#0AA896',
+        colorBadge: '#0AA896',
+        nombre: 'Estimulación temprana',
+        duracion: '45 min',
+        precio: '$85.000 COP',
+        publico: 'Primera Infancia (0 a 5 años)',
+        desc: 'Potenciación de habilidades comunicativas, atención conjunta, intención comunicativa y juego simbólico.'
+      },
+      {
+        id: 'lectoescritura',
+        icono: '📖',
+        color: '#5A96C8',
+        nombre: 'Lectoescritura y aprendizaje escolar',
+        duracion: '45 min',
+        precio: '$90.000 COP',
+        publico: 'Edad Escolar',
+        desc: 'Intervención en conciencia fonológica, dislexia, velocidad comprensiva y procesos lectoescritores.'
+      },
+      {
+        id: 'voz',
+        icono: '🗣️',
+        color: '#DF9B78',
+        nombre: 'Voz y comunicación',
+        duracion: '45 min',
+        precio: '$95.000 COP',
+        publico: 'Docentes, Cantantes y Adultos',
+        desc: 'Rehabilitación de disfonías, higiene vocal, proyección, respiración costo-diafragmática y fluidez.'
+      },
+      {
+        id: 'miofuncional',
+        icono: '👄',
+        color: '#136A7B',
+        nombre: 'Terapia Miofuncional',
+        duracion: '45 min',
+        precio: '$95.000 COP',
+        publico: 'Ortodoncia, Niños y Adultos',
+        desc: 'Equilibrio muscular orofacial, deglución atípica, respiración oral y motricidad fina de órganos fonoarticuladores.'
+      },
+      {
+        id: 'aba',
+        icono: '🧠',
+        color: '#0AA896',
+        nombre: 'Terapia ABA y neurodesarrollo',
+        duracion: '45 min',
+        precio: '$110.000 COP',
+        publico: 'TEA, TDAH y Neurodesarrollo',
+        desc: 'Intervención conductual y comunicativa estructurada basada en evidencia para el desarrollo funcional.'
+      }
+    ];
+
+    // Datos de Juguetes Didácticos (HU-07)
+    const JUGUETES_FONELLA = [
+      {
+        nombre: 'Kit de Soplo y Motricidad Orofacial',
+        categoria: 'MIOFUNCIONAL',
+        edad: '3+ años',
+        precio: '$42.000 COP',
+        stock: 8,
+        icono: '🎺',
+        desc: 'Ejercitador respiratorio y de tonicidad labial para terapia miofuncional en casa.'
+      },
+      {
+        nombre: 'Tarjetas Fonológicas Ilustradas (Fonemas /R/ y /S/)',
+        categoria: 'HABLA',
+        edad: '4 a 9 años',
+        precio: '$55.000 COP',
+        stock: 12,
+        icono: '🃏',
+        desc: 'Mazo de 64 tarjetas clínicas como las del folleto de Fonella para articulación y vocabulario.'
+      },
+      {
+        nombre: 'Tablero Sensorial de Secuencias ABA',
+        categoria: 'ABA',
+        edad: '2 a 8 años',
+        precio: '$68.000 COP',
+        stock: 5,
+        icono: '🧩',
+        desc: 'Apoyo visual estructurado para rutinas, contacto visual y tolerancia a la espera.'
+      },
+      {
+        nombre: 'Lotería Silábica y Conciencia Fonológica',
+        categoria: 'HABLA',
+        edad: '5 a 10 años',
+        precio: '$48.000 COP',
+        stock: 0,
+        icono: '🔤',
+        desc: 'Juego didáctico para segmentación silábica y fortalecimiento de la lectoescritura inicial.'
+      }
+    ];
+
+    // Datos de Personal Clínico (HU-02)
+    let STAFF_LIST = [
+      {
+        id: 1,
+        nombre: 'Dra. Bárbara Ccucho Delgado',
+        email: 'barbara.ccucho@fonella.com',
+        rol: 'FONOAUDIOLOGA',
+        activo: true,
+        protegido: true
+      },
+      {
+        id: 2,
+        nombre: 'Laura Sofía Gómez (Secretaria)',
+        email: 'secretaria@fonella.com',
+        rol: 'SECRETARIA',
+        activo: true,
+        protegido: false
+      }
+    ];
+
+    let currentPatientType = 'MENOR';
+    let failedAttempts = 0;
+
+    function renderServices() {
+      const container = document.getElementById('services-grid');
+      container.innerHTML = SERVICIOS_FONELLA.map(s => `
+        <div class="bg-white rounded-2xl p-5 border border-[#136A7B]/15 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="w-11 h-11 rounded-xl flex items-center justify-center text-lg text-white font-bold shadow-sm" style="background-color: ${s.color}">
+                ${s.icono}
+              </span>
+              <span class="px-2.5 py-1 rounded-full bg-[#F5ECDD] text-[#136A7B] text-xs font-extrabold">
+                ⏱️ ${s.duracion}
+              </span>
+            </div>
+            <h4 class="text-base font-extrabold text-[#136A7B] leading-snug">${s.nombre}</h4>
+            <p class="text-xs font-semibold text-[#0AA896] mt-1">${s.publico}</p>
+            <p class="text-xs text-slate-600 mt-2 leading-relaxed">${s.desc}</p>
+          </div>
+          <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-sm font-extrabold text-[#136A7B]">${s.precio}</span>
+            <button onclick="selectServiceAndBook('${s.nombre}')"
+              class="px-3.5 py-1.5 rounded-lg bg-[#0AA896] hover:bg-[#136A7B] text-white text-xs font-bold transition">
+              Solicitar Cita →
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderToys(filter = 'TODOS') {
+      const container = document.getElementById('toys-grid');
+      const filtered = filter === 'TODOS' ? JUGUETES_FONELLA : JUGUETES_FONELLA.filter(t => t.categoria === filter);
+      container.innerHTML = filtered.map(t => {
+        const disponible = t.stock > 0;
+        return `
+          <div class="bg-white rounded-2xl p-4 border border-[#136A7B]/15 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="h-28 rounded-xl bg-[#F5ECDD] flex items-center justify-center text-4xl mb-3 relative">
+                ${t.icono}
+                <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-bold ${disponible ? 'bg-[#0AA896] text-white' : 'bg-slate-300 text-slate-700'}">
+                  ${disponible ? `Disponible (${t.stock})` : 'Agotado'}
+                </span>
+              </div>
+              <span class="text-xs font-bold text-[#DF9B78] uppercase">Edad: ${t.edad}</span>
+              <h4 class="text-sm font-extrabold text-[#136A7B] mt-0.5 leading-snug">${t.nombre}</h4>
+              <p class="text-xs text-slate-600 mt-1.5">${t.desc}</p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-sm font-extrabold text-[#136A7B]">${t.precio}</span>
+              <button onclick="switchTab('cita')" ${!disponible ? 'disabled' : ''}
+                class="px-3 py-1.5 rounded-lg text-xs font-bold ${disponible ? 'bg-[#136A7B] text-white hover:bg-[#0AA896]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
+                ${disponible ? 'Consultar' : 'Sin Stock'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterToys(cat) {
+      document.querySelectorAll('.toy-filter-btn').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = 'toy-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-[#136A7B] text-white';
+        } else {
+          btn.className = 'toy-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-[#136A7B] border border-[#136A7B]/20';
+        }
+      });
+      renderToys(cat);
+    }
+
+    function selectServiceAndBook(serviceName) {
+      document.getElementById('inp-servicio').value = serviceName;
+      switchTab('cita');
+      updateWaPreview();
+    }
+
+    function setPatientType(type) {
+      currentPatientType = type;
+      const boxAcudiente = document.getElementById('box-acudiente');
+      const btnMenor = document.getElementById('btn-tipo-menor');
+      const btnAdulto = document.getElementById('btn-tipo-adulto');
+      const lblPaciente = document.getElementById('lbl-paciente');
+
+      if (type === 'MENOR') {
+        boxAcudiente.classList.remove('hidden');
+        btnMenor.className = 'p-3 rounded-xl border-2 border-[#0AA896] bg-[#0AA896]/10 text-[#136A7B] text-left transition';
+        btnAdulto.className = 'p-3 rounded-xl border-2 border-slate-200 bg-white text-slate-700 text-left transition';
+        lblPaciente.textContent = 'Nombre del Niño/a (Paciente) *';
+      } else {
+        boxAcudiente.classList.add('hidden');
+        btnAdulto.className = 'p-3 rounded-xl border-2 border-[#0AA896] bg-[#0AA896]/10 text-[#136A7B] text-left transition';
+        btnMenor.className = 'p-3 rounded-xl border-2 border-slate-200 bg-white text-slate-700 text-left transition';
+        lblPaciente.textContent = 'Nombre Completo del Paciente Adulto *';
+      }
+      updateWaPreview();
+    }
+
+    function updateWaPreview() {
+      const paciente = document.getElementById('inp-paciente').value.trim() || 'Paciente';
+      const edad = document.getElementById('inp-edad').value.trim() || '-';
+      const servicio = document.getElementById('inp-servicio').value;
+      const jornada = document.getElementById('inp-jornada').value;
+      const motivo = document.getElementById('inp-motivo').value.trim() || 'Valoración general';
+
+      let msg = `Hola Consultorio FONELLA (Dra. Bárbara Ccucho) 👋.\nDeseo agendar una cita fonoaudiológica:\n\n`;
+      if (currentPatientType === 'MENOR') {
+        const acudiente = document.getElementById('inp-acudiente').value.trim() || 'Acudiente';
+        const parentesco = document.getElementById('inp-parentesco').value;
+        msg += `• *Tipo:* Paciente Pediátrico\n`;
+        msg += `• *Acudiente:* ${acudiente} (${parentesco})\n`;
+        msg += `• *Paciente:* ${paciente} (${edad})\n`;
+      } else {
+        msg += `• *Tipo:* Paciente Adulto\n`;
+        msg += `• *Paciente:* ${paciente} (${edad})\n`;
+      }
+      msg += `• *Servicio:* ${servicio} (45 min)\n`;
+      msg += `• *Jornada preferida:* ${jornada}\n`;
+      msg += `• *Motivo:* ${motivo}\n\nQuedo atento(a) a la disponibilidad en agenda. ¡Gracias!`;
+
+      document.getElementById('wa-preview-bubble').textContent = msg;
+      document.getElementById('wa-link-cta').href = `https://wa.me/573000000000?text=${encodeURIComponent(msg)}`;
+    }
+
+    // Simulador HU-01 Login y Bloqueo por Fuerza Bruta
+    function simulateFailedAttempt() {
+      if (failedAttempts < 5) {
+        failedAttempts++;
+      }
+      document.getElementById('fail-count').textContent = failedAttempts;
+      const alertBox = document.getElementById('login-alert');
+      const submitBtn = document.getElementById('btn-submit-login');
+
+      if (failedAttempts >= 5) {
+        alertBox.className = 'p-3.5 rounded-xl bg-rose-50 border-2 border-rose-500 text-xs text-rose-900 font-semibold';
+        alertBox.innerHTML = '🔒 <strong>CUENTA BLOQUEADA TEMPORALMENTE (HTTP 423 Locked):</strong> Se registraron 5 intentos fallidos consecutivos. Por seguridad (`HU-01`), el acceso queda bloqueado durante <strong>15 minutos</strong>.';
+        submitBtn.disabled = true;
+        submitBtn.className = 'w-full py-3 rounded-xl bg-slate-300 text-slate-500 font-bold text-sm cursor-not-allowed';
+        submitBtn.textContent = 'Bloqueado por 15:00 min';
+      } else {
+        alertBox.className = 'p-3 rounded-xl bg-amber-50 border border-amber-400 text-xs text-amber-900';
+        alertBox.innerHTML = `⚠️ <strong>Credenciales inválidas (HTTP 401):</strong> Intento fallido <strong>${failedAttempts} de 5</strong>. Restan ${5 - failedAttempts} intentos antes del bloqueo temporal.`;
+      }
+    }
+
+    function resetLoginLock() {
+      failedAttempts = 0;
+      document.getElementById('fail-count').textContent = '0';
+      const alertBox = document.getElementById('login-alert');
+      const submitBtn = document.getElementById('btn-submit-login');
+      alertBox.className = 'p-3 rounded-xl bg-[#0AA896]/10 border border-[#0AA896]/30 text-xs text-[#136A7B]';
+      alertBox.innerHTML = '<strong>Seguridad Activa:</strong> La cuenta se bloquea temporalmente por <strong>15 minutos</strong> tras <strong>5 intentos fallidos</strong> consecutivos.';
+      submitBtn.disabled = false;
+      submitBtn.className = 'w-full py-3 rounded-xl bg-[#136A7B] hover:bg-[#0AA896] text-white font-bold text-sm shadow-md transition';
+      submitBtn.textContent = 'Iniciar Sesión Segura';
+    }
+
+    function simulateLoginSuccess() {
+      if (failedAttempts >= 5) return;
+      switchTab('personal');
+    }
+
+    // Simulador HU-02 Gestión de Personal
+    function renderStaffTable() {
+      const tbody = document.getElementById('staff-table-body');
+      tbody.innerHTML = STAFF_LIST.map(u => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-3.5 px-4 font-bold text-[#136A7B]">${u.nombre}</td>
+          <td class="py-3.5 px-4 text-slate-600 text-xs">${u.email}</td>
+          <td class="py-3.5 px-4">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${u.rol === 'FONOAUDIOLOGA' ? 'bg-[#136A7B] text-white' : 'bg-[#5A96C8]/20 text-[#136A7B]'}">
+              ${u.rol}
+            </span>
+          </td>
+          <td class="py-3.5 px-4">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${u.activo ? 'bg-[#0AA896]/20 text-[#0AA896]' : 'bg-rose-100 text-rose-700'}">
+              ${u.activo ? '● ACTIVO' : '○ INACTIVO (Acceso Revocado)'}
+            </span>
+          </td>
+          <td class="py-3.5 px-4 text-right">
+            ${u.protegido
+              ? '<span class="text-xs text-slate-400 italic">Cuenta Titular</span>'
+              : `<button onclick="toggleStaffStatus(${u.id})" class="px-3 py-1 rounded-lg text-xs font-bold border transition ${u.activo ? 'border-rose-300 text-rose-700 hover:bg-rose-50' : 'border-[#0AA896] text-[#0AA896] hover:bg-[#0AA896]/10'}">
+                  ${u.activo ? 'Desactivar Acceso' : 'Reactivar Acceso'}
+                </button>`
+            }
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function toggleStaffStatus(id) {
+      STAFF_LIST = STAFF_LIST.map(u => u.id === id ? { ...u, activo: !u.activo } : u);
+      renderStaffTable();
+    }
+
+    function toggleModalPersonal(show) {
+      const modal = document.getElementById('modal-personal');
+      if (show) modal.classList.remove('hidden');
+      else modal.classList.add('hidden');
+    }
+
+    function addStaffMember() {
+      const name = document.getElementById('new-staff-name').value.trim();
+      const email = document.getElementById('new-staff-email').value.trim();
+      if (!name || !email) return;
+      STAFF_LIST.push({
+        id: Date.now(),
+        nombre: name,
+        email: email,
+        rol: 'SECRETARIA',
+        activo: true,
+        protegido: false
+      });
+      document.getElementById('new-staff-name').value = '';
+      document.getElementById('new-staff-email').value = '';
+      toggleModalPersonal(false);
+      renderStaffTable();
+    }
+
+    // Navegación entre pestañas del Prototipo
+    function switchTab(tabId) {
+      const tabs = ['publico', 'cita', 'login', 'personal', 'tokens'];
+      tabs.forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (t === 'tokens') {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-[#DF9B78] text-[#136A7B] font-bold hover:opacity-90';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white/10 text-white hover:bg-white/20';
+        }
+      });
+
+      document.getElementById(`view-${tabId}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      activeBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-[#F5ECDD] text-[#136A7B] shadow-sm';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function togglePaletteTheme() {
+      const isAnterior = document.body.classList.toggle('theme-anterior');
+      const btn = document.getElementById('btn-toggle-palette');
+      if (isAnterior) {
+        btn.textContent = '✨ Volver a Paleta Folleto Bárbara (#F5ECDD)';
+        btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-[#0AA896] text-white hover:opacity-90 shadow-sm border border-white/40';
+      } else {
+        btn.textContent = '🔄 Ver Paleta Anterior (#F8FAFC)';
+        btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-300 text-slate-900 hover:bg-amber-200 shadow-sm border border-white/40';
+      }
+    }
+
+    // Inicializar vistas
+    renderServices();
+    renderToys();
+    updateWaPreview();
+    renderStaffTable();
+  </script>
+</body>
+</html>
