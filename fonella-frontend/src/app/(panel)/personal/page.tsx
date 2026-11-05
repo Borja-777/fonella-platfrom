@@ -677,12 +677,18 @@ export default function PersonalPage() {
                     <input
                       type="email"
                       required
+                      disabled={usuarioSeleccionado?.rol === 'FONOAUDIOLOGA'}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="valeria.recepcion@fonella.co"
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white disabled:bg-slate-100 disabled:text-slate-500"
                     />
                   </div>
+                  {usuarioSeleccionado?.rol === 'FONOAUDIOLOGA' && (
+                    <p className="text-[10px] text-slate-400 mt-1 italic">
+                      El correo de la dirección clínica titular está protegido y es inmutable.
+                    </p>
+                  )}
                 </div>
 
                 {/* Contraseña con Regla de Complejidad */}

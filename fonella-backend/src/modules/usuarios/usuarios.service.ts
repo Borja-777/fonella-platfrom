@@ -119,7 +119,7 @@ export class UsuariosService {
       }
     }
 
-    // 3. Regla de seguridad: Si es la Dra. Bárbara, no se le puede degradar el rol ni ocultar
+    // 3. Regla de seguridad: Si es la Dra. Bárbara, no se le puede degradar el rol, ocultar ni cambiar su correo oficial
     if (usuario.email === "barbara.ccucho@fonella.co") {
       if (dto.rol && dto.rol !== "FONOAUDIOLOGA") {
         throw new BadRequestException(
@@ -129,6 +129,11 @@ export class UsuariosService {
       if (dto.ocultoEnPanel === true) {
         throw new BadRequestException(
           "No es posible ocultar la cuenta titular de la dirección clínica.",
+        );
+      }
+      if (emailNormalizado && emailNormalizado !== "barbara.ccucho@fonella.co") {
+        throw new BadRequestException(
+          "El correo institucional de la cuenta titular (barbara.ccucho@fonella.co) no puede ser modificado.",
         );
       }
     }
