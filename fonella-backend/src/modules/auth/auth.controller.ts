@@ -12,6 +12,8 @@ import {
 import { Response, Request } from "express";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
+import { SolicitarRecuperacionDto } from "./dto/solicitar-recuperacion.dto";
+import { RestablecerPasswordDto } from "./dto/restablecer-password.dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 
 @Controller("auth")
@@ -28,13 +30,10 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: false }) res: Response,
   ) {
-    // 1. Validamos credenciales y bloqueos en el servicio
     const usuario = await this.authService.validarUsuario(
       loginDto.email,
       loginDto.password,
     );
-
-    // 2. Generamos el token y emitimos la Cookie HttpOnly
     return this.authService.login(usuario, res);
   }
 
@@ -46,6 +45,26 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logout(@Res({ passthrough: false }) res: Response) {
     return this.authService.logout(res);
+  }
+
+  /**
+   * Endpoint para solicitar restablecimiento de contraseña
+   * Ruta: POST /api/v1/auth/recuperar-password
+   */
+  @Post("recuperar-password")
+  @HttpCode(HttpStatus.OK)
+  async solicitarRecuperacion(@Body() dto: SolicitarRecuperacionDto) {
+    return this.authService.solicitarRecuperacion(dto);
+  }
+
+  /**
+   * Endpoint para confirmar nueva contraseña con token temporal
+   * Ruta: POST /api/v1/auth/restablecer-password
+   */
+  @Post("restablecer-password")
+  @HttpCode(HttpStatus.OK)
+  async restablecerPassword(@Body() dto: RestablecerPasswordDto) {
+    return this.authService.restablecerPassword(dto);
   }
 
   /**

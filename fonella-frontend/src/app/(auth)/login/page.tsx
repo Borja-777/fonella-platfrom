@@ -2,8 +2,20 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, Clock } from 'lucide-react';
-import { apiService } from '@/services/api';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Clock,
+  KeyRound,
+  Send,
+  CheckCircle2,
+  X,
+  ExternalLink,
+} from 'lucide-react';
+import { apiService, RecuperacionResponse } from '@/services/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +25,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
+
+  // Estados del Modal de Recuperación de Contraseña
+  const [modalRecuperar, setModalRecuperar] = useState(false);
+  const [emailRecuperar, setEmailRecuperar] = useState('');
+  const [loadingRecuperar, setLoadingRecuperar] = useState(false);
+  const [resultadoRecuperacion, setResultadoRecuperacion] = useState<RecuperacionResponse | null>(null);
+  const [errorRecuperar, setErrorRecuperar] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +63,28 @@ export default function LoginPage() {
     }
   };
 
+  const handleSolicitarRecuperacion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorRecuperar(null);
+    setLoadingRecuperar(true);
+
+    try {
+      const data = await apiService.solicitarRecuperacion(emailRecuperar);
+      setResultadoRecuperacion(data);
+    } catch (err: any) {
+      setErrorRecuperar(err.message || 'No se pudo procesar la solicitud.');
+    } finally {
+      setLoadingRecuperar(false);
+    }
+  };
+
+  const abrirModalRecuperar = () => {
+    setEmailRecuperar(email || '');
+    setErrorRecuperar(null);
+    setResultadoRecuperacion(null);
+    setModalRecuperar(true);
+  };
+
   return (
     <div className="relative h-screen w-screen flex items-center justify-center p-4 overflow-hidden">
       {/* Fotografía Oficial de Fonella de Fondo (Dra. Bárbara en Sesión Clínica DSC_6249) */}
@@ -64,8 +105,7 @@ export default function LoginPage() {
             <span className="text-[#0AA896] font-black text-2xl tracking-wider">F</span>
             <span className="text-[#5A96C8] font-black text-2xl tracking-wider">O</span>
             <span className="text-[#0AA896] font-black text-2xl tracking-wider">N</span>
-            <span className="text-[#5A96C8] font-black text-2xl tracking-wider">E</span>
-            <span className="text-[#DF9B78] font-black text-2xl tracking-wider">L</span>
+            <span className="text-[#DF9B78] font-black text-2xl tracking-wider">E</span>
             <span className="text-[#0AA896] font-black text-2xl tracking-wider">L</span>
             <span className="text-[#5A96C8] font-black text-2xl tracking-wider">A</span>
           </div>
@@ -79,7 +119,7 @@ export default function LoginPage() {
         </div>
 
         {/* Formulario Limpio con Iconos */}
-        <form onSubmit={handleSubmit} className="p-7 space-y-5">
+        <form onSubmit={handleSubmit} className="p-7 space-y-4">
           {/* Alertas de Error / Bloqueo */}
           {errorMsg && (
             <div
@@ -148,11 +188,22 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {/* Enlace para Recuperar Contraseña */}
+          <div className="flex justify-end pt-0.5">
+            <button
+              type="button"
+              onClick={abrirModalRecuperar}
+              className="text-xs font-bold text-[#136A7B] hover:text-[#0AA896] hover:underline transition-colors cursor-pointer"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+
           {/* Botón Iniciar Sesión */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-[#136A7B] hover:bg-[#0AA896] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
+            className="w-full py-3.5 rounded-xl bg-[#136A7B] hover:bg-[#0AA896] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer mt-2"
           >
             {loading ? (
               <>
@@ -165,6 +216,162 @@ export default function LoginPage() {
           </button>
         </form>
       </div>
+
+      {/* Modal Interactivo: Recuperar Contraseña */}
+      {modalRecuperar && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-white/60">
+            {/* Cabecera Naranja Terracota con Botón Rojo de Cerrar */}
+            <div className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] px-6 py-4 flex items-center justify-between text-white shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl">
+                  <KeyRound className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight text-white">
+                    Recuperación de Contraseña
+                  </h3>
+                  <p className="text-[11px] text-white/90">
+                    Restablece tu acceso clínico de forma segura
+                  </p>
+                </div>
+              </div>
+
+              {/* Botón Rojo Bonito de Cerrar */}
+              <button
+                type="button"
+                onClick={() => setModalRecuperar(false)}
+                className="bg-red-500 hover:bg-red-600 active:scale-95 text-white px-3.5 py-1 rounded-full text-xs font-black shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>✕</span>
+                <span>Cerrar</span>
+              </button>
+            </div>
+
+            {/* Cuerpo del Modal */}
+            <div className="p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+              {resultadoRecuperacion ? (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-600/90 to-teal-700/90 text-white shadow-md border border-emerald-400/50 flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-100 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-extrabold text-xs sm:text-sm">
+                        Instrucciones generadas con éxito
+                      </p>
+                      <p className="text-xs text-emerald-50 mt-0.5 leading-relaxed">
+                        {resultadoRecuperacion.mensaje}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Previsualización Inmediata del Correo en Entorno Local */}
+                  {resultadoRecuperacion.enlaceSimulado && (
+                    <div className="p-4 bg-[#FAF6F0] rounded-2xl border border-[#DF9B78]/40 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-[#136A7B] flex items-center gap-1.5">
+                          <span>📧</span>
+                          <span>Previsualización del Correo Clínico (Modo Local)</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#DF9B78]/20 text-[#B86E47]">
+                          Token: 15 min
+                        </span>
+                      </div>
+
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-2">
+                        <p className="text-slate-600">
+                          <strong>Para:</strong> {resultadoRecuperacion.nombreCompleto || 'Colaborador FONELLA'} ({resultadoRecuperacion.email})
+                        </p>
+                        <p className="text-slate-600">
+                          <strong>Asunto:</strong> Recuperación de Contraseña - FONELLA Portal Clínico
+                        </p>
+                        <p className="text-[11.5px] text-slate-500 leading-relaxed">
+                          Se ha generado el enlace seguro de restablecimiento de un solo uso.
+                        </p>
+                      </div>
+
+                      {/* Botón directo para probar inmediatamente */}
+                      <a
+                        href={resultadoRecuperacion.enlaceSimulado}
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-[#136A7B] to-[#0AA896] hover:from-[#0E5B6A] hover:to-[#088677] text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2 text-center"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Abrir Pantalla de Restablecimiento Ahora</span>
+                      </a>
+                    </div>
+                  )}
+
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setModalRecuperar(false)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                    >
+                      Aceptar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleSolicitarRecuperacion} className="space-y-4">
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Ingresa tu correo institucional registrado. Te enviaremos un enlace seguro y temporal para que puedas definir una nueva contraseña.
+                  </p>
+
+                  {errorRecuperar && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                      <span>{errorRecuperar}</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#136A7B] mb-1">
+                      Correo Institucional *
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
+                      <input
+                        type="email"
+                        required
+                        value={emailRecuperar}
+                        onChange={(e) => setEmailRecuperar(e.target.value)}
+                        placeholder="barbara.ccucho@fonella.co"
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setModalRecuperar(false)}
+                      className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors border border-slate-200 cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loadingRecuperar}
+                      className="bg-[#136A7B] hover:bg-[#0AA896] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-60 flex items-center gap-2 cursor-pointer"
+                    >
+                      {loadingRecuperar ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Generando enlace...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Enviar Instrucciones</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

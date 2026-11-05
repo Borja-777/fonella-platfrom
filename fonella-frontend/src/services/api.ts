@@ -18,6 +18,14 @@ export interface LoginResponse {
   usuario: Usuario;
 }
 
+export interface RecuperacionResponse {
+  mensaje: string;
+  email?: string;
+  nombreCompleto?: string;
+  enlaceSimulado?: string;
+  plantillaHtml?: string;
+}
+
 export const apiService = {
   async login(email: string, password: string): Promise<LoginResponse> {
     const res = await fetch(`${API_URL}/auth/login`, {
@@ -32,6 +40,41 @@ export const apiService = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Error al iniciar sesión');
+    }
+    return data;
+  },
+
+  async solicitarRecuperacion(email: string): Promise<RecuperacionResponse> {
+    const res = await fetch(`${API_URL}/auth/recuperar-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al procesar la solicitud');
+    }
+    return data;
+  },
+
+  async restablecerPassword(
+    token: string,
+    nuevaPassword: string,
+  ): Promise<{ mensaje: string }> {
+    const res = await fetch(`${API_URL}/auth/restablecer-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token, nuevaPassword }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al restablecer la contraseña');
     }
     return data;
   },
