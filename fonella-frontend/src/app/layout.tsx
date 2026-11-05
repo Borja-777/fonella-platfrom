@@ -1,10 +1,9 @@
-import type { Metadata } from "next";
-import "./globals.css";
+﻿import React from 'react';
+import './globals.css';
 
-export const metadata: Metadata = {
-  title: "FONELLA | Centro Integral de Fonoaudiología",
-  description:
-    "Plataforma clínica y administrativa de Fonella - Dra. Bárbara Ccucho Delgado.",
+export const metadata = {
+  title: 'Consultorio Fonoaudiológico FONELLA',
+  description: 'Plataforma Web de Gestión Clínica y Agendamiento',
 };
 
 export default function RootLayout({
@@ -14,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="min-h-screen bg-fonella-fondo text-gray-800 antialiased selection:bg-fonella-turquesa selection:text-white">
+      <body className="bg-[#FAF6F0] text-gray-800 antialiased min-h-screen">
         {children}
       </body>
     </html>
