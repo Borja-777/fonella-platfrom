@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
-import { EstadoRegistro } from "@prisma/client";
+import { EstadoRegistro, RolUsuario } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CrearPersonalDto } from "./dto/crear-personal.dto";
 import { ActualizarEstadoDto } from "./dto/actualizar-estado.dto";
@@ -194,13 +194,13 @@ export class UsuariosService {
       throw new NotFoundException("El usuario especificado no existe.");
     }
 
-    // 2. Regla de seguridad: Proteger la cuenta principal de la clínica
+    // 2. Regla de seguridad: Las cuentas de Fonoaudióloga son administradoras y no pueden desactivarse
     if (
-      usuario.email === "barbara.ccucho@fonella.co" &&
+      usuario.rol === RolUsuario.FONOAUDIOLOGA &&
       dto.estado === EstadoRegistro.INACTIVO
     ) {
       throw new BadRequestException(
-        "No es posible desactivar la cuenta principal de la dirección clínica.",
+        "Las cuentas con rol de Fonoaudióloga (Administración Clínica) no pueden ser desactivadas.",
       );
     }
 

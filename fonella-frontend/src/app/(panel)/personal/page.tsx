@@ -445,7 +445,7 @@ export default function PersonalPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
                 {personalVisible.map((u, index) => {
-                  const esAdminPrincipal = u.email === 'barbara.ccucho@fonella.co';
+                  const esFonoaudiologa = u.rol === 'FONOAUDIOLOGA';
                   const activo = u.estado === 'ACTIVO';
                   const fotoUrl = u.fotoPerfilUrl || (u.rol === 'FONOAUDIOLOGA' ? '/images/barbara-avatar.jpg' : null);
                   const abrirHaciaArriba = index >= personalVisible.length - 2 && personalVisible.length > 2;
@@ -580,56 +580,64 @@ export default function PersonalPage() {
                                 </button>
                               </div>
 
-                              {/* 2. Activar / Desactivar */}
-                              <div className="py-0.5">
-                                {esAdminPrincipal ? (
-                                  <div className="px-3.5 py-2 text-[11px] text-slate-400 italic flex items-center gap-2">
+                              {/* Opciones exclusivas para Asistentes: las fonoaudiólogas son administradoras permanentes */}
+                              {esFonoaudiologa ? (
+                                <div className="py-1 px-3 bg-[#FAF6F0]/80 m-1 rounded-xl border border-[#DF9B78]/25">
+                                  <p className="text-[10.5px] font-bold text-[#136A7B] flex items-center gap-1.5">
                                     <span>🔒</span>
-                                    <span>Cuenta Titular</span>
-                                  </div>
-                                ) : activo ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setMenuAbiertoId(null);
-                                      handleToggleEstado(u);
-                                    }}
-                                    className="w-full px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors cursor-pointer"
-                                  >
-                                    <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
-                                    <span>Desactivar</span>
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setMenuAbiertoId(null);
-                                      handleToggleEstado(u);
-                                    }}
-                                    className="w-full px-3.5 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2.5 transition-colors cursor-pointer"
-                                  >
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                    <span>Activar</span>
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* 3. Ocultar */}
-                              {!esAdminPrincipal && (
-                                <div className="py-0.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setMenuAbiertoId(null);
-                                      handleOcultarCuenta(u);
-                                    }}
-                                    className="w-full px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2.5 transition-colors cursor-pointer"
-                                    title="Ocultar esta cuenta del panel principal"
-                                  >
-                                    <EyeOff className="w-3.5 h-3.5 text-slate-500" />
-                                    <span>Ocultar</span>
-                                  </button>
+                                    <span>Administradora Clínica</span>
+                                  </p>
+                                  <p className="text-[9.5px] text-slate-500 mt-0.5 leading-snug">
+                                    Cuenta permanente y siempre activa.
+                                  </p>
                                 </div>
+                              ) : (
+                                <>
+                                  {/* 2. Activar / Desactivar */}
+                                  <div className="py-0.5">
+                                    {activo ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setMenuAbiertoId(null);
+                                          handleToggleEstado(u);
+                                        }}
+                                        className="w-full px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                      >
+                                        <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                                        <span>Desactivar</span>
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setMenuAbiertoId(null);
+                                          handleToggleEstado(u);
+                                        }}
+                                        className="w-full px-3.5 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                      >
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span>Activar</span>
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  {/* 3. Ocultar */}
+                                  <div className="py-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setMenuAbiertoId(null);
+                                        handleOcultarCuenta(u);
+                                      }}
+                                      className="w-full px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                      title="Ocultar esta cuenta del panel principal"
+                                    >
+                                      <EyeOff className="w-3.5 h-3.5 text-slate-500" />
+                                      <span>Ocultar</span>
+                                    </button>
+                                  </div>
+                                </>
                               )}
                             </div>
                           )}
