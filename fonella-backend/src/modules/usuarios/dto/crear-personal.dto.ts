@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   MinLength,
+  Matches,
 } from "class-validator";
 import { RolUsuario } from "@prisma/client";
 
@@ -20,6 +21,13 @@ export class CrearPersonalDto {
   @IsString({ message: "La contraseña debe ser una cadena de texto" })
   @IsNotEmpty({ message: "La contraseña es obligatoria" })
   @MinLength(8, { message: "La contraseña debe tener al menos 8 caracteres" })
+  @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/,
+    {
+      message:
+        "La contraseña debe contener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial (!@#$%...).",
+    },
+  )
   password!: string;
 
   @IsEnum(RolUsuario, {
@@ -31,4 +39,8 @@ export class CrearPersonalDto {
   @IsOptional()
   @IsString({ message: "El registro ReTHUS debe ser una cadena de texto" })
   registroRethus?: string;
+
+  @IsOptional()
+  @IsString({ message: "La URL de la foto de perfil debe ser una cadena de texto" })
+  fotoPerfilUrl?: string;
 }

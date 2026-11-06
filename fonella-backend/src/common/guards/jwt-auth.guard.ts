@@ -12,7 +12,7 @@ import { PrismaService } from "../../prisma/prisma.service";
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService, // 👈 Inyectamos Prisma
+    private readonly prisma: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -21,7 +21,7 @@ export class JwtAuthGuard implements CanActivate {
 
     if (!token) {
       throw new UnauthorizedException(
-        "Sesión no iniciada o expirada por inactividad (HU-01 / HU-04).",
+        "Sesión no iniciada o expirada por inactividad.",
       );
     }
 
@@ -31,7 +31,7 @@ export class JwtAuthGuard implements CanActivate {
         secret: process.env.JWT_SECRET || "fonella_secret_key_2026",
       });
 
-      // 2. Verificamos en BD que la cuenta siga en estado ACTIVO (Revocación inmediata HU-02)
+      // 2. Verificamos en BD que la cuenta siga en estado ACTIVO (Revocación inmediata)
       const usuario = await this.prisma.usuario.findUnique({
         where: { id: payload.sub },
         select: {
@@ -40,6 +40,7 @@ export class JwtAuthGuard implements CanActivate {
           rol: true,
           estado: true,
           nombreCompleto: true,
+          fotoPerfilUrl: true,
         },
       });
 
