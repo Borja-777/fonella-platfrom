@@ -335,3 +335,25 @@ model VentaJuguete {
   @@index([fechaVenta])
   @@map("ventas_juguetes")
 }
+
+
+// ----------------------------------------------------------------------------
+// 5. SOLICITUDES PÚBLICAS DESDE EL PORTAL WEB (WhatsApp / Formulario Asistido)
+// ----------------------------------------------------------------------------
+
+model SolicitudCitaPublica {
+  id           String   @id @default(uuid()) @db.Uuid
+  tipoPaciente String   @map("tipo_paciente") @db.VarChar(20)
+  acudiente    String?  @db.VarChar(150)
+  parentesco   String?  @db.VarChar(50)
+  paciente     String   @db.VarChar(150)
+  edad         String   @db.VarChar(50)
+  servicio     String   @db.VarChar(200)
+  jornada      String   @db.VarChar(100)
+  motivo       String?  @db.Text
+  estado       String   @default("PENDIENTE") @db.VarChar(30)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("solicitudes_citas_publicas")
+}
