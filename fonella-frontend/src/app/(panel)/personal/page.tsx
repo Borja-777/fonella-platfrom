@@ -527,121 +527,119 @@ export default function PersonalPage() {
                         </span>
                       </td>
 
-                      {/* Acciones Integradas (Botón Split Editar + Menú Apilado) */}
+                      {/* Acciones Integradas */}
                       <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap relative">
-                        <div className="relative inline-block text-left menu-acciones-container">
-                          {/* Split Button: Editar | ▼ */}
-                          <div className="inline-flex items-stretch rounded-lg border border-[#0084FF] bg-white shadow-xs overflow-hidden">
-                            <button
-                              type="button"
-                              onClick={() => abrirModalEditar(u)}
-                              className="px-3 py-1.5 text-xs font-semibold text-[#0084FF] hover:bg-sky-50 transition-colors flex items-center gap-1.5 cursor-pointer"
-                              title="Editar información de colaborador"
-                            >
-                              <Pencil className="w-3.5 h-3.5 text-[#0084FF]" />
-                              <span>Editar</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setMenuAbiertoId(menuAbiertoId === u.id ? null : u.id);
-                              }}
-                              className="px-2 py-1.5 border-l border-[#0084FF] text-[#0084FF] hover:bg-sky-50 transition-colors flex items-center justify-center cursor-pointer"
-                              title="Ver más opciones"
-                            >
-                              <ChevronDown
-                                className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                                  menuAbiertoId === u.id ? 'rotate-180' : ''
-                                }`}
-                              />
-                            </button>
-                          </div>
+                        {esFonoaudiologa ? (
+                          /* Rol Fonoaudióloga: Solo botón simple de Editar (sin flecha ni dropdown) */
+                          <button
+                            type="button"
+                            onClick={() => abrirModalEditar(u)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#0084FF] text-[#0084FF] hover:bg-sky-50 transition-colors text-xs font-semibold shadow-xs cursor-pointer bg-white"
+                            title="Editar información"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-[#0084FF]" />
+                            <span>Editar</span>
+                          </button>
+                        ) : (
+                          /* Rol Asistente: Botón Split Editar con Menú Apilado */
+                          <div className="relative inline-block text-left menu-acciones-container">
+                            <div className="inline-flex items-stretch rounded-lg border border-[#0084FF] bg-white shadow-xs overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => abrirModalEditar(u)}
+                                className="px-3 py-1.5 text-xs font-semibold text-[#0084FF] hover:bg-sky-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+                                title="Editar información de colaborador"
+                              >
+                                <Pencil className="w-3.5 h-3.5 text-[#0084FF]" />
+                                <span>Editar</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMenuAbiertoId(menuAbiertoId === u.id ? null : u.id);
+                                }}
+                                className="px-2 py-1.5 border-l border-[#0084FF] text-[#0084FF] hover:bg-sky-50 transition-colors flex items-center justify-center cursor-pointer"
+                                title="Ver más opciones"
+                              >
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                    menuAbiertoId === u.id ? 'rotate-180' : ''
+                                  }`}
+                                />
+                              </button>
+                            </div>
 
-                          {/* Menú Desplegable con Opciones Apiladas */}
-                          {menuAbiertoId === u.id && (
-                            <div
-                              className={`absolute right-0 ${
-                                abrirHaciaArriba ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
-                              } w-44 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50 text-left divide-y divide-slate-100 animate-fade-in`}
-                            >
-                              {/* 1. Editar */}
-                              <div className="py-0.5">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setMenuAbiertoId(null);
-                                    abrirModalEditar(u);
-                                  }}
-                                  className="w-full px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FAF6F0] hover:text-[#136A7B] flex items-center gap-2.5 transition-colors cursor-pointer"
-                                >
-                                  <Pencil className="w-3.5 h-3.5 text-[#136A7B]" />
-                                  <span>Editar</span>
-                                </button>
-                              </div>
-
-                              {/* Opciones exclusivas para Asistentes: las fonoaudiólogas son administradoras permanentes */}
-                              {esFonoaudiologa ? (
-                                <div className="py-1 px-3 bg-[#FAF6F0]/80 m-1 rounded-xl border border-[#DF9B78]/25">
-                                  <p className="text-[10.5px] font-bold text-[#136A7B] flex items-center gap-1.5">
-                                    <span>🔒</span>
-                                    <span>Administradora Clínica</span>
-                                  </p>
-                                  <p className="text-[9.5px] text-slate-500 mt-0.5 leading-snug">
-                                    Cuenta permanente y siempre activa.
-                                  </p>
+                            {/* Menú Desplegable con Opciones Apiladas */}
+                            {menuAbiertoId === u.id && (
+                              <div
+                                className={`absolute right-0 ${
+                                  abrirHaciaArriba ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                                } w-44 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50 text-left divide-y divide-slate-100 animate-fade-in`}
+                              >
+                                {/* 1. Editar */}
+                                <div className="py-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setMenuAbiertoId(null);
+                                      abrirModalEditar(u);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FAF6F0] hover:text-[#136A7B] flex items-center gap-2.5 transition-colors cursor-pointer"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5 text-[#136A7B]" />
+                                    <span>Editar</span>
+                                  </button>
                                 </div>
-                              ) : (
-                                <>
-                                  {/* 2. Activar / Desactivar */}
-                                  <div className="py-0.5">
-                                    {activo ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setMenuAbiertoId(null);
-                                          handleToggleEstado(u);
-                                        }}
-                                        className="w-full px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors cursor-pointer"
-                                      >
-                                        <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
-                                        <span>Desactivar</span>
-                                      </button>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setMenuAbiertoId(null);
-                                          handleToggleEstado(u);
-                                        }}
-                                        className="w-full px-3.5 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2.5 transition-colors cursor-pointer"
-                                      >
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                        <span>Activar</span>
-                                      </button>
-                                    )}
-                                  </div>
 
-                                  {/* 3. Ocultar */}
-                                  <div className="py-0.5">
+                                {/* 2. Activar / Desactivar */}
+                                <div className="py-0.5">
+                                  {activo ? (
                                     <button
                                       type="button"
                                       onClick={() => {
                                         setMenuAbiertoId(null);
-                                        handleOcultarCuenta(u);
+                                        handleToggleEstado(u);
                                       }}
-                                      className="w-full px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2.5 transition-colors cursor-pointer"
-                                      title="Ocultar esta cuenta del panel principal"
+                                      className="w-full px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors cursor-pointer"
                                     >
-                                      <EyeOff className="w-3.5 h-3.5 text-slate-500" />
-                                      <span>Ocultar</span>
+                                      <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                                      <span>Desactivar</span>
                                     </button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setMenuAbiertoId(null);
+                                        handleToggleEstado(u);
+                                      }}
+                                      className="w-full px-3.5 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                      <span>Activar</span>
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* 3. Ocultar */}
+                                <div className="py-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setMenuAbiertoId(null);
+                                      handleOcultarCuenta(u);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                    title="Ocultar esta cuenta del panel principal"
+                                  >
+                                    <EyeOff className="w-3.5 h-3.5 text-slate-500" />
+                                    <span>Ocultar</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
