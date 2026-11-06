@@ -9,10 +9,15 @@ export interface DatosSolicitudCita {
   esMenorEdad: boolean;
   nombrePaciente: string;
   edadPaciente: string;
+  telefono: string;
   nombreAcudiente?: string;
+  parentescoAcudiente?: string;
   servicioInteres: string;
+  duracionMinutos: number;
   motivoBreve: string;
-  jornadaPreferida: 'Mañana' | 'Tarde';
+  jornadaPreferida:
+    | 'Mañana (8:00 a.m. - 12:00 m.)'
+    | 'Tarde (2:00 p.m. - 6:00 p.m.)';
 }
 
 /**
@@ -42,18 +47,33 @@ export function generarLinkConsultaJuguete(nombreJuguete: string, codigoSku: str
 /**
  * HU-09: Generador estructurado del Formulario Dinámico Asistido para Cita
  */
-export function generarLinkSolicitudCitaAsistida(datos: DatosSolicitudCita): string {
-  const lineaAcudiente = datos.esMenorEdad && datos.nombreAcudiente
-    ? `• *Acudiente:* ${datos.nombreAcudiente}\n`
-    : '';
+export function generarLinkSolicitudCitaAsistida(
+  datos: DatosSolicitudCita
+): string {
+  const tipoPaciente = datos.esMenorEdad
+    ? 'Paciente Pediátrico'
+    : 'Paciente Adulto';
+
+  const lineaAcudiente =
+    datos.esMenorEdad && datos.nombreAcudiente
+      ? `• *Acudiente:* ${datos.nombreAcudiente}${
+          datos.parentescoAcudiente
+            ? ` (${datos.parentescoAcudiente})`
+            : ''
+        }\n`
+      : '';
 
   const mensaje =
-    `Hola Fonella, deseo solicitar una cita fonoaudiológica:\n\n` +
-    `• *Paciente:* ${datos.nombrePaciente} (${datos.edadPaciente})\n` +
+    `Hola Consultorio FONELLA 👋.\n` +
+    `Deseo agendar una cita fonoaudiológica:\n\n` +
+    `• *Tipo:* ${tipoPaciente}\n` +
+    `• *Teléfono de contacto:* ${datos.telefono}\n` +
     lineaAcudiente +
-    `• *Servicio de interés:* ${datos.servicioInteres}\n` +
-    `• *Motivo de consulta:* ${datos.motivoBreve}\n` +
-    `• *Jornada preferida:* ${datos.jornadaPreferida}`;
+    `• *Paciente:* ${datos.nombrePaciente} (${datos.edadPaciente})\n` +
+    `• *Servicio:* ${datos.servicioInteres} (${datos.duracionMinutos} min)\n` +
+    `• *Jornada preferida:* ${datos.jornadaPreferida}\n` +
+    `• *Motivo:* ${datos.motivoBreve}\n\n` +
+    `Quedo atento(a) a la disponibilidad en agenda. ¡Gracias!`;
 
   return `https://wa.me/${WHATSAPP_FONELLA}?text=${encodeURIComponent(mensaje)}`;
 }
