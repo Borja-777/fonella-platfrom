@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
   HttpException,
   HttpStatus,
   Logger,
@@ -196,12 +197,11 @@ export class AuthService {
       where: { email: emailNormalizado },
     });
 
-    // Anti-enumeración: si no existe, devolvemos mensaje genérico exitoso
+    // Validar si el usuario existe en el sistema
     if (!usuario) {
-      return {
-        mensaje:
-          "Si el correo se encuentra registrado en el sistema, recibirás las instrucciones para restablecer tu contraseña.",
-      };
+      throw new NotFoundException(
+        "El correo electrónico no se encuentra registrado en el sistema.",
+      );
     }
 
     // 1. Generar token criptográfico único
