@@ -39,6 +39,7 @@ export default function PersonalPage() {
     tipo: 'exito' | 'error';
     texto: string;
   } | null>(null);
+  const [contadorFeedback, setContadorFeedback] = useState<number>(5);
 
   // Estados del Formulario
   const [nombreCompleto, setNombreCompleto] = useState('');
@@ -82,6 +83,26 @@ export default function PersonalPage() {
     document.addEventListener('click', handleClickFuera);
     return () => document.removeEventListener('click', handleClickFuera);
   }, []);
+
+  // Temporizador regresivo de 5 segundos para cerrar la notificación de feedback
+  useEffect(() => {
+    if (!feedback) return;
+
+    setContadorFeedback(5);
+
+    const interval = setInterval(() => {
+      setContadorFeedback((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setFeedback(null);
+          return 5;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [feedback]);
 
   const abrirModalCrear = () => {
     setModoModal('crear');
@@ -362,7 +383,7 @@ export default function PersonalPage() {
         </div>
       </div>
 
-      {/* 2. Banner de Feedback Global con Difuminado Glassmorphism */}
+      {/* 2. Banner de Feedback Global con Difuminado Glassmorphism y Contador */}
       {feedback && (
         <div
           className={`px-5 py-3.5 rounded-2xl flex items-center justify-between text-xs sm:text-sm animate-fade-in shadow-xl border backdrop-blur-lg transition-all ${
@@ -381,17 +402,24 @@ export default function PersonalPage() {
             </div>
             <span className="font-extrabold tracking-wide">{feedback.texto}</span>
           </div>
-          <button
-            onClick={() => setFeedback(null)}
-            className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-            title="Cerrar notificación"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Contador de 5 segundos que se actualiza en tiempo real */}
+            <span className="text-[11px] font-black font-mono px-2 py-0.5 rounded-full bg-white/20 text-white/95 shadow-xs border border-white/25">
+              {contadorFeedback}s
+            </span>
+            <button
+              onClick={() => setFeedback(null)}
+              className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              title="Cerrar notificación"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* 3. Tabla de Personal con Acciones Completas y Totalmente Responsive */}
+      {/* 3. Tabla de Personal con Ajuste Dinámico de Altura (Responsive a los datos) */}
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/70 overflow-hidden w-full">
         {loading ? (
           <div className="p-16 text-center text-gray-500">
@@ -401,7 +429,7 @@ export default function PersonalPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto w-full min-h-[320px] pb-14">
+          <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] text-white text-[10.5px] sm:text-xs uppercase font-extrabold tracking-wider shadow-sm">
@@ -448,7 +476,7 @@ export default function PersonalPage() {
                   const esFonoaudiologa = u.rol === 'FONOAUDIOLOGA';
                   const activo = u.estado === 'ACTIVO';
                   const fotoUrl = u.fotoPerfilUrl || (u.rol === 'FONOAUDIOLOGA' ? '/images/barbara-avatar.jpg' : null);
-                  const abrirHaciaArriba = index >= personalVisible.length - 2 && personalVisible.length > 2;
+                  const abrirHaciaArriba = index >= personalVisible.length - 1 && personalVisible.length > 1;
 
                   return (
                     <tr
