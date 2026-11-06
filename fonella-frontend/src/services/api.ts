@@ -22,8 +22,6 @@ export interface RecuperacionResponse {
   mensaje: string;
   email?: string;
   nombreCompleto?: string;
-  enlaceSimulado?: string;
-  plantillaHtml?: string;
 }
 
 export const apiService = {

@@ -13,7 +13,6 @@ import {
   Send,
   CheckCircle2,
   X,
-  ExternalLink,
 } from 'lucide-react';
 import { apiService, RecuperacionResponse } from '@/services/api';
 
@@ -256,57 +255,37 @@ export default function LoginPage() {
                     <CheckCircle2 className="w-5 h-5 text-emerald-100 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-extrabold text-xs sm:text-sm">
-                        Instrucciones generadas con éxito
+                        Instrucciones enviadas con éxito
                       </p>
-                      <p className="text-xs text-emerald-50 mt-0.5 leading-relaxed">
+                      <p className="text-xs text-emerald-50 mt-1 leading-relaxed">
                         {resultadoRecuperacion.mensaje}
                       </p>
                     </div>
                   </div>
 
-                  {/* Previsualización Inmediata del Correo en Entorno Local */}
-                  {resultadoRecuperacion.enlaceSimulado && (
-                    <div className="p-4 bg-[#FAF6F0] rounded-2xl border border-[#DF9B78]/40 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black uppercase tracking-wider text-[#136A7B] flex items-center gap-1.5">
-                          <span>📧</span>
-                          <span>Previsualización del Correo Clínico (Modo Local)</span>
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#DF9B78]/20 text-[#B86E47]">
-                          Token: 15 min
-                        </span>
-                      </div>
-
-                      <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-2">
-                        <p className="text-slate-600">
-                          <strong>Para:</strong> {resultadoRecuperacion.nombreCompleto || 'Colaborador FONELLA'} ({resultadoRecuperacion.email})
-                        </p>
-                        <p className="text-slate-600">
-                          <strong>Asunto:</strong> Recuperación de Contraseña - FONELLA Portal Clínico
-                        </p>
-                        <p className="text-[11.5px] text-slate-500 leading-relaxed">
-                          Se ha generado el enlace seguro de restablecimiento de un solo uso.
-                        </p>
-                      </div>
-
-                      {/* Botón directo para probar inmediatamente */}
-                      <a
-                        href={resultadoRecuperacion.enlaceSimulado}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-[#136A7B] to-[#0AA896] hover:from-[#0E5B6A] hover:to-[#088677] text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2 text-center"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        <span>Abrir Pantalla de Restablecimiento Ahora</span>
-                      </a>
+                  <div className="p-4 bg-[#FAF6F0] rounded-2xl border border-[#DF9B78]/40 space-y-2.5">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#136A7B]">
+                      <span>📬</span>
+                      <span>¿Qué debes hacer ahora?</span>
                     </div>
-                  )}
+                    <ul className="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+                      <li>Abre tu bandeja de entrada en tu proveedor de correo ({resultadoRecuperacion.email}).</li>
+                      <li>Busca el correo con el asunto <strong>"Recuperación de Contraseña - FONELLA Portal Clínico"</strong>.</li>
+                      <li>Haz clic en el enlace para definir tu nueva clave de acceso.</li>
+                      <li>Si no lo ves en tu bandeja principal, revisa la carpeta de <strong>spam o correo no deseado</strong>.</li>
+                    </ul>
+                    <p className="text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200/60 mt-2">
+                      ⏱️ <strong>Nota de seguridad:</strong> El enlace de recuperación es de un solo uso y expirará automáticamente en <strong>15 minutos</strong>.
+                    </p>
+                  </div>
 
                   <div className="pt-2 flex justify-end">
                     <button
                       type="button"
                       onClick={() => setModalRecuperar(false)}
-                      className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                      className="px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-[#136A7B] hover:bg-[#0AA896] transition-all shadow-md cursor-pointer"
                     >
-                      Aceptar
+                      Entendido
                     </button>
                   </div>
                 </div>

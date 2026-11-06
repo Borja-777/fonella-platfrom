@@ -11,6 +11,7 @@ import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../../prisma/prisma.service";
 import * as bcrypt from "bcrypt";
 import * as crypto from "crypto";
+import * as nodemailer from "nodemailer";
 import { Response } from "express";
 import { SolicitarRecuperacionDto } from "./dto/solicitar-recuperacion.dto";
 import { RestablecerPasswordDto } from "./dto/restablecer-password.dto";
@@ -189,6 +190,68 @@ export class AuthService {
   }
 
   /**
+   * Envía el correo de recuperación utilizando Nodemailer (SMTP / Gmail)
+   */
+  private async enviarEmailRecuperacion(
+    destinatario: string,
+    nombre: string,
+    enlace: string,
+  ): Promise<void> {
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+
+    if (!smtpUser || !smtpPass) {
+      this.logger.error(
+        "❌ [Nodemailer] Credenciales SMTP no configuradas en el archivo .env (SMTP_USER, SMTP_PASS no definidos).",
+      );
+      throw new HttpException(
+        "El servicio de envío de correos no está configurado en el servidor (faltan credenciales SMTP en el archivo .env).",
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+
+    const host = process.env.SMTP_HOST || "smtp.gmail.com";
+    const port = parseInt(process.env.SMTP_PORT || "465", 10);
+    const secure = port === 465;
+
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+
+    const plantillaHtml = this.generarPlantillaHtml(nombre, enlace);
+
+    try {
+      await transporter.sendMail({
+        from:
+          process.env.SMTP_FROM ||
+          `"FONELLA Portal Clínico" <${smtpUser}>`,
+        to: destinatario,
+        subject: "Recuperación de Contraseña - FONELLA Portal Clínico",
+        html: plantillaHtml,
+      });
+
+      this.logger.log(
+        `✅ [Nodemailer] Correo de recuperación enviado con éxito a: ${destinatario}`,
+      );
+    } catch (error: any) {
+      this.logger.error(
+        `❌ [Nodemailer] Error al despachar correo a ${destinatario}: ${error.message}`,
+        error.stack,
+      );
+      throw new HttpException(
+        `Error al enviar el correo de recuperación: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
    * Solicita la recuperación de contraseña generando un token seguro
    */
   async solicitarRecuperacion(dto: SolicitarRecuperacionDto) {
@@ -220,26 +283,18 @@ export class AuthService {
     // 3. Crear enlace de restablecimiento
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     const enlaceRecuperacion = `${frontendUrl}/restablecer-password?token=${token}`;
-    const plantillaHtml = this.generarPlantillaHtml(
+
+    // 4. Enviar correo real vía Nodemailer
+    await this.enviarEmailRecuperacion(
+      usuario.email,
       usuario.nombreCompleto,
       enlaceRecuperacion,
     );
 
-    // 4. Log corporativo en consola para desarrollo
-    this.logger.log(`\n=============================================================`);
-    this.logger.log(`📧 [EMAIL CLINICO FONELLA] Recuperación de Contraseña`);
-    this.logger.log(`Destinatario: ${usuario.nombreCompleto} <${usuario.email}>`);
-    this.logger.log(`Enlace Seguro: ${enlaceRecuperacion}`);
-    this.logger.log(`Expira en: 15 minutos (${expiracion.toLocaleTimeString()})`);
-    this.logger.log(`=============================================================\n`);
-
     return {
-      mensaje:
-        "Si el correo se encuentra registrado en el sistema, recibirás las instrucciones para restablecer tu contraseña.",
+      mensaje: `Hemos enviado las instrucciones para restablecer tu contraseña al correo ${usuario.email}. Revisa tu bandeja de entrada o carpeta de spam.`,
       email: usuario.email,
       nombreCompleto: usuario.nombreCompleto,
-      enlaceSimulado: enlaceRecuperacion,
-      plantillaHtml,
     };
   }
 
