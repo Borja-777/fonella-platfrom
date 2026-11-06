@@ -268,11 +268,10 @@ export default function LoginPage() {
           {/* Alertas de Error / Bloqueo */}
           {errorMsg && (
             <div
-              className={`p-3.5 rounded-xl flex items-start gap-2.5 text-xs animate-fade-in ${
-                isLocked
+              className={`p-3.5 rounded-xl flex items-start gap-2.5 text-xs animate-fade-in ${isLocked
                   ? 'bg-amber-50 border border-amber-300 text-amber-900'
                   : 'bg-red-50 border border-red-200 text-red-800'
-              }`}
+                }`}
             >
               {isLocked ? (
                 <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -356,7 +355,7 @@ export default function LoginPage() {
                 <span>Validando credenciales...</span>
               </>
             ) : (
-              <span>Iniciar Sesión Segura</span>
+              <span>Iniciar Sesión</span>
             )}
           </button>
 

@@ -109,11 +109,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             {esFonoaudiologa && (
               <Link
                 href="/personal"
-                className={`px-3.5 py-3 rounded-2xl flex items-center justify-between transition-all ${
-                  pathname.startsWith('/personal')
+                className={`px-3.5 py-3 rounded-2xl flex items-center justify-between transition-all ${pathname.startsWith('/personal')
                     ? 'bg-white text-[#0E5666] shadow-lg border border-white font-extrabold'
                     : 'text-white hover:bg-white/15'
-                }`}
+                  }`}
               >
                 <span className="flex items-center gap-2.5">
                   <Users className="w-4 h-4 text-[#0AA896]" />
@@ -166,7 +165,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             className="w-full py-3 rounded-2xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
           >
             <LogOut className="w-4 h-4 text-white" />
-            <span>Cerrar Sesión Segura</span>
+            <span>Cerrar Sesión</span>
           </button>
         </div>
       </aside>
