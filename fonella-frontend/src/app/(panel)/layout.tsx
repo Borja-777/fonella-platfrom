@@ -19,6 +19,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
+  const [modalConfirmarLogout, setModalConfirmarLogout] = useState(false);
 
   useEffect(() => {
     async function cargarSesion() {
@@ -161,7 +162,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             <span>Cierre automático por inactividad: 30m</span>
           </div>
           <button
-            onClick={handleLogout}
+            onClick={() => setModalConfirmarLogout(true)}
             className="w-full py-3 rounded-2xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
           >
             <LogOut className="w-4 h-4 text-white" />
@@ -169,6 +170,43 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           </button>
         </div>
       </aside>
+
+      {/* Modal de Confirmación de Cierre de Sesión */}
+      {modalConfirmarLogout && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center space-y-4 border border-[#136A7B]/10">
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600 shadow-inner">
+              <LogOut className="w-7 h-7" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-base font-bold text-gray-900">
+                ¿Estás seguro que deseas cerrar la sesión?
+              </h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Tendrás que ingresar nuevamente tus credenciales para acceder al portal clínico de Fonella.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalConfirmarLogout(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white text-xs font-bold transition-all shadow-md hover:shadow-lg cursor-pointer"
+              >
+                Sí, Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2. ÁREA DE CONTENIDO PRINCIPAL: Responsive sin desbordamiento */}
       <div className="flex-1 min-w-0 relative flex flex-col min-h-screen">
