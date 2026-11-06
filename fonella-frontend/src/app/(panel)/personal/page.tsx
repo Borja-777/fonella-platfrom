@@ -20,6 +20,7 @@ import {
   Archive,
   Check,
   RotateCcw,
+  ChevronDown,
 } from 'lucide-react';
 import { apiService, Usuario } from '@/services/api';
 
@@ -32,6 +33,7 @@ export default function PersonalPage() {
   const [modalArchivadosAbierto, setModalArchivadosAbierto] = useState(false);
   const [modoModal, setModoModal] = useState<'crear' | 'editar'>('crear');
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
+  const [menuAbiertoId, setMenuAbiertoId] = useState<string | null>(null);
 
   const [feedback, setFeedback] = useState<{
     tipo: 'exito' | 'error';
@@ -68,6 +70,17 @@ export default function PersonalPage() {
 
   useEffect(() => {
     cargarPersonal();
+  }, []);
+
+  // Cerrar menú de acciones al hacer clic fuera
+  useEffect(() => {
+    const handleClickFuera = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('.menu-acciones-container')) {
+        setMenuAbiertoId(null);
+      }
+    };
+    document.addEventListener('click', handleClickFuera);
+    return () => document.removeEventListener('click', handleClickFuera);
   }, []);
 
   const abrirModalCrear = () => {
@@ -388,35 +401,54 @@ export default function PersonalPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto w-full">
+          <div className="overflow-x-auto w-full min-h-[320px] pb-14">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] text-white text-[10.5px] sm:text-xs uppercase font-extrabold tracking-wider shadow-sm">
                   <th className="py-3 px-3 sm:px-4 font-extrabold whitespace-nowrap">
-                    Nombre Completo
+                    <div className="flex items-center gap-2">
+                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
+                      <span>Nombre Completo</span>
+                    </div>
                   </th>
                   <th className="py-3 px-3 sm:px-4 font-extrabold whitespace-nowrap">
-                    Correo Institucional
+                    <div className="flex items-center gap-2">
+                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
+                      <span>Correo Institucional</span>
+                    </div>
                   </th>
                   <th className="py-3 px-2 sm:px-3 font-extrabold whitespace-nowrap">
-                    Rol RBAC
+                    <div className="flex items-center gap-2">
+                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
+                      <span>Rol RBAC</span>
+                    </div>
                   </th>
                   <th className="py-3 px-2 sm:px-3 font-extrabold whitespace-nowrap">
-                    Registro ReTHUS
+                    <div className="flex items-center gap-2">
+                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
+                      <span>Registro ReTHUS</span>
+                    </div>
                   </th>
                   <th className="py-3 px-2 sm:px-3 font-extrabold whitespace-nowrap">
-                    Estado
+                    <div className="flex items-center gap-2">
+                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
+                      <span>Estado</span>
+                    </div>
                   </th>
                   <th className="py-3 px-3 sm:px-4 text-right font-extrabold whitespace-nowrap">
-                    Acción Inmediata
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
+                      <span>Acciones</span>
+                    </div>
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
-                {personalVisible.map((u) => {
+                {personalVisible.map((u, index) => {
                   const esAdminPrincipal = u.email === 'barbara.ccucho@fonella.co';
                   const activo = u.estado === 'ACTIVO';
                   const fotoUrl = u.fotoPerfilUrl || (u.rol === 'FONOAUDIOLOGA' ? '/images/barbara-avatar.jpg' : null);
+                  const abrirHaciaArriba = index >= personalVisible.length - 2 && personalVisible.length > 2;
 
                   return (
                     <tr
@@ -495,48 +527,111 @@ export default function PersonalPage() {
                         </span>
                       </td>
 
-                      {/* Acciones Inmediatas (Editar + Activar/Desactivar + Ocultar) */}
-                      <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5 sm:gap-2">
-                          {/* Botón Editar para todos (incluida Bárbara) */}
-                          <button
-                            onClick={() => abrirModalEditar(u)}
-                            className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-[#136A7B] transition-colors flex items-center gap-1 cursor-pointer shadow-xs bg-white"
-                            title="Editar información y fotografía"
-                          >
-                            <Pencil className="w-3.5 h-3.5 text-[#136A7B]" />
-                            <span>Editar</span>
-                          </button>
-
-                          {/* Botón Activar / Desactivar (o etiqueta Cuenta Titular) */}
-                          {esAdminPrincipal ? (
-                            <span className="text-[11px] text-slate-400 italic pl-1">
-                              Cuenta Titular
-                            </span>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => handleToggleEstado(u)}
-                                className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors border cursor-pointer ${
-                                  activo
-                                    ? 'border-red-200 text-red-600 hover:bg-red-50'
-                                    : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                      {/* Acciones Integradas (Botón Split Editar + Menú Apilado) */}
+                      <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap relative">
+                        <div className="relative inline-block text-left menu-acciones-container">
+                          {/* Split Button: Editar | ▼ */}
+                          <div className="inline-flex items-stretch rounded-lg border border-[#0084FF] bg-white shadow-xs overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => abrirModalEditar(u)}
+                              className="px-3 py-1.5 text-xs font-semibold text-[#0084FF] hover:bg-sky-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+                              title="Editar información de colaborador"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-[#0084FF]" />
+                              <span>Editar</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMenuAbiertoId(menuAbiertoId === u.id ? null : u.id);
+                              }}
+                              className="px-2 py-1.5 border-l border-[#0084FF] text-[#0084FF] hover:bg-sky-50 transition-colors flex items-center justify-center cursor-pointer"
+                              title="Ver más opciones"
+                            >
+                              <ChevronDown
+                                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                  menuAbiertoId === u.id ? 'rotate-180' : ''
                                 }`}
-                              >
-                                {activo ? 'Desactivar' : 'Activar'}
-                              </button>
+                              />
+                            </button>
+                          </div>
 
-                              {/* Ícono de Ojo Ocultar: Solo para cuentas desactivadas */}
-                              {!activo && (
+                          {/* Menú Desplegable con Opciones Apiladas */}
+                          {menuAbiertoId === u.id && (
+                            <div
+                              className={`absolute right-0 ${
+                                abrirHaciaArriba ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                              } w-44 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50 text-left divide-y divide-slate-100 animate-fade-in`}
+                            >
+                              {/* 1. Editar */}
+                              <div className="py-0.5">
                                 <button
-                                  onClick={() => handleOcultarCuenta(u)}
-                                  className="p-1.5 rounded-lg border border-slate-300 text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer bg-white shadow-xs"
-                                  title="Ocultar esta cuenta inactiva del panel principal"
+                                  type="button"
+                                  onClick={() => {
+                                    setMenuAbiertoId(null);
+                                    abrirModalEditar(u);
+                                  }}
+                                  className="w-full px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FAF6F0] hover:text-[#136A7B] flex items-center gap-2.5 transition-colors cursor-pointer"
                                 >
-                                  <EyeOff className="w-3.5 h-3.5 text-slate-500 hover:text-slate-800" />
+                                  <Pencil className="w-3.5 h-3.5 text-[#136A7B]" />
+                                  <span>Editar</span>
                                 </button>
+                              </div>
+
+                              {/* 2. Activar / Desactivar */}
+                              <div className="py-0.5">
+                                {esAdminPrincipal ? (
+                                  <div className="px-3.5 py-2 text-[11px] text-slate-400 italic flex items-center gap-2">
+                                    <span>🔒</span>
+                                    <span>Cuenta Titular</span>
+                                  </div>
+                                ) : activo ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setMenuAbiertoId(null);
+                                      handleToggleEstado(u);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                  >
+                                    <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                                    <span>Desactivar</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setMenuAbiertoId(null);
+                                      handleToggleEstado(u);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span>Activar</span>
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* 3. Ocultar */}
+                              {!esAdminPrincipal && (
+                                <div className="py-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setMenuAbiertoId(null);
+                                      handleOcultarCuenta(u);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                    title="Ocultar esta cuenta del panel principal"
+                                  >
+                                    <EyeOff className="w-3.5 h-3.5 text-slate-500" />
+                                    <span>Ocultar</span>
+                                  </button>
+                                </div>
                               )}
-                            </>
+                            </div>
                           )}
                         </div>
                       </td>
