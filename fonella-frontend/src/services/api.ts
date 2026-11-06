@@ -77,6 +77,44 @@ export const apiService = {
     return data;
   },
 
+  async registroAdministrador(datos: {
+    nombreCompleto: string;
+    email: string;
+    password: string;
+    registroRethus?: string;
+    fotoPerfilUrl?: string;
+  }): Promise<{ mensaje: string; email: string; nombreCompleto: string }> {
+    const res = await fetch(`${API_URL}/auth/registro-administrador`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(datos),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al registrar administradora');
+    }
+    return data;
+  },
+
+  async confirmarCuenta(token: string): Promise<{ mensaje: string; usuario: Usuario }> {
+    const res = await fetch(`${API_URL}/auth/confirmar-cuenta`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al confirmar cuenta');
+    }
+    return data;
+  },
+
   async getMe(): Promise<{ usuario: Usuario }> {
     const res = await fetch(`${API_URL}/auth/me`, {
       method: 'GET',

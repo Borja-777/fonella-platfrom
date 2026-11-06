@@ -15,6 +15,8 @@ import * as nodemailer from "nodemailer";
 import { Response } from "express";
 import { SolicitarRecuperacionDto } from "./dto/solicitar-recuperacion.dto";
 import { RestablecerPasswordDto } from "./dto/restablecer-password.dto";
+import { RegistroAdministradorDto } from "./dto/registro-administrador.dto";
+import { ConfirmarCuentaDto } from "./dto/confirmar-cuenta.dto";
 
 @Injectable()
 export class AuthService {
@@ -342,6 +344,218 @@ export class AuthService {
     return {
       mensaje:
         "Tu contraseña ha sido restablecida exitosamente. Ya puedes iniciar sesión con tu nueva clave.",
+    };
+  }
+
+  /**
+   * Genera plantilla HTML corporativa de correo para confirmación de cuenta administradora
+   */
+  private generarPlantillaConfirmacionHtml(nombre: string, enlace: string): string {
+    return `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #FAF6F0; border-radius: 20px; overflow: hidden; border: 1px solid #DF9B78; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #136A7B, #0AA896); padding: 30px 20px; text-align: center; color: white;">
+          <div style="background-color: #FAF6F0; display: inline-block; padding: 6px 20px; border-radius: 14px; margin-bottom: 12px; border: 1px solid rgba(223, 155, 120, 0.4);">
+            <span style="font-size: 22px; font-weight: 900; letter-spacing: 2px;">
+              <span style="color: #0AA896;">F</span><span style="color: #5A96C8;">O</span><span style="color: #0AA896;">N</span><span style="color: #DF9B78;">E</span><span style="color: #0AA896;">L</span><span style="color: #5A96C8;">L</span><span style="color: #0AA896;">A</span>
+            </span>
+          </div>
+          <h1 style="margin: 0; font-size: 20px; font-weight: 800;">Confirmación de Cuenta Administradora</h1>
+          <p style="margin: 4px 0 0 0; font-size: 12px; color: #EAF5F6; opacity: 0.9;">Centro Integral de Fonoaudiología</p>
+        </div>
+        <div style="padding: 32px 28px; background-color: #FFFFFF;">
+          <p style="font-size: 15px; color: #1E293B; margin-top: 0;">¡Bienvenida, <strong>${nombre}</strong>!</p>
+          <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+            Has iniciado el registro de tu cuenta como <strong>Especialista Titular y Administradora</strong> del <strong>Portal Clínico de FONELLA</strong>.
+          </p>
+          <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+            Para verificar tu dirección de correo electrónico y activar de forma segura tu acceso al sistema, por favor haz clic en el siguiente botón:
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${enlace}" target="_blank" style="background: linear-gradient(to right, #136A7B, #0AA896); color: #FFFFFF; font-weight: 800; font-size: 14px; text-decoration: none; padding: 14px 30px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 14px rgba(19, 106, 123, 0.3);">
+              Confirmar y Activar mi Cuenta
+            </a>
+          </div>
+          <div style="background-color: #FAF6F0; border-left: 4px solid #DF9B78; padding: 12px 16px; border-radius: 0 10px 10px 0; margin-top: 24px;">
+            <p style="margin: 0; font-size: 12px; color: #64748B; line-height: 1.5;">
+              🔒 <strong>Verificación de Seguridad:</strong> Este enlace estará disponible durante <strong>24 horas</strong>. Una vez confirmado tu correo, tu cuenta quedará activa de inmediato para iniciar sesión.
+            </p>
+          </div>
+        </div>
+        <div style="background-color: #F5ECDD; padding: 16px; text-align: center; font-size: 11px; color: #78716C; border-top: 1px solid #DF9B78;">
+          © 2026 FONELLA • Centro Integral de Fonoaudiología • Portal Clínico Seguro
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Envía el correo de confirmación de cuenta utilizando Nodemailer
+   */
+  private async enviarEmailConfirmacion(
+    destinatario: string,
+    nombre: string,
+    enlace: string,
+  ): Promise<void> {
+    const smtpUser = process.env.SMTP_USER?.trim();
+    const smtpPass = process.env.SMTP_PASS?.replace(/\s+/g, "").trim();
+
+    if (!smtpUser || !smtpPass) {
+      this.logger.error(
+        "❌ [Nodemailer] Credenciales SMTP no configuradas en el archivo .env (SMTP_USER, SMTP_PASS no definidos).",
+      );
+      throw new HttpException(
+        "El servicio de envío de correos no está configurado en el servidor (faltan credenciales SMTP en el archivo .env).",
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+
+    const host = process.env.SMTP_HOST || "smtp.gmail.com";
+    const port = parseInt(process.env.SMTP_PORT || "465", 10);
+    const secure = port === 465;
+
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+
+    const plantillaHtml = this.generarPlantillaConfirmacionHtml(nombre, enlace);
+
+    try {
+      await transporter.sendMail({
+        from:
+          process.env.SMTP_FROM ||
+          `"FONELLA Portal Clínico" <${smtpUser}>`,
+        to: destinatario,
+        subject: "Confirma tu cuenta de Administradora - FONELLA Portal Clínico",
+        html: plantillaHtml,
+      });
+
+      this.logger.log(
+        `✅ [Nodemailer] Correo de confirmación enviado con éxito a: ${destinatario}`,
+      );
+    } catch (error: any) {
+      this.logger.error(
+        `❌ [Nodemailer] Error al despachar correo de confirmación a ${destinatario}: ${error.message}`,
+        error.stack,
+      );
+      throw new HttpException(
+        `Error al enviar el correo de confirmación: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Registra una nueva cuenta de administradora clínica titular (FONOAUDIOLOGA)
+   * e inicia el flujo de confirmación por correo electrónico
+   */
+  async registroAdministrador(dto: RegistroAdministradorDto) {
+    const emailNormalizado = dto.email.toLowerCase().trim();
+
+    // 1. Verificar si ya existe un usuario con este correo
+    const usuarioExistente = await this.prisma.usuario.findUnique({
+      where: { email: emailNormalizado },
+    });
+
+    if (usuarioExistente) {
+      throw new BadRequestException(
+        "Ya existe una cuenta registrada con este correo electrónico. Si olvidaste tu contraseña, utiliza la opción de recuperación.",
+      );
+    }
+
+    // 2. Hashear la contraseña con bcrypt
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    // 3. Generar token de confirmación criptográfico
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiracion = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
+
+    // 4. Crear usuario en estado INACTIVO (pendiente de confirmar correo)
+    // Rol inmutable forzado en backend: FONOAUDIOLOGA (Especialista Titular)
+    const nuevoUsuario = await this.prisma.usuario.create({
+      data: {
+        nombreCompleto: dto.nombreCompleto.trim(),
+        email: emailNormalizado,
+        passwordHash,
+        rol: "FONOAUDIOLOGA",
+        registroRethus: dto.registroRethus?.trim() || null,
+        fotoPerfilUrl: dto.fotoPerfilUrl || null,
+        estado: "INACTIVO",
+        resetToken: token,
+        resetTokenExpira: expiracion,
+      },
+    });
+
+    // 5. Enlace seguro de confirmación
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const enlaceConfirmacion = `${frontendUrl}/confirmar-cuenta?token=${token}`;
+
+    // 6. Enviar correo de confirmación mediante Nodemailer
+    await this.enviarEmailConfirmacion(
+      nuevoUsuario.email,
+      nuevoUsuario.nombreCompleto,
+      enlaceConfirmacion,
+    );
+
+    this.logger.log(
+      `👩‍⚕️ Cuenta administradora registrada (pendiente confirmación): ${nuevoUsuario.email}`,
+    );
+
+    return {
+      mensaje: `Hemos enviado un correo de confirmación a ${nuevoUsuario.email}. Por favor verifica tu bandeja de entrada o spam para activar tu cuenta.`,
+      email: nuevoUsuario.email,
+      nombreCompleto: nuevoUsuario.nombreCompleto,
+    };
+  }
+
+  /**
+   * Confirma y activa la cuenta del usuario validando el token enviado por correo
+   */
+  async confirmarCuenta(dto: ConfirmarCuentaDto) {
+    const ahora = new Date();
+
+    const usuario = await this.prisma.usuario.findFirst({
+      where: {
+        resetToken: dto.token,
+        resetTokenExpira: {
+          gt: ahora,
+        },
+      },
+    });
+
+    if (!usuario) {
+      throw new BadRequestException(
+        "El enlace de confirmación es inválido o ha expirado. Por favor solicita un nuevo registro o contacta a soporte.",
+      );
+    }
+
+    // Activar usuario y limpiar token
+    const usuarioActivo = await this.prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        estado: "ACTIVO",
+        resetToken: null,
+        resetTokenExpira: null,
+      },
+    });
+
+    this.logger.log(
+      `🎉 Cuenta activada exitosamente tras confirmar correo: ${usuarioActivo.email}`,
+    );
+
+    return {
+      mensaje: "¡Tu cuenta de Administradora ha sido confirmada y activada con éxito!",
+      usuario: {
+        id: usuarioActivo.id,
+        email: usuarioActivo.email,
+        nombreCompleto: usuarioActivo.nombreCompleto,
+        rol: usuarioActivo.rol,
+      },
     };
   }
 }
