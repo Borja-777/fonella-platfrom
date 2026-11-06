@@ -197,8 +197,8 @@ export class AuthService {
     nombre: string,
     enlace: string,
   ): Promise<void> {
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPass = process.env.SMTP_PASS;
+    const smtpUser = process.env.SMTP_USER?.trim();
+    const smtpPass = process.env.SMTP_PASS?.replace(/\s+/g, "").trim();
 
     if (!smtpUser || !smtpPass) {
       this.logger.error(
