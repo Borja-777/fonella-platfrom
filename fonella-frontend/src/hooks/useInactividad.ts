@@ -22,6 +22,21 @@ export function useInactividad({
 }: OpcionesInactividad) {
   const [mostrarModalAdvertencia, setMostrarModalAdvertencia] = useState(false);
   const [segundosRestantes, setSegundosRestantes] = useState<number>(0);
+  const [esModoPrueba, setEsModoPrueba] = useState(false);
+
+  // Detección de parámetro de prueba rápida (?testInactividad=true)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('testInactividad') === 'true') {
+        setEsModoPrueba(true);
+      }
+    }
+  }, []);
+
+  // En modo prueba: 15s para advertencia, 30s para cierre definitivo
+  const tiempoAdvEfectivo = esModoPrueba ? 15 * 1000 : tiempoAdvertenciaMs;
+  const tiempoCierreEfectivo = esModoPrueba ? 30 * 1000 : tiempoCierreMs;
 
   const timerAdvertenciaRef = useRef<NodeJS.Timeout | null>(null);
   const timerCierreRef = useRef<NodeJS.Timeout | null>(null);
@@ -41,11 +56,11 @@ export function useInactividad({
     limpiarTemporizadores();
     setMostrarModalAdvertencia(false);
 
-    // 1. Temporizador de Advertencia Preventiva (ej. a los 25 minutos)
+    // 1. Temporizador de Advertencia Preventiva (15s en test, 25m en prod)
     timerAdvertenciaRef.current = setTimeout(() => {
       setMostrarModalAdvertencia(true);
 
-      const msRestantes = Math.max(0, tiempoCierreMs - tiempoAdvertenciaMs);
+      const msRestantes = Math.max(0, tiempoCierreEfectivo - tiempoAdvEfectivo);
       let seg = Math.round(msRestantes / 1000);
       setSegundosRestantes(seg);
 
@@ -59,15 +74,15 @@ export function useInactividad({
           return prev - 1;
         });
       }, 1000);
-    }, tiempoAdvertenciaMs);
+    }, tiempoAdvEfectivo);
 
-    // 2. Temporizador de Cierre Definitivo (ej. a los 30 minutos)
+    // 2. Temporizador de Cierre Definitivo (30s en test, 30m en prod)
     timerCierreRef.current = setTimeout(() => {
       limpiarTemporizadores();
       setMostrarModalAdvertencia(false);
       onCierre();
-    }, tiempoCierreMs);
-  }, [activo, tiempoAdvertenciaMs, tiempoCierreMs, onCierre, limpiarTemporizadores]);
+    }, tiempoCierreEfectivo);
+  }, [activo, tiempoAdvEfectivo, tiempoCierreEfectivo, onCierre, limpiarTemporizadores]);
 
   // Acción explícita del usuario para extender su sesión activa
   const extenderSesion = useCallback(() => {
@@ -107,5 +122,6 @@ export function useInactividad({
     segundosRestantes,
     extenderSesion,
     reiniciarInactividad,
+    esModoPrueba,
   };
 }
