@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Mail,
@@ -19,6 +19,7 @@ import {
   Award,
   Check,
   ShieldCheck,
+  ShieldAlert,
   UserPlus,
 } from 'lucide-react';
 import { apiService, RecuperacionResponse } from '@/services/api';
@@ -31,6 +32,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
+  const [porInactividad, setPorInactividad] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setPorInactividad(params.get('inactividad') === 'true');
+    }
+  }, []);
 
   // Estados del Modal de Recuperación de Contraseña
   const [modalRecuperar, setModalRecuperar] = useState(false);
@@ -265,6 +274,19 @@ export default function LoginPage() {
 
         {/* Formulario Limpio con Iconos */}
         <form onSubmit={handleSubmit} className="p-7 space-y-4">
+          {/* Alerta de Cierre por Inactividad (HU-04) */}
+          {porInactividad && (
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 flex items-start gap-2.5 text-xs animate-fade-in shadow-xs">
+              <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-amber-950">Sesión cerrada por inactividad</p>
+                <p className="mt-0.5 text-amber-800 leading-relaxed">
+                  Tu sesión se cerró automáticamente tras 30 minutos sin actividad para proteger los expedientes clínicos de los pacientes. Por favor ingresa nuevamente.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Alertas de Error / Bloqueo */}
           {errorMsg && (
             <div

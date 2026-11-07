@@ -11,8 +11,10 @@ import {
   LogOut,
   Clock,
   Stethoscope,
+  ShieldAlert,
 } from 'lucide-react';
 import { apiService, Usuario } from '@/services/api';
+import { useInactividad } from '@/hooks/useInactividad';
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -35,15 +37,24 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     cargarSesion();
   }, [router]);
 
-  const handleLogout = async () => {
+  const handleLogout = async (porInactividad = false) => {
     try {
       await apiService.logout();
       document.cookie = 'fonella_rol=; path=/; max-age=0';
-      router.push('/login');
+      router.push(porInactividad ? '/login?inactividad=true' : '/login');
     } catch {
-      router.push('/login');
+      router.push(porInactividad ? '/login?inactividad=true' : '/login');
     }
   };
+  // Detector global de inactividad de 30 minutos (HU-04)
+  const {
+    mostrarModalAdvertencia,
+    segundosRestantes,
+    extenderSesion,
+  } = useInactividad({
+    onCierre: () => handleLogout(true),
+    activo: !loading && !!usuario,
+  });
 
   if (loading) {
     return (
@@ -111,8 +122,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               <Link
                 href="/personal"
                 className={`px-3.5 py-3 rounded-2xl flex items-center justify-between transition-all ${pathname.startsWith('/personal')
-                    ? 'bg-white text-[#0E5666] shadow-lg border border-white font-extrabold'
-                    : 'text-white hover:bg-white/15'
+                  ? 'bg-white text-[#0E5666] shadow-lg border border-white font-extrabold'
+                  : 'text-white hover:bg-white/15'
                   }`}
               >
                 <span className="flex items-center gap-2.5">
@@ -198,10 +209,61 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               </button>
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => handleLogout(false)}
                 className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white text-xs font-bold transition-all shadow-md hover:shadow-lg cursor-pointer"
               >
                 Sí, Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Advertencia Preventiva de Inactividad (HU-04) */}
+      {mostrarModalAdvertencia && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 text-center space-y-4 border border-amber-200">
+            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto text-amber-600 shadow-inner">
+              <ShieldAlert className="w-8 h-8 animate-pulse" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-[11px] font-bold uppercase tracking-wider">
+                Seguridad Clínica Fonella
+              </span>
+              <h3 className="text-lg font-black text-gray-900">
+                ¿Sigues ahí? Tu sesión está por expirar
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                Por normatividad de confidencialidad y protección de historias clínicas de los pacientes, el sistema cerrará tu sesión automáticamente por inactividad.
+              </p>
+            </div>
+
+            {/* Contador regresivo grande */}
+            <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 flex flex-col items-center justify-center">
+              <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">
+                Tiempo restante para cierre seguro
+              </span>
+              <span className="text-3xl font-black text-amber-600 font-mono tracking-widest mt-1">
+                {Math.floor(segundosRestantes / 60).toString().padStart(2, '0')}:
+                {(segundosRestantes % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => handleLogout(false)}
+                className="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-100 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cerrar ahora
+              </button>
+              <button
+                type="button"
+                onClick={extenderSesion}
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#0AA896] to-[#136A7B] hover:from-[#099787] hover:to-[#0f5462] text-white text-xs font-black transition-all shadow-md hover:shadow-lg cursor-pointer tracking-wide"
+              >
+                Seguir trabajando
               </button>
             </div>
           </div>
