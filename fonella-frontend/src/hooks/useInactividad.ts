@@ -6,23 +6,23 @@ interface OpcionesInactividad {
   tiempoAdvertenciaMs?: number; // Tiempo hasta mostrar advertencia (por defecto: 25 min)
   tiempoCierreMs?: number;      // Tiempo hasta cierre definitivo (por defecto: 30 min)
   onCierre: () => void;         // Callback a ejecutar al agotar tiempo
-  activo?: boolean;             // Habilitar o pausar
+  activo?: boolean;             // Habilitar o pausar el hook
 }
 
 /**
  * Hook HU-04: Cierre Automático de Sesión por Inactividad (Seguridad Clínica)
- * Implementado con reloj de pared (Date.now()) y latido heartbeat para inmunidad contra
- * re-renders de React, throttling de navegador y pérdida de referencias en hooks.
+ * Monitorea la actividad global del usuario (mouse, teclado, touch, scroll)
+ * y emite una advertencia preventiva a los 25 minutos antes del cierre forzoso a los 30 minutos.
+ * Implementado con reloj de pared (Date.now()) y latido heartbeat inmune a re-renders.
  */
 export function useInactividad({
-  tiempoAdvertenciaMs = 25 * 60 * 1000,
-  tiempoCierreMs = 30 * 60 * 1000,
+  tiempoAdvertenciaMs = 25 * 60 * 1000, // 25 minutos
+  tiempoCierreMs = 30 * 60 * 1000,      // 30 minutos
   onCierre,
   activo = true,
 }: OpcionesInactividad) {
   const [mostrarModalAdvertencia, setMostrarModalAdvertencia] = useState(false);
   const [segundosRestantes, setSegundosRestantes] = useState<number>(0);
-  const [esModoPrueba, setEsModoPrueba] = useState(false);
 
   // Referencias mutables para evitar desconexión por re-renders
   const ultimaActividadRef = useRef<number>(Date.now());
@@ -33,20 +33,6 @@ export function useInactividad({
   advertenciaAbiertaRef.current = mostrarModalAdvertencia;
 
   const sesionCerradaRef = useRef(false);
-
-  // Detectar parámetro ?testInactividad=true de inmediato
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('testInactividad') === 'true') {
-        setEsModoPrueba(true);
-      }
-    }
-  }, []);
-
-  // Tiempos efectivos: 15s/30s si es prueba, 25m/30m si es producción clínica
-  const tiempoAdvEfectivo = esModoPrueba ? 15 * 1000 : tiempoAdvertenciaMs;
-  const tiempoCierreEfectivo = esModoPrueba ? 30 * 1000 : tiempoCierreMs;
 
   const extenderSesion = useCallback(() => {
     ultimaActividadRef.current = Date.now();
@@ -74,7 +60,7 @@ export function useInactividad({
     };
   }, [activo]);
 
-  // 2. Latido Heartbeat cada 500ms basado en Date.now()
+  // 2. Latido Heartbeat cada 1000ms basado en Date.now()
   useEffect(() => {
     if (!activo) return;
 
@@ -86,8 +72,8 @@ export function useInactividad({
 
       const tiempoInactivo = Date.now() - ultimaActividadRef.current;
 
-      // Caso A: Expiró el tiempo total (30s en prueba / 30m en producción)
-      if (tiempoInactivo >= tiempoCierreEfectivo) {
+      // Caso A: Expiró el tiempo total (30 minutos)
+      if (tiempoInactivo >= tiempoCierreMs) {
         sesionCerradaRef.current = true;
         setMostrarModalAdvertencia(false);
         advertenciaAbiertaRef.current = false;
@@ -96,9 +82,9 @@ export function useInactividad({
         return;
       }
 
-      // Caso B: Superó el tiempo de advertencia (15s en prueba / 25m en producción)
-      if (tiempoInactivo >= tiempoAdvEfectivo) {
-        const msRestantes = Math.max(0, tiempoCierreEfectivo - tiempoInactivo);
+      // Caso B: Superó el tiempo de advertencia (25 minutos)
+      if (tiempoInactivo >= tiempoAdvertenciaMs) {
+        const msRestantes = Math.max(0, tiempoCierreMs - tiempoInactivo);
         const seg = Math.ceil(msRestantes / 1000);
         setSegundosRestantes(seg);
         setMostrarModalAdvertencia(true);
@@ -110,15 +96,14 @@ export function useInactividad({
           advertenciaAbiertaRef.current = false;
         }
       }
-    }, 500);
+    }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [activo, tiempoAdvEfectivo, tiempoCierreEfectivo]);
+  }, [activo, tiempoAdvertenciaMs, tiempoCierreMs]);
 
   return {
     mostrarModalAdvertencia,
     segundosRestantes,
     extenderSesion,
-    esModoPrueba,
   };
 }

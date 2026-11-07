@@ -51,7 +51,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     mostrarModalAdvertencia,
     segundosRestantes,
     extenderSesion,
-    esModoPrueba,
   } = useInactividad({
     onCierre: () => handleLogout(true),
     activo: !loading && !!usuario,
@@ -172,7 +171,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center justify-center gap-2 text-[11px] font-bold text-gray-900 mb-2.5">
             <Clock className="w-3.5 h-3.5 text-[#0AA896] shrink-0 animate-pulse" />
             <span className="text-gray-900 font-extrabold tracking-tight">
-              {esModoPrueba ? 'Prueba Rápida: Cierre en 30s' : 'Cierre automático por inactividad: 30m'}
+              Cierre automático por inactividad: 30m
             </span>
           </div>
           <button
@@ -234,11 +233,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-[11px] font-bold uppercase tracking-wider">
                 Seguridad Clínica Fonella
               </span>
-              {esModoPrueba && (
-                <div className="inline-block ml-1.5 px-2.5 py-0.5 bg-rose-100 text-rose-800 border border-rose-300 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
-                  Modo de Prueba (15s / 30s)
-                </div>
-              )}
               <h3 className="text-lg font-black text-gray-900">
                 ¿Sigues ahí? Tu sesión está por expirar
               </h3>
