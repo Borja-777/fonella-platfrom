@@ -6,26 +6,29 @@ import {
   Clock,
   User,
   Phone,
+  Mail,
   CheckCircle2,
   AlertCircle,
   ShieldAlert,
   Info,
   Search,
-  Filter,
   Plus,
   Stethoscope,
   X,
-  MessageCircle,
+  Baby,
+  UserCheck,
 } from 'lucide-react';
 import { apiService, Usuario } from '@/services/api';
 
 interface CitaOperativa {
   id: string;
   hora: string;
+  tipo: 'MENOR' | 'ADULTO';
   pacienteNombre: string;
   pacienteEdad: string;
-  acudienteNombre: string;
-  acudienteTelefono: string;
+  contactoNombre: string;
+  contactoEmail: string;
+  contactoTelefono: string;
   servicio: string;
   estado: 'CONFIRMADA' | 'EN_ESPERA' | 'COMPLETADA' | 'PENDIENTE';
 }
@@ -35,57 +38,78 @@ export default function AgendaPage() {
   const [alertaForbidden, setAlertaForbidden] = useState(false);
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
   const [modalNuevaCita, setModalNuevaCita] = useState(false);
+  const [mensajeExito, setMensajeExito] = useState<string | null>(null);
 
-  // Lista simulada operativa de citas de hoy (HU-03: Solo datos de contacto y recepción, sin historias clínicas)
+  // Estados del Formulario del Modal
+  const [tipoPaciente, setTipoPaciente] = useState<'MENOR' | 'ADULTO'>('MENOR');
+  const [formNombre, setFormNombre] = useState('');
+  const [formEdad, setFormEdad] = useState('');
+  const [formHora, setFormHora] = useState('14:00');
+  const [formAcudiente, setFormAcudiente] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formTelefono, setFormTelefono] = useState('');
+  const [formServicio, setFormServicio] = useState('Valoración Fonoaudiológica Inicial');
+
+  // Lista de citas operativas (HU-03: Solo datos de contacto y recepción, sin historias clínicas)
   const [citas, setCitas] = useState<CitaOperativa[]>([
     {
       id: 'c1',
       hora: '08:00 AM',
+      tipo: 'MENOR',
       pacienteNombre: 'Mateo Gómez Pardo',
       pacienteEdad: '5 años',
-      acudienteNombre: 'Camila Pardo (Madre)',
-      acudienteTelefono: '315 889 4421',
+      contactoNombre: 'Camila Pardo (Madre)',
+      contactoEmail: 'camila.pardo@gmail.com',
+      contactoTelefono: '315 889 4421',
       servicio: 'Terapia del Lenguaje y Pronunciación',
       estado: 'COMPLETADA',
     },
     {
       id: 'c2',
       hora: '09:00 AM',
+      tipo: 'MENOR',
       pacienteNombre: 'Luciana Vélez Restrepo',
       pacienteEdad: '4 años',
-      acudienteNombre: 'Andrés Vélez (Padre)',
-      acudienteTelefono: '310 445 9988',
+      contactoNombre: 'Andrés Vélez (Padre)',
+      contactoEmail: 'andres.velez@hotmail.com',
+      contactoTelefono: '310 445 9988',
       servicio: 'Valoración Fonoaudiológica Inicial',
       estado: 'COMPLETADA',
     },
     {
       id: 'c3',
       hora: '10:30 AM',
-      pacienteNombre: 'Samuel David Rodríguez',
-      pacienteEdad: '6 años',
-      acudienteNombre: 'Sandra Milena Torres (Tía)',
-      acudienteTelefono: '320 771 2345',
-      servicio: 'Estimulación del Habla y Deglución',
+      tipo: 'ADULTO',
+      pacienteNombre: 'Carlos Eduardo Mendoza',
+      pacienteEdad: '42 años',
+      contactoNombre: 'Paciente Directo (Adulto)',
+      contactoEmail: 'carlos.mendoza@empresa.com',
+      contactoTelefono: '301 552 1100',
+      servicio: 'Terapia Vocal y Disfonía del Profesional',
       estado: 'EN_ESPERA',
     },
     {
       id: 'c4',
       hora: '11:30 AM',
+      tipo: 'MENOR',
       pacienteNombre: 'Valentina Morales Cruz',
       pacienteEdad: '3 años',
-      acudienteNombre: 'Diana Cruz (Madre)',
-      acudienteTelefono: '318 662 1090',
+      contactoNombre: 'Diana Cruz (Madre)',
+      contactoEmail: 'diana.cruz91@gmail.com',
+      contactoTelefono: '318 662 1090',
       servicio: 'Terapia Miofuncional Orofacial',
       estado: 'CONFIRMADA',
     },
     {
       id: 'c5',
       hora: '02:00 PM',
-      pacienteNombre: 'Joaquín Silva Henao',
-      pacienteEdad: '7 años',
-      acudienteNombre: 'Rodrigo Silva (Padre)',
-      acudienteTelefono: '312 901 3456',
-      servicio: 'Control y Seguimiento Fonoaudiológico',
+      tipo: 'ADULTO',
+      pacienteNombre: 'Patricia Elena Duarte',
+      pacienteEdad: '58 años',
+      contactoNombre: 'Paciente Directo (Adulto)',
+      contactoEmail: 'patricia.duarte@gmail.com',
+      contactoTelefono: '312 901 3456',
+      servicio: 'Rehabilitación de la Deglución / Disfagia',
       estado: 'CONFIRMADA',
     },
   ]);
@@ -113,14 +137,51 @@ export default function AgendaPage() {
 
   const citasFiltradas = citas.filter((c) =>
     c.pacienteNombre.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
-    c.acudienteNombre.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
-    c.acudienteTelefono.includes(filtroBusqueda)
+    c.contactoNombre.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
+    c.contactoEmail.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
+    c.contactoTelefono.includes(filtroBusqueda)
   );
 
   const cambiarEstadoCita = (id: string, nuevoEstado: CitaOperativa['estado']) => {
     setCitas((prev) =>
       prev.map((c) => (c.id === id ? { ...c, estado: nuevoEstado } : c))
     );
+  };
+
+  const handleGuardarCita = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formNombre.trim() || !formEmail.trim() || !formTelefono.trim()) {
+      alert('Por favor completa los campos requeridos: Nombre, Correo Electrónico y Teléfono.');
+      return;
+    }
+
+    const nuevaCita: CitaOperativa = {
+      id: 'c_' + Date.now(),
+      hora: formHora,
+      tipo: tipoPaciente,
+      pacienteNombre: formNombre,
+      pacienteEdad: formEdad ? `${formEdad} años` : (tipoPaciente === 'MENOR' ? '5 años' : '32 años'),
+      contactoNombre: tipoPaciente === 'MENOR' ? (formAcudiente || 'Acudiente Titular') : 'Paciente Directo (Adulto)',
+      contactoEmail: formEmail,
+      contactoTelefono: formTelefono,
+      servicio: formServicio,
+      estado: 'CONFIRMADA',
+    };
+
+    setCitas([nuevaCita, ...citas]);
+    setModalNuevaCita(false);
+
+    // Mensaje de éxito temporal
+    setMensajeExito(`Cita para ${formNombre} (${tipoPaciente === 'MENOR' ? 'Menor' : 'Adulto'}) agendada exitosamente.`);
+    setTimeout(() => setMensajeExito(null), 5000);
+
+    // Limpiar formulario
+    setFormNombre('');
+    setFormEdad('');
+    setFormAcudiente('');
+    setFormEmail('');
+    setFormTelefono('');
   };
 
   const esAsistente = usuario?.rol === 'ASISTENTE';
@@ -157,6 +218,19 @@ export default function AgendaPage() {
             title="Cerrar notificación"
           >
             <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Banner de Éxito al Agendar Cita */}
+      {mensajeExito && (
+        <div className="px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-lg flex items-center justify-between text-xs sm:text-sm animate-fade-in border border-emerald-400/40">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-5 h-5 text-emerald-200" />
+            <span className="font-bold">{mensajeExito}</span>
+          </div>
+          <button onClick={() => setMensajeExito(null)} className="p-1 hover:bg-white/20 rounded-lg cursor-pointer">
+            <X className="w-4 h-4 text-white" />
           </button>
         </div>
       )}
@@ -212,7 +286,7 @@ export default function AgendaPage() {
           <strong className="font-extrabold text-[#0E5666]">Garantía de Confidencialidad Médica (HU-03):</strong>
           <span className="ml-1 opacity-90">
             Esta pantalla opera bajo el principio de privilegio mínimo de seguridad (RBAC). El personal asistente 
-            accede exclusivamente a la información de coordinación y acudientes. Los expedientes de anamnesis, 
+            accede exclusivamente a la información de coordinación, correos y teléfonos. Los expedientes de anamnesis, 
             diagnósticos y notas clínicas privadas permanecen estrictamente resguardados para la fonoaudióloga.
           </span>
         </div>
@@ -222,17 +296,17 @@ export default function AgendaPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-[#136A7B]/10 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#0AA896] font-black text-sm">
-            5
+            {citas.length}
           </div>
           <div>
             <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Citas Hoy</div>
-            <div className="text-sm font-black text-[#094A57]">5 Pacientes</div>
+            <div className="text-sm font-black text-[#094A57]">{citas.length} Pacientes</div>
           </div>
         </div>
 
         <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-[#136A7B]/10 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-black text-sm">
-            2
+            {citas.filter((c) => c.estado === 'COMPLETADA').length}
           </div>
           <div>
             <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Atendidas</div>
@@ -242,21 +316,21 @@ export default function AgendaPage() {
 
         <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-[#136A7B]/10 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-black text-sm">
-            1
+            {citas.filter((c) => c.estado === 'EN_ESPERA').length}
           </div>
           <div>
             <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">En Sala</div>
-            <div className="text-sm font-black text-amber-700">1 Esperando</div>
+            <div className="text-sm font-black text-amber-700">En Espera</div>
           </div>
         </div>
 
         <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-[#136A7B]/10 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 font-black text-sm">
-            2
+            {citas.filter((c) => c.estado === 'CONFIRMADA').length}
           </div>
           <div>
             <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Por Llegar</div>
-            <div className="text-sm font-black text-sky-700">En la tarde</div>
+            <div className="text-sm font-black text-sky-700">Confirmadas</div>
           </div>
         </div>
       </div>
@@ -269,7 +343,7 @@ export default function AgendaPage() {
             <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Buscar por paciente, acudiente o teléfono..."
+              placeholder="Buscar por paciente, contacto, correo o teléfono..."
               value={filtroBusqueda}
               onChange={(e) => setFiltroBusqueda(e.target.value)}
               className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#0AA896] transition-all bg-[#FAF6F0]/50"
@@ -277,18 +351,18 @@ export default function AgendaPage() {
           </div>
 
           <div className="text-xs font-bold text-gray-500">
-            Mostrando <strong className="text-[#094A57]">{citasFiltradas.length}</strong> citas para hoy
+            Mostrando <strong className="text-[#094A57]">{citasFiltradas.length}</strong> de {citas.length} citas
           </div>
         </div>
 
         {/* Listado / Tabla */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[750px]">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-gradient-to-r from-[#DF9B78] to-[#D68B66] text-white text-[11px] font-black uppercase tracking-wider">
                 <th className="py-3 px-4">Hora</th>
-                <th className="py-3 px-4 border-l border-white/20">Paciente (Edad)</th>
-                <th className="py-3 px-4 border-l border-white/20">Acudiente y Contacto</th>
+                <th className="py-3 px-4 border-l border-white/20">Paciente y Modalidad</th>
+                <th className="py-3 px-4 border-l border-white/20">Contacto / Acudiente</th>
                 <th className="py-3 px-4 border-l border-white/20">Servicio Solicitado</th>
                 <th className="py-3 px-4 border-l border-white/20">Estado Sala</th>
                 <th className="py-3 px-4 border-l border-white/20 text-center">Acciones Recepción</th>
@@ -304,18 +378,37 @@ export default function AgendaPage() {
                     </div>
                   </td>
                   <td className="py-3.5 px-4 font-bold text-gray-900">
-                    <div>{c.pacienteNombre}</div>
+                    <div className="flex items-center gap-2">
+                      <span>{c.pacienteNombre}</span>
+                      {c.tipo === 'MENOR' ? (
+                        <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[9px] font-extrabold uppercase border border-amber-200 flex items-center gap-0.5">
+                          <Baby className="w-2.5 h-2.5" />
+                          <span>Pediátrico</span>
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-900 text-[9px] font-extrabold uppercase border border-sky-200 flex items-center gap-0.5">
+                          <UserCheck className="w-2.5 h-2.5" />
+                          <span>Adulto</span>
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[10px] text-gray-400 font-medium">({c.pacienteEdad})</span>
                   </td>
                   <td className="py-3.5 px-4 text-gray-700">
-                    <div className="font-semibold text-gray-900">{c.acudienteNombre}</div>
-                    <div className="text-[11px] text-teal-700 flex items-center gap-1 mt-0.5">
-                      <Phone className="w-3 h-3 text-[#0AA896]" />
-                      <span>{c.acudienteTelefono}</span>
+                    <div className="font-semibold text-gray-900">{c.contactoNombre}</div>
+                    <div className="flex flex-col gap-0.5 mt-1">
+                      <div className="text-[11px] text-gray-600 flex items-center gap-1">
+                        <Mail className="w-3 h-3 text-[#136A7B] shrink-0" />
+                        <span className="truncate">{c.contactoEmail}</span>
+                      </div>
+                      <div className="text-[11px] text-teal-700 flex items-center gap-1">
+                        <Phone className="w-3 h-3 text-[#0AA896] shrink-0" />
+                        <span>{c.contactoTelefono}</span>
+                      </div>
                     </div>
                   </td>
-                  <td className="py-3.5 px-4 text-gray-700 max-w-xs truncate">
-                    <span className="px-2.5 py-1 rounded-lg bg-[#FAF6F0] border border-[#136A7B]/10 text-[#0E5666] text-[11px] font-medium">
+                  <td className="py-3.5 px-4 text-gray-700 max-w-xs">
+                    <span className="inline-block px-2.5 py-1 rounded-lg bg-[#FAF6F0] border border-[#136A7B]/10 text-[#0E5666] text-[11px] font-medium">
                       {c.servicio}
                     </span>
                   </td>
@@ -368,10 +461,10 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      {/* 6. Modal de Registro Rápido de Cita en Recepción */}
+      {/* 6. Modal de Registro Rápido de Cita en Recepción (Con Selector Menor / Adulto y Correo Electrónico) */}
       {modalNuevaCita && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-[#136A7B]/10">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-[#136A7B]/10 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-[#0AA896]" />
@@ -387,87 +480,175 @@ export default function AgendaPage() {
               </button>
             </div>
 
-            <div className="p-3 rounded-xl bg-teal-50/80 border border-teal-200 text-xs text-[#094A57]">
-              Esta función operativa permite a la recepción reservar la franja de 45 minutos con la Dra. Bárbara Ccucho sin acceder a la historia clínica del paciente.
+            {/* Selector de Modalidad: Menor de Edad vs Adulto */}
+            <div>
+              <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wide mb-1.5">
+                Tipo de Paciente
+              </label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100/80 rounded-2xl border border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setTipoPaciente('MENOR')}
+                  className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    tipoPaciente === 'MENOR'
+                      ? 'bg-white text-[#094A57] shadow-sm border border-gray-200/80'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Baby className="w-4 h-4 text-amber-600" />
+                  <span>Menor (Pediátrico)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTipoPaciente('ADULTO')}
+                  className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    tipoPaciente === 'ADULTO'
+                      ? 'bg-white text-[#094A57] shadow-sm border border-gray-200/80'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4 text-sky-600" />
+                  <span>Paciente Adulto</span>
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <form onSubmit={handleGuardarCita} className="space-y-3 text-xs">
+              {/* Campo Nombre del Paciente */}
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Nombre Completo del Paciente (Niño/Niña)</label>
+                <label className="block font-bold text-gray-700 mb-1">
+                  {tipoPaciente === 'MENOR'
+                    ? 'Nombre Completo del Niño/Niña'
+                    : 'Nombre Completo del Paciente Adulto'}
+                </label>
                 <input
                   type="text"
-                  placeholder="Ej. Lucas Daniel Morales"
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896]"
+                  required
+                  value={formNombre}
+                  onChange={(e) => setFormNombre(e.target.value)}
+                  placeholder={tipoPaciente === 'MENOR' ? 'Ej. Lucas Daniel Morales' : 'Ej. Mariana Gómez Rivas'}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896] bg-[#FAF6F0]/40"
                 />
               </div>
 
+              {/* Edad y Hora Deseada */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block font-bold text-gray-700 mb-1">Edad</label>
                   <input
                     type="text"
-                    placeholder="Ej. 4 años"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896]"
+                    value={formEdad}
+                    onChange={(e) => setFormEdad(e.target.value)}
+                    placeholder={tipoPaciente === 'MENOR' ? 'Ej. 5' : 'Ej. 34'}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896] bg-[#FAF6F0]/40"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Hora Deseada</label>
+                  <label className="block font-bold text-gray-700 mb-1">Hora del Turno</label>
                   <input
                     type="time"
-                    defaultValue="14:00"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896]"
+                    value={formHora}
+                    onChange={(e) => setFormHora(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896] bg-[#FAF6F0]/40"
                   />
                 </div>
               </div>
 
+              {/* Campos condicionales para Menor de Edad */}
+              {tipoPaciente === 'MENOR' && (
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    Nombre del Acudiente / Familiar Responsable
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formAcudiente}
+                    onChange={(e) => setFormAcudiente(e.target.value)}
+                    placeholder="Ej. Martha Morales (Madre)"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896] bg-[#FAF6F0]/40"
+                  />
+                </div>
+              )}
+
+              {/* Correo Electrónico (Acudiente o Paciente) */}
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Nombre del Acudiente / Familiar</label>
-                <input
-                  type="text"
-                  placeholder="Ej. Martha Morales (Madre)"
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896]"
-                />
+                <label className="block font-bold text-gray-700 mb-1">
+                  {tipoPaciente === 'MENOR'
+                    ? 'Correo Electrónico del Acudiente'
+                    : 'Correo Electrónico del Paciente'}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <Mail className="w-3.5 h-3.5" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                    placeholder="correo@ejemplo.com"
+                    className="w-full pl-8 pr-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896] bg-[#FAF6F0]/40"
+                  />
+                </div>
               </div>
 
+              {/* Teléfono Móvil / WhatsApp */}
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Teléfono Móvil (WhatsApp)</label>
-                <input
-                  type="tel"
-                  placeholder="Ej. 315 778 9900"
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896]"
-                />
+                <label className="block font-bold text-gray-700 mb-1">
+                  {tipoPaciente === 'MENOR'
+                    ? 'Teléfono Móvil del Acudiente (WhatsApp)'
+                    : 'Teléfono Móvil del Paciente (WhatsApp)'}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <Phone className="w-3.5 h-3.5" />
+                  </div>
+                  <input
+                    type="tel"
+                    required
+                    value={formTelefono}
+                    onChange={(e) => setFormTelefono(e.target.value)}
+                    placeholder="Ej. 315 778 9900"
+                    className="w-full pl-8 pr-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896] bg-[#FAF6F0]/40"
+                  />
+                </div>
               </div>
 
+              {/* Servicio Solicitado */}
               <div>
                 <label className="block font-bold text-gray-700 mb-1">Servicio Solicitado</label>
-                <select className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896] bg-white">
-                  <option>Valoración Fonoaudiológica Inicial</option>
-                  <option>Terapia del Habla y Lenguaje</option>
-                  <option>Terapia Miofuncional Orofacial</option>
-                  <option>Estimulación Temprana</option>
+                <select
+                  value={formServicio}
+                  onChange={(e) => setFormServicio(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0AA896] bg-white cursor-pointer"
+                >
+                  <option value="Valoración Fonoaudiológica Inicial">Valoración Fonoaudiológica Inicial</option>
+                  <option value="Terapia del Habla y Lenguaje">Terapia del Habla y Lenguaje</option>
+                  <option value="Terapia Miofuncional Orofacial">Terapia Miofuncional Orofacial</option>
+                  <option value="Terapia Vocal y Disfonía">Terapia Vocal y Disfonía</option>
+                  <option value="Rehabilitación de la Deglución">Rehabilitación de la Deglución</option>
+                  <option value="Estimulación Temprana">Estimulación Temprana</option>
                 </select>
               </div>
-            </div>
 
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setModalNuevaCita(false)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold text-xs cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setModalNuevaCita(false);
-                  alert('Cita guardada en el turno de recepción exitosamente.');
-                }}
-                className="flex-1 py-2.5 rounded-xl bg-[#0AA896] hover:bg-[#136A7B] text-white font-bold text-xs shadow-md transition-all cursor-pointer"
-              >
-                Guardar Cita
-              </button>
-            </div>
+              <div className="flex items-center gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setModalNuevaCita(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold text-xs cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-[#0AA896] hover:bg-[#136A7B] text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+                >
+                  Guardar Cita
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
