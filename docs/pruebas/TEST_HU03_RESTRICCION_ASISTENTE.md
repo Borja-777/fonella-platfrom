@@ -1,9 +1,9 @@
 # INFORME DE PRUEBA Y AUDITORÍA DE SEGURIDAD (HU-03)
-## Acceso Operativo con Permisos Restringidos (Rol Asistente / Secretaria)
+## Acceso Operativo de Secretaria (Seguridad Clínica y RBAC)
 **Equipo InnovaCode:** Jhoan Borja (Scrum Master / Arquitecto), Diego Barrera (Product Owner), Sergio Rodríguez (Desarrollador)  
 **Fecha de Ejecución y Validación:** 7 de Noviembre de 2026  
-**Historia de Usuario:** `HU - Personal - 003: Acceso Operativo con Permisos Restringidos (Rol Secretaria / Asistente) #3`  
-**Rama:** `feat/hu-personal-003-acceso-restringido-asistente`  
+**Historia de Usuario:** `HU - Seguridad - 003: Acceso Operativo de Secretaria #3`  
+**Rama Oficial:** `feat/hu-seguridad-003-acceso-operativo-secretaria`  
 **Estado:** Superado 100% y Verificado ✅ | **Cumplimiento:** Ley 1581 de 2012 (Habeas Data) & Secreto Profesional Médico
 
 ---
