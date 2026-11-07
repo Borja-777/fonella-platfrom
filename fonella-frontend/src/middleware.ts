@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
 
   // HU-03: Bloquear acceso de Secretaria a Historia Clínica y Gestión de Cuentas de Personal
   if (rol === 'ASISTENTE' && (pathname.startsWith('/historia-clinica') || pathname.startsWith('/personal'))) {
-    return NextResponse.redirect(new URL('/agenda', request.url));
+    return NextResponse.redirect(new URL('/agenda?error=forbidden', request.url));
   }
 
   return NextResponse.next();
