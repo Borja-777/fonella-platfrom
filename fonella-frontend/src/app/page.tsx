@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import PublicHomePage from './(publico)/page';
 
 export default function HomePage() {
-  redirect('/login');
+  return <PublicHomePage />;
 }
