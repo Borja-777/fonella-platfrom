@@ -34,6 +34,11 @@ export default function PersonalPage() {
   const [modoModal, setModoModal] = useState<'crear' | 'editar'>('crear');
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
   const [menuAbiertoId, setMenuAbiertoId] = useState<string | null>(null);
+  const [menuPosicion, setMenuPosicion] = useState<{
+    top: number;
+    right: number;
+    abrirHaciaArriba: boolean;
+  } | null>(null);
 
   const [feedback, setFeedback] = useState<{
     tipo: 'exito' | 'error';
@@ -73,15 +78,29 @@ export default function PersonalPage() {
     cargarPersonal();
   }, []);
 
-  // Cerrar menú de acciones al hacer clic fuera
+  // Cerrar menú de acciones al hacer clic fuera, scroll o resize
   useEffect(() => {
     const handleClickFuera = (e: MouseEvent) => {
       if (!(e.target as HTMLElement).closest('.menu-acciones-container')) {
         setMenuAbiertoId(null);
+        setMenuPosicion(null);
       }
     };
+
+    const handleScrollOrResize = () => {
+      setMenuAbiertoId(null);
+      setMenuPosicion(null);
+    };
+
     document.addEventListener('click', handleClickFuera);
-    return () => document.removeEventListener('click', handleClickFuera);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+
+    return () => {
+      document.removeEventListener('click', handleClickFuera);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
   }, []);
 
   // Temporizador regresivo de 5 segundos para cerrar la notificación de feedback
@@ -476,7 +495,6 @@ export default function PersonalPage() {
                   const esFonoaudiologa = u.rol === 'FONOAUDIOLOGA';
                   const activo = u.estado === 'ACTIVO';
                   const fotoUrl = u.fotoPerfilUrl || (u.rol === 'FONOAUDIOLOGA' ? '/images/barbara-avatar.jpg' : null);
-                  const abrirHaciaArriba = index >= personalVisible.length - 1 && personalVisible.length > 1;
 
                   return (
                     <tr
@@ -585,7 +603,23 @@ export default function PersonalPage() {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setMenuAbiertoId(menuAbiertoId === u.id ? null : u.id);
+                                  if (menuAbiertoId === u.id) {
+                                    setMenuAbiertoId(null);
+                                    setMenuPosicion(null);
+                                  } else {
+                                    const parentEl = e.currentTarget.parentElement || e.currentTarget;
+                                    const rect = parentEl.getBoundingClientRect();
+                                    const espacioAbajo = window.innerHeight - rect.bottom;
+                                    const abrirArriba = espacioAbajo < 145;
+                                    const rightOffset = Math.max(0, document.documentElement.clientWidth - rect.right);
+
+                                    setMenuAbiertoId(u.id);
+                                    setMenuPosicion({
+                                      top: abrirArriba ? rect.top - 2 : rect.bottom + 2,
+                                      right: rightOffset,
+                                      abrirHaciaArriba: abrirArriba,
+                                    });
+                                  }
                                 }}
                                 className="px-2 py-1.5 border-l border-[#0084FF] text-[#0084FF] hover:bg-sky-50 transition-colors flex items-center justify-center cursor-pointer"
                                 title="Ver más opciones"
@@ -597,75 +631,6 @@ export default function PersonalPage() {
                                 />
                               </button>
                             </div>
-
-                            {/* Menú Desplegable con Opciones Apiladas */}
-                            {menuAbiertoId === u.id && (
-                              <div
-                                className={`absolute right-0 ${
-                                  abrirHaciaArriba ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
-                                } w-44 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50 text-left divide-y divide-slate-100 animate-fade-in`}
-                              >
-                                {/* 1. Editar */}
-                                <div className="py-0.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setMenuAbiertoId(null);
-                                      abrirModalEditar(u);
-                                    }}
-                                    className="w-full px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FAF6F0] hover:text-[#136A7B] flex items-center gap-2.5 transition-colors cursor-pointer"
-                                  >
-                                    <Pencil className="w-3.5 h-3.5 text-[#136A7B]" />
-                                    <span>Editar</span>
-                                  </button>
-                                </div>
-
-                                {/* 2. Activar / Desactivar */}
-                                <div className="py-0.5">
-                                  {activo ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setMenuAbiertoId(null);
-                                        handleToggleEstado(u);
-                                      }}
-                                      className="w-full px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors cursor-pointer"
-                                    >
-                                      <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
-                                      <span>Desactivar</span>
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setMenuAbiertoId(null);
-                                        handleToggleEstado(u);
-                                      }}
-                                      className="w-full px-3.5 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2.5 transition-colors cursor-pointer"
-                                    >
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                      <span>Activar</span>
-                                    </button>
-                                  )}
-                                </div>
-
-                                {/* 3. Ocultar */}
-                                <div className="py-0.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setMenuAbiertoId(null);
-                                      handleOcultarCuenta(u);
-                                    }}
-                                    className="w-full px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2.5 transition-colors cursor-pointer"
-                                    title="Ocultar esta cuenta del panel principal"
-                                  >
-                                    <EyeOff className="w-3.5 h-3.5 text-slate-500" />
-                                    <span>Ocultar</span>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         )}
                       </td>
@@ -677,6 +642,91 @@ export default function PersonalPage() {
           </div>
         )}
       </div>
+
+      {/* Menú Desplegable Flotante Desacoplado (Superpuesto sin corte ni scrollbars) */}
+      {menuAbiertoId && menuPosicion && (() => {
+        const u = personalVisible.find((p) => p.id === menuAbiertoId);
+        if (!u) return null;
+        const activo = u.estado === 'ACTIVO';
+
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              top: menuPosicion.abrirHaciaArriba ? undefined : `${menuPosicion.top}px`,
+              bottom: menuPosicion.abrirHaciaArriba
+                ? `${window.innerHeight - menuPosicion.top}px`
+                : undefined,
+              right: `${menuPosicion.right}px`,
+            }}
+            className="w-44 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 py-1.5 z-[100] text-left divide-y divide-slate-100 animate-fade-in menu-acciones-container"
+          >
+            {/* 1. Editar */}
+            <div className="py-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuAbiertoId(null);
+                  setMenuPosicion(null);
+                  abrirModalEditar(u);
+                }}
+                className="w-full px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-[#FAF6F0] hover:text-[#136A7B] flex items-center gap-2.5 transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5 text-[#136A7B]" />
+                <span>Editar</span>
+              </button>
+            </div>
+
+            {/* 2. Activar / Desactivar */}
+            <div className="py-0.5">
+              {activo ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbiertoId(null);
+                    setMenuPosicion(null);
+                    handleToggleEstado(u);
+                  }}
+                  className="w-full px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                  <span>Desactivar</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbiertoId(null);
+                    setMenuPosicion(null);
+                    handleToggleEstado(u);
+                  }}
+                  className="w-full px-3.5 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Activar</span>
+                </button>
+              )}
+            </div>
+
+            {/* 3. Ocultar */}
+            <div className="py-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuAbiertoId(null);
+                  setMenuPosicion(null);
+                  handleOcultarCuenta(u);
+                }}
+                className="w-full px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2.5 transition-colors cursor-pointer"
+                title="Ocultar esta cuenta del panel principal"
+              >
+                <EyeOff className="w-3.5 h-3.5 text-slate-500" />
+                <span>Ocultar</span>
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 4. Modal para Añadir o Editar Cuenta de Personal */}
       {modalAbierto && (
