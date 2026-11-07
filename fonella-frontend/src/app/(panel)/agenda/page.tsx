@@ -50,69 +50,8 @@ export default function AgendaPage() {
   const [formTelefono, setFormTelefono] = useState('');
   const [formServicio, setFormServicio] = useState('Valoración Fonoaudiológica Inicial');
 
-  // Lista de citas operativas (HU-03: Solo datos de contacto y recepción, sin historias clínicas)
-  const [citas, setCitas] = useState<CitaOperativa[]>([
-    {
-      id: 'c1',
-      hora: '08:00 AM',
-      tipo: 'MENOR',
-      pacienteNombre: 'Mateo Gómez Pardo',
-      pacienteEdad: '5 años',
-      contactoNombre: 'Camila Pardo (Madre)',
-      contactoEmail: 'camila.pardo@gmail.com',
-      contactoTelefono: '315 889 4421',
-      servicio: 'Terapia del Lenguaje y Pronunciación',
-      estado: 'COMPLETADA',
-    },
-    {
-      id: 'c2',
-      hora: '09:00 AM',
-      tipo: 'MENOR',
-      pacienteNombre: 'Luciana Vélez Restrepo',
-      pacienteEdad: '4 años',
-      contactoNombre: 'Andrés Vélez (Padre)',
-      contactoEmail: 'andres.velez@hotmail.com',
-      contactoTelefono: '310 445 9988',
-      servicio: 'Valoración Fonoaudiológica Inicial',
-      estado: 'COMPLETADA',
-    },
-    {
-      id: 'c3',
-      hora: '10:30 AM',
-      tipo: 'ADULTO',
-      pacienteNombre: 'Carlos Eduardo Mendoza',
-      pacienteEdad: '42 años',
-      contactoNombre: 'Paciente Directo (Adulto)',
-      contactoEmail: 'carlos.mendoza@empresa.com',
-      contactoTelefono: '301 552 1100',
-      servicio: 'Terapia Vocal y Disfonía del Profesional',
-      estado: 'EN_ESPERA',
-    },
-    {
-      id: 'c4',
-      hora: '11:30 AM',
-      tipo: 'MENOR',
-      pacienteNombre: 'Valentina Morales Cruz',
-      pacienteEdad: '3 años',
-      contactoNombre: 'Diana Cruz (Madre)',
-      contactoEmail: 'diana.cruz91@gmail.com',
-      contactoTelefono: '318 662 1090',
-      servicio: 'Terapia Miofuncional Orofacial',
-      estado: 'CONFIRMADA',
-    },
-    {
-      id: 'c5',
-      hora: '02:00 PM',
-      tipo: 'ADULTO',
-      pacienteNombre: 'Patricia Elena Duarte',
-      pacienteEdad: '58 años',
-      contactoNombre: 'Paciente Directo (Adulto)',
-      contactoEmail: 'patricia.duarte@gmail.com',
-      contactoTelefono: '312 901 3456',
-      servicio: 'Rehabilitación de la Deglución / Disfagia',
-      estado: 'CONFIRMADA',
-    },
-  ]);
+  // Lista de citas operativas (Inicia vacía; la persistencia en base de datos pertenece al Sprint 2)
+  const [citas, setCitas] = useState<CitaOperativa[]>([]);
 
   useEffect(() => {
     // 1. Cargar información de la sesión activa
@@ -369,93 +308,125 @@ export default function AgendaPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-xs">
-              {citasFiltradas.map((c) => (
-                <tr key={c.id} className="hover:bg-teal-50/40 transition-colors">
-                  <td className="py-3.5 px-4 font-black text-[#094A57] whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#0AA896]" />
-                      <span>{c.hora}</span>
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4 font-bold text-gray-900">
-                    <div className="flex items-center gap-2">
-                      <span>{c.pacienteNombre}</span>
-                      {c.tipo === 'MENOR' ? (
-                        <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[9px] font-extrabold uppercase border border-amber-200 flex items-center gap-0.5">
-                          <Baby className="w-2.5 h-2.5" />
-                          <span>Pediátrico</span>
-                        </span>
-                      ) : (
-                        <span className="px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-900 text-[9px] font-extrabold uppercase border border-sky-200 flex items-center gap-0.5">
-                          <UserCheck className="w-2.5 h-2.5" />
-                          <span>Adulto</span>
-                        </span>
+              {citasFiltradas.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-16 text-center">
+                    <div className="max-w-md mx-auto space-y-3">
+                      <div className="w-14 h-14 bg-teal-50 border border-teal-200/80 rounded-2xl flex items-center justify-center text-[#0AA896] mx-auto shadow-xs">
+                        <Calendar className="w-7 h-7" />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-sm text-gray-800">
+                          {filtroBusqueda ? 'No se encontraron citas con ese criterio' : 'No hay citas registradas para hoy'}
+                        </h4>
+                        <p className="text-xs text-gray-500 leading-relaxed">
+                          {filtroBusqueda
+                            ? 'Intenta buscando por otro nombre, contacto, correo o teléfono.'
+                            : 'El módulo operativo de recepción está listo. La persistencia en base de datos PostgreSQL se completará en la historia de usuario del Sprint 2.'}
+                        </p>
+                      </div>
+                      {!filtroBusqueda && (
+                        <button
+                          type="button"
+                          onClick={() => setModalNuevaCita(true)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0AA896] hover:bg-[#136A7B] text-white text-xs font-bold transition-all shadow-sm cursor-pointer mt-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>+ Agendar Cita en Recepción</span>
+                        </button>
                       )}
                     </div>
-                    <span className="text-[10px] text-gray-400 font-medium">({c.pacienteEdad})</span>
-                  </td>
-                  <td className="py-3.5 px-4 text-gray-700">
-                    <div className="font-semibold text-gray-900">{c.contactoNombre}</div>
-                    <div className="flex flex-col gap-0.5 mt-1">
-                      <div className="text-[11px] text-gray-600 flex items-center gap-1">
-                        <Mail className="w-3 h-3 text-[#136A7B] shrink-0" />
-                        <span className="truncate">{c.contactoEmail}</span>
-                      </div>
-                      <div className="text-[11px] text-teal-700 flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-[#0AA896] shrink-0" />
-                        <span>{c.contactoTelefono}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4 text-gray-700 max-w-xs">
-                    <span className="inline-block px-2.5 py-1 rounded-lg bg-[#FAF6F0] border border-[#136A7B]/10 text-[#0E5666] text-[11px] font-medium">
-                      {c.servicio}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    {c.estado === 'COMPLETADA' && (
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] uppercase tracking-wide border border-emerald-200 flex items-center gap-1 w-max">
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>Completada</span>
-                      </span>
-                    )}
-                    {c.estado === 'EN_ESPERA' && (
-                      <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px] uppercase tracking-wide border border-amber-300 flex items-center gap-1 w-max animate-pulse">
-                        <Clock className="w-3 h-3" />
-                        <span>En Sala de Espera</span>
-                      </span>
-                    )}
-                    {c.estado === 'CONFIRMADA' && (
-                      <span className="px-2.5 py-1 rounded-full bg-sky-100 text-sky-800 font-bold text-[10px] uppercase tracking-wide border border-sky-200 flex items-center gap-1 w-max">
-                        <span>Confirmada</span>
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                    {c.estado === 'CONFIRMADA' && (
-                      <button
-                        onClick={() => cambiarEstadoCita(c.id, 'EN_ESPERA')}
-                        className="px-2.5 py-1.5 rounded-lg bg-[#0AA896] hover:bg-[#136A7B] text-white font-bold text-[11px] transition-all cursor-pointer shadow-xs"
-                      >
-                        Pasar a Sala
-                      </button>
-                    )}
-                    {c.estado === 'EN_ESPERA' && (
-                      <button
-                        onClick={() => cambiarEstadoCita(c.id, 'COMPLETADA')}
-                        className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-all cursor-pointer shadow-xs"
-                      >
-                        Marcar Atendida
-                      </button>
-                    )}
-                    {c.estado === 'COMPLETADA' && (
-                      <span className="text-[11px] text-gray-400 font-semibold italic">
-                        Turno finalizado
-                      </span>
-                    )}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                citasFiltradas.map((c) => (
+                  <tr key={c.id} className="hover:bg-teal-50/40 transition-colors">
+                    <td className="py-3.5 px-4 font-black text-[#094A57] whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#0AA896]" />
+                        <span>{c.hora}</span>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 font-bold text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <span>{c.pacienteNombre}</span>
+                        {c.tipo === 'MENOR' ? (
+                          <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[9px] font-extrabold uppercase border border-amber-200 flex items-center gap-0.5">
+                            <Baby className="w-2.5 h-2.5" />
+                            <span>Pediátrico</span>
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-900 text-[9px] font-extrabold uppercase border border-sky-200 flex items-center gap-0.5">
+                            <UserCheck className="w-2.5 h-2.5" />
+                            <span>Adulto</span>
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-medium">({c.pacienteEdad})</span>
+                    </td>
+                    <td className="py-3.5 px-4 text-gray-700">
+                      <div className="font-semibold text-gray-900">{c.contactoNombre}</div>
+                      <div className="flex flex-col gap-0.5 mt-1">
+                        <div className="text-[11px] text-gray-600 flex items-center gap-1">
+                          <Mail className="w-3 h-3 text-[#136A7B] shrink-0" />
+                          <span className="truncate">{c.contactoEmail}</span>
+                        </div>
+                        <div className="text-[11px] text-teal-700 flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-[#0AA896] shrink-0" />
+                          <span>{c.contactoTelefono}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 text-gray-700 max-w-xs">
+                      <span className="inline-block px-2.5 py-1 rounded-lg bg-[#FAF6F0] border border-[#136A7B]/10 text-[#0E5666] text-[11px] font-medium">
+                        {c.servicio}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {c.estado === 'COMPLETADA' && (
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] uppercase tracking-wide border border-emerald-200 flex items-center gap-1 w-max">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Completada</span>
+                        </span>
+                      )}
+                      {c.estado === 'EN_ESPERA' && (
+                        <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px] uppercase tracking-wide border border-amber-300 flex items-center gap-1 w-max animate-pulse">
+                          <Clock className="w-3 h-3" />
+                          <span>En Sala de Espera</span>
+                        </span>
+                      )}
+                      {c.estado === 'CONFIRMADA' && (
+                        <span className="px-2.5 py-1 rounded-full bg-sky-100 text-sky-800 font-bold text-[10px] uppercase tracking-wide border border-sky-200 flex items-center gap-1 w-max">
+                          <span>Confirmada</span>
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      {c.estado === 'CONFIRMADA' && (
+                        <button
+                          onClick={() => cambiarEstadoCita(c.id, 'EN_ESPERA')}
+                          className="px-2.5 py-1.5 rounded-lg bg-[#0AA896] hover:bg-[#136A7B] text-white font-bold text-[11px] transition-all cursor-pointer shadow-xs"
+                        >
+                          Pasar a Sala
+                        </button>
+                      )}
+                      {c.estado === 'EN_ESPERA' && (
+                        <button
+                          onClick={() => cambiarEstadoCita(c.id, 'COMPLETADA')}
+                          className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-all cursor-pointer shadow-xs"
+                        >
+                          Marcar Atendida
+                        </button>
+                      )}
+                      {c.estado === 'COMPLETADA' && (
+                        <span className="text-[11px] text-gray-400 font-semibold italic">
+                          Turno finalizado
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
