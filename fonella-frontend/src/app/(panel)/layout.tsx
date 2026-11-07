@@ -12,6 +12,7 @@ import {
   Clock,
   Stethoscope,
   ShieldAlert,
+  User,
 } from 'lucide-react';
 import { apiService, Usuario } from '@/services/api';
 import { useInactividad } from '@/hooks/useInactividad';
@@ -108,9 +109,13 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                 {usuario?.nombreCompleto || 'Dra. Bárbara Ccucho Delgado'}
               </h3>
               <div className="flex items-center gap-1.5 mt-1">
-                <Stethoscope className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                {esFonoaudiologa ? (
+                  <Stethoscope className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                ) : (
+                  <User className="w-3.5 h-3.5 text-teal-200 shrink-0" />
+                )}
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200 truncate">
-                  {usuario?.rol || 'FONOAUDIÓLOGA'}
+                  {esFonoaudiologa ? 'FONOAUDIÓLOGA' : 'ASISTENTE / RECEPCIÓN'}
                 </span>
               </div>
             </div>
@@ -134,15 +139,21 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               </Link>
             )}
 
-            <div className="px-3.5 py-3 rounded-2xl bg-white/15 text-white/85 flex items-center justify-between border border-white/10 cursor-not-allowed">
+            <Link
+              href="/agenda"
+              className={`px-3.5 py-3 rounded-2xl flex items-center justify-between transition-all ${pathname.startsWith('/agenda')
+                ? 'bg-white text-[#0E5666] shadow-lg border border-white font-extrabold'
+                : 'text-white hover:bg-white/15'
+                }`}
+            >
               <span className="flex items-center gap-2.5">
-                <Calendar className="w-4 h-4 text-white/70" />
+                <Calendar className="w-4 h-4 text-[#0AA896]" />
                 <span>Agenda Clínica</span>
               </span>
-              <span className="text-[9px] font-semibold bg-white/20 px-2 py-0.5 rounded-full text-white/90">
-                Próx.
-              </span>
-            </div>
+              {pathname.startsWith('/agenda') && (
+                <span className="w-2.5 h-2.5 rounded-full bg-[#0AA896] shadow-xs" />
+              )}
+            </Link>
 
             <div className="px-3.5 py-3 rounded-2xl bg-white/15 text-white/85 flex items-center justify-between border border-white/10 cursor-not-allowed">
               <span className="flex items-center gap-2.5">
