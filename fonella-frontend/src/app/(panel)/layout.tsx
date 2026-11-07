@@ -169,9 +169,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
         {/* Footer del Sidebar */}
         <div className="mt-6 pt-4 border-t border-[#136A7B]/20">
-          <div className="flex items-center justify-center gap-2 text-[10.5px] font-semibold text-[#0E5666] mb-2.5">
-            <Clock className={`w-3.5 h-3.5 animate-pulse ${esModoPrueba ? 'text-amber-300' : 'text-[#0AA896]'}`} />
-            <span className={esModoPrueba ? 'text-amber-200 font-extrabold' : ''}>
+          <div className="flex items-center justify-center gap-2 text-[11px] font-bold text-gray-900 mb-2.5">
+            <Clock className="w-3.5 h-3.5 text-[#0AA896] shrink-0 animate-pulse" />
+            <span className="text-gray-900 font-extrabold tracking-tight">
               {esModoPrueba ? 'Prueba Rápida: Cierre en 30s' : 'Cierre automático por inactividad: 30m'}
             </span>
           </div>
