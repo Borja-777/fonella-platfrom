@@ -259,4 +259,27 @@ export class InventarioService {
       mensaje: "Juguete didáctico actualizado exitosamente.",
     };
   }
+
+  /**
+   * Eliminar juguete didáctico (Soft Delete lógico para integridad referencial)
+   */
+  async eliminarJuguete(id: string) {
+    const juguete = await this.prisma.jugueteDidactico.findUnique({
+      where: { id },
+    });
+
+    if (!juguete) {
+      throw new NotFoundException("El juguete didáctico no existe.");
+    }
+
+    await this.prisma.jugueteDidactico.update({
+      where: { id },
+      data: { estado: "INACTIVO" },
+    });
+
+    return {
+      id,
+      mensaje: `Juguete "${juguete.nombre}" eliminado exitosamente del inventario.`,
+    };
+  }
 }

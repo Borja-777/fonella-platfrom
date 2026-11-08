@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -75,5 +76,16 @@ export class InventarioController {
     @Body() dto: ActualizarJugueteDto,
   ) {
     return this.inventarioService.actualizarJuguete(id, dto);
+  }
+
+  /**
+   * Endpoint para eliminar un juguete (Soft Delete)
+   * Ruta: DELETE /api/v1/inventario/juguetes/:id
+   * Acceso: Exclusivo FONOAUDIOLOGA
+   */
+  @Delete("juguetes/:id")
+  @Roles(RolUsuario.FONOAUDIOLOGA)
+  eliminarJuguete(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
+    return this.inventarioService.eliminarJuguete(id);
   }
 }

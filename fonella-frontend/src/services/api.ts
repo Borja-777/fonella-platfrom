@@ -292,6 +292,39 @@ export const apiService = {
     return data;
   },
 
+  async actualizarJuguete(
+    id: string,
+    datos: Partial<CrearJugueteData>,
+  ): Promise<Juguete & { mensaje: string }> {
+    const res = await fetch(`${API_URL}/inventario/juguetes/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al actualizar juguete');
+    }
+    return data;
+  },
+
+  async eliminarJuguete(id: string): Promise<{ id: string; mensaje: string }> {
+    const res = await fetch(`${API_URL}/inventario/juguetes/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al eliminar juguete del inventario');
+    }
+    return data;
+  },
+
   async registrarVentaJuguete(
     id: string,
     datos: RegistrarVentaData,
