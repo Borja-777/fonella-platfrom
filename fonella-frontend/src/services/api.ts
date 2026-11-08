@@ -9,8 +9,73 @@ export interface Usuario {
   fotoPerfilUrl?: string | null;
   ocultoEnPanel?: boolean;
   estado: 'ACTIVO' | 'INACTIVO';
+  resetToken?: string | null;
+  resetTokenExpira?: string | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface Juguete {
+  id: string;
+  codigoSku: string;
+  nombre: string;
+  descripcionTerapeutica: string;
+  areaEstimulacion: string;
+  edadSugerida: string;
+  imagenUrl?: string;
+  stockDisponible: number;
+  stockMinimoAlerta: number;
+  costoUnitario?: number;
+  precioVenta: number;
+  gananciaNetaUnitaria?: number;
+  margenPorcentual?: number;
+  publicadoCatalogo: boolean;
+  estado: 'ACTIVO' | 'INACTIVO';
+  createdAt?: string;
+}
+
+export interface CrearJugueteData {
+  codigoSku: string;
+  nombre: string;
+  descripcionTerapeutica: string;
+  areaEstimulacion: string;
+  edadSugerida: string;
+  imagenUrl?: string;
+  stockDisponible: number;
+  stockMinimoAlerta?: number;
+  costoUnitario: number;
+  precioVenta: number;
+  publicadoCatalogo?: boolean;
+}
+
+export interface RegistrarVentaData {
+  cantidad: number;
+  metodoPago: 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
+  pacienteId?: string;
+}
+
+export interface VentaHistorial {
+  id: string;
+  jugueteId: string;
+  cantidad: number;
+  metodoPago: 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
+  precioUnitarioVenta: number;
+  totalVenta: number;
+  costoUnitarioSnapshot?: number;
+  gananciaNeta?: number;
+  fechaVenta: string;
+  juguete: {
+    id: string;
+    codigoSku: string;
+    nombre: string;
+    imagenUrl?: string;
+    areaEstimulacion: string;
+  };
+  vendidoPor: {
+    id: string;
+    nombreCompleto: string;
+    rol: string;
+  };
 }
 
 export interface LoginResponse {
@@ -219,4 +284,149 @@ export const apiService = {
     }
     return data;
   },
+
+  async reenviarActivacionPersonal(id: string): Promise<{ mensaje: string }> {
+    const res = await fetch(`${API_URL}/usuarios/personal/${id}/reenviar-activacion`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al reenviar correo de activación');
+    }
+    return data;
+  },
+
+  // --------------------------------------------------------------------------
+  // MÓDULO DE INVENTARIO DIDÁCTICO Y MARGEN DE GANANCIA (HU-001, HU-002)
+  // --------------------------------------------------------------------------
+  async getJuguetes(): Promise<Juguete[]> {
+    const res = await fetch(`${API_URL}/inventario/juguetes`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al consultar inventario de juguetes');
+    }
+    return data;
+  },
+
+  async crearJuguete(datos: CrearJugueteData): Promise<Juguete & { mensaje: string }> {
+    const res = await fetch(`${API_URL}/inventario/juguetes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al registrar producto en inventario');
+    }
+    return data;
+  },
+
+  async actualizarJuguete(
+    id: string,
+    datos: Partial<CrearJugueteData>,
+  ): Promise<Juguete & { mensaje: string }> {
+    const res = await fetch(`${API_URL}/inventario/juguetes/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al actualizar juguete');
+    }
+    return data;
+  },
+
+  async eliminarJuguete(id: string): Promise<{ id: string; mensaje: string }> {
+    const res = await fetch(`${API_URL}/inventario/juguetes/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al eliminar juguete del inventario');
+    }
+    return data;
+  },
+
+  async registrarVentaJuguete(
+    id: string,
+    datos: RegistrarVentaData,
+  ): Promise<{
+    ventaId: string;
+    jugueteId: string;
+    nombre: string;
+    cantidadVendida: number;
+    stockRestante: number;
+    totalVenta: number;
+    mensaje: string;
+  }> {
+    const res = await fetch(`${API_URL}/inventario/juguetes/${id}/venta`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al procesar la venta');
+    }
+    return data;
+  },
+
+  async listarVentas(): Promise<VentaHistorial[]> {
+    const res = await fetch(`${API_URL}/inventario/ventas`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al obtener historial de ventas');
+    }
+    return data;
+  },
+
+  async validarEmail(
+    email: string,
+  ): Promise<{ valido: boolean; email: string; mensaje: string }> {
+    const res = await fetch(`${API_URL}/auth/validar-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(
+        data.message || 'El correo electrónico ingresado no existe o no es válido.',
+      );
+    }
+    return data;
+  },
 };
+
+export const api = apiService;

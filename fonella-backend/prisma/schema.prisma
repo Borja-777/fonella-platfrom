@@ -284,7 +284,7 @@ model JugueteDidactico {
   descripcionTerapeutica String         @map("descripcion_terapeutica") @db.Text
   areaEstimulacion       String         @map("area_estimulacion") @db.VarChar(100)
   edadSugerida           String         @map("edad_sugerida") @db.VarChar(50)
-  imagenUrl              String         @map("imagen_url") @db.VarChar(500)
+  imagenUrl              String         @map("imagen_url") @db.Text
   stockDisponible        Int            @default(0) @map("stock_disponible")
   stockMinimoAlerta      Int            @default(3) @map("stock_minimo_alerta")
   costoUnitario          Decimal        @map("costo_unitario") @db.Decimal(10, 2)

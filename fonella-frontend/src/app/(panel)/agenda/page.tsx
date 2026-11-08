@@ -218,19 +218,6 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      {/* 3. Garantía de Confidencialidad y Reserva Legal (DoD HU-03) */}
-      <div className="bg-[#EAF5F6] border border-[#0AA896]/30 p-3.5 rounded-2xl flex items-start gap-3 shadow-xs">
-        <Info className="w-4 h-4 text-[#0AA896] shrink-0 mt-0.5" />
-        <div className="text-xs text-[#094A57] leading-relaxed">
-          <strong className="font-extrabold text-[#0E5666]">Garantía de Confidencialidad Médica (HU-03):</strong>
-          <span className="ml-1 opacity-90">
-            Esta pantalla opera bajo el principio de privilegio mínimo de seguridad (RBAC). El personal asistente 
-            accede exclusivamente a la información de coordinación, correos y teléfonos. Los expedientes de anamnesis, 
-            diagnósticos y notas clínicas privadas permanecen estrictamente resguardados para la fonoaudióloga.
-          </span>
-        </div>
-      </div>
-
       {/* 4. Métricas Rápidas Operativas del Día */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-[#136A7B]/10 shadow-xs flex items-center gap-3">

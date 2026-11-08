@@ -10,6 +10,7 @@ export interface DatosSolicitudCita {
   nombrePaciente: string;
   edadPaciente: string;
   telefono: string;
+  email?: string;
   nombreAcudiente?: string;
   parentescoAcudiente?: string;
   servicioInteres: string;
@@ -54,6 +55,12 @@ export function generarLinkSolicitudCitaAsistida(
     ? 'Paciente Pediátrico'
     : 'Paciente Adulto';
 
+  const lineaCorreo = datos.email
+    ? datos.esMenorEdad
+      ? `• *Correo del acudiente:* ${datos.email}\n`
+      : `• *Correo electrónico:* ${datos.email}\n`
+    : '';
+
   const lineaAcudiente =
     datos.esMenorEdad && datos.nombreAcudiente
       ? `• *Acudiente:* ${datos.nombreAcudiente}${
@@ -63,13 +70,20 @@ export function generarLinkSolicitudCitaAsistida(
         }\n`
       : '';
 
+  const edadTexto = datos.edadPaciente
+    ? datos.edadPaciente.toLowerCase().includes('año')
+      ? datos.edadPaciente
+      : `${datos.edadPaciente} años`
+    : '';
+
   const mensaje =
     `Hola Consultorio FONELLA 👋.\n` +
     `Deseo agendar una cita fonoaudiológica:\n\n` +
     `• *Tipo:* ${tipoPaciente}\n` +
     `• *Teléfono de contacto:* ${datos.telefono}\n` +
+    lineaCorreo +
     lineaAcudiente +
-    `• *Paciente:* ${datos.nombrePaciente} (${datos.edadPaciente})\n` +
+    `• *Paciente:* ${datos.nombrePaciente}${edadTexto ? ` (${edadTexto})` : ''}\n` +
     `• *Servicio:* ${datos.servicioInteres} (${datos.duracionMinutos} min)\n` +
     `• *Jornada preferida:* ${datos.jornadaPreferida}\n` +
     `• *Motivo:* ${datos.motivoBreve}\n\n` +

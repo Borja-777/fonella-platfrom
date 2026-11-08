@@ -16,6 +16,7 @@ import { SolicitarRecuperacionDto } from "./dto/solicitar-recuperacion.dto";
 import { RestablecerPasswordDto } from "./dto/restablecer-password.dto";
 import { RegistroAdministradorDto } from "./dto/registro-administrador.dto";
 import { ConfirmarCuentaDto } from "./dto/confirmar-cuenta.dto";
+import { ValidarEmailDto } from "./dto/validar-email.dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 
 @Controller("auth")
@@ -87,6 +88,16 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async confirmarCuenta(@Body() dto: ConfirmarCuentaDto) {
     return this.authService.confirmarCuenta(dto);
+  }
+
+  /**
+   * Endpoint público para verificar existencia real de un correo electrónico
+   * Ruta: POST /api/v1/auth/validar-email
+   */
+  @Post("validar-email")
+  @HttpCode(HttpStatus.OK)
+  async validarEmail(@Body() dto: ValidarEmailDto) {
+    return this.authService.validarExistenciaEmail(dto.email);
   }
 
   /**

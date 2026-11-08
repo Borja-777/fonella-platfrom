@@ -1,15 +1,17 @@
-﻿
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { generarLinkSolicitudCitaAsistida } from '@/utils/whatsapp-link';
+import { api } from '@/services/api';
 
 type FormularioCita = {
   esMenorEdad: boolean;
   nombrePaciente: string;
   edadPaciente: string;
   telefono: string;
+  email: string;
   nombreAcudiente: string;
   parentescoAcudiente: string;
   servicioInteres: string;
@@ -26,6 +28,7 @@ export default function SolicitarCitaPage() {
     nombrePaciente: '',
     edadPaciente: '',
     telefono: '',
+    email: '',
     nombreAcudiente: '',
     parentescoAcudiente: 'Madre',
     servicioInteres: 'Evaluación e intervención del lenguaje y del habla',
@@ -33,6 +36,167 @@ export default function SolicitarCitaPage() {
     motivoBreve: '',
     jornadaPreferida: 'Mañana (8:00 a.m. - 12:00 m.)',
   });
+
+  const [errorEdad, setErrorEdad] = useState<string | null>(null);
+  const [errorTelefono, setErrorTelefono] = useState<string | null>(null);
+  const [errorEmail, setErrorEmail] = useState<string | null>(null);
+  const [validandoEmail, setValidandoEmail] = useState(false);
+  const [emailVerificado, setEmailVerificado] = useState<string | null>(null);
+
+  const PREFIJOS_OPERADOR_VALIDOS = ['300', '310', '315', '320'];
+
+  const validarTelefono = (valor: string): string | null => {
+    const trimmed = valor.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    if (!/^\d+$/.test(trimmed)) {
+      return 'El número de teléfono solo debe contener dígitos numéricos.';
+    }
+
+    // Validar prefijo del operador (debe iniciar con 300, 310, 315 o 320)
+    if (trimmed.length >= 3) {
+      const prefijo = trimmed.slice(0, 3);
+      if (!PREFIJOS_OPERADOR_VALIDOS.includes(prefijo)) {
+        return `El prefijo (${prefijo}) no es válido. Debe iniciar con 300, 310, 315 o 320.`;
+      }
+    }
+
+    if (trimmed.length !== 10) {
+      return 'El número de teléfono debe contener exactamente 10 dígitos.';
+    }
+
+    return null;
+  };
+
+  const manejarCambioTelefono = (nuevoValor: string) => {
+    const soloDigitos = nuevoValor.replace(/\D/g, '').slice(0, 10);
+    actualizarCampo('telefono', soloDigitos);
+
+    if (nuevoValor !== soloDigitos && !/^\d*$/.test(nuevoValor)) {
+      setErrorTelefono('El número de teléfono solo debe contener dígitos numéricos.');
+    } else if (soloDigitos.length >= 3) {
+      const prefijo = soloDigitos.slice(0, 3);
+      if (!PREFIJOS_OPERADOR_VALIDOS.includes(prefijo)) {
+        setErrorTelefono(
+          `El prefijo (${prefijo}) no es válido. Debe iniciar con 300, 310, 315 o 320.`,
+        );
+      } else if (soloDigitos.length === 10) {
+        setErrorTelefono(null);
+      } else if (errorTelefono && errorTelefono.includes('prefijo')) {
+        setErrorTelefono(null);
+      }
+    } else {
+      if (errorTelefono && errorTelefono.includes('prefijo')) {
+        setErrorTelefono(null);
+      }
+    }
+  };
+
+  const manejarBlurTelefono = () => {
+    if (formData.telefono.trim()) {
+      setErrorTelefono(validarTelefono(formData.telefono));
+    }
+  };
+
+  const validarEdad = (valor: string, esMenor: boolean): string | null => {
+    const trimmed = valor.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    // 1. Validar que no contenga decimales (punto o coma)
+    if (trimmed.includes('.') || trimmed.includes(',')) {
+      return 'La edad debe ser un número entero sin decimales.';
+    }
+
+    // 2. Extraer sufijo "años" si el usuario lo escribe
+    const soloDigitos = trimmed.replace(/\s*(años|año|anios|anio)\s*$/i, '');
+    if (!/^\d+$/.test(soloDigitos)) {
+      return 'La edad debe ser un número entero válido.';
+    }
+
+    const num = parseInt(soloDigitos, 10);
+    if (isNaN(num) || num < 0) {
+      return 'Ingresa una edad válida en años cumplidos.';
+    }
+
+    // 3. Reglas específicas por tipo de paciente
+    if (esMenor) {
+      if (num >= 18) {
+        return 'Para paciente pediátrico, la edad debe ser menor a 18 años.';
+      }
+    } else {
+      if (num < 18) {
+        return 'Para paciente adulto, la edad debe ser mayor o igual a 18 años.';
+      }
+      if (num > 125) {
+        return 'Ingresa una edad válida.';
+      }
+    }
+
+    return null;
+  };
+
+  const cambiarModoPaciente = (esMenor: boolean) => {
+    setFormData((actual) => ({
+      ...actual,
+      esMenorEdad: esMenor,
+    }));
+    if (formData.edadPaciente) {
+      setErrorEdad(validarEdad(formData.edadPaciente, esMenor));
+    }
+  };
+
+  const manejarCambioEdad = (nuevoValor: string) => {
+    actualizarCampo('edadPaciente', nuevoValor);
+    setErrorEdad(validarEdad(nuevoValor, formData.esMenorEdad));
+  };
+
+  const manejarCambioEmail = (nuevoEmail: string) => {
+    actualizarCampo('email', nuevoEmail);
+    if (errorEmail) setErrorEmail(null);
+    if (emailVerificado && emailVerificado !== nuevoEmail.trim().toLowerCase()) {
+      setEmailVerificado(null);
+    }
+  };
+
+  const verificarExistenciaEmail = async (
+    emailAValidar: string,
+  ): Promise<boolean> => {
+    const emailLimpio = emailAValidar.trim().toLowerCase();
+    if (!emailLimpio) {
+      setErrorEmail('El correo electrónico es obligatorio.');
+      return false;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLimpio)) {
+      setErrorEmail('Ingresa un correo electrónico con formato válido.');
+      return false;
+    }
+
+    if (emailVerificado === emailLimpio) {
+      return true;
+    }
+
+    setValidandoEmail(true);
+    setErrorEmail(null);
+
+    try {
+      await api.validarEmail(emailLimpio);
+      setEmailVerificado(emailLimpio);
+      return true;
+    } catch (err: any) {
+      setErrorEmail(
+        err.message ||
+          'El correo electrónico ingresado no existe en el servidor o no puede recibir mensajes.',
+      );
+      return false;
+    } finally {
+      setValidandoEmail(false);
+    }
+  };
 
   const actualizarCampo = <K extends keyof FormularioCita>(
     campo: K,
@@ -51,8 +215,28 @@ export default function SolicitarCitaPage() {
     return new URL(enlace).searchParams.get('text') ?? '';
   }, [formData]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const err = validarEdad(formData.edadPaciente, formData.esMenorEdad);
+    if (err) {
+      setErrorEdad(err);
+      return;
+    }
+
+    const errTelefono = validarTelefono(formData.telefono);
+    if (errTelefono || formData.telefono.trim().length !== 10) {
+      setErrorTelefono(
+        errTelefono || 'El número de teléfono debe contener exactamente 10 dígitos.',
+      );
+      return;
+    }
+
+    // Validar existencia real del correo electrónico vía backend
+    const correoEsValido = await verificarExistenciaEmail(formData.email);
+    if (!correoEsValido) {
+      return;
+    }
 
     const enlace = generarLinkSolicitudCitaAsistida(formData);
     window.open(enlace, '_blank', 'noopener,noreferrer');
@@ -129,7 +313,7 @@ export default function SolicitarCitaPage() {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <button
                     type="button"
-                    onClick={() => actualizarCampo('esMenorEdad', true)}
+                    onClick={() => cambiarModoPaciente(true)}
                     aria-pressed={formData.esMenorEdad}
                     className={`rounded-xl border-2 p-3 text-left transition ${
                       formData.esMenorEdad
@@ -147,7 +331,7 @@ export default function SolicitarCitaPage() {
 
                   <button
                     type="button"
-                    onClick={() => actualizarCampo('esMenorEdad', false)}
+                    onClick={() => cambiarModoPaciente(false)}
                     aria-pressed={!formData.esMenorEdad}
                     className={`rounded-xl border-2 p-3 text-left transition ${
                       !formData.esMenorEdad
@@ -204,6 +388,51 @@ export default function SolicitarCitaPage() {
                       </select>
                     </label>
                   </div>
+
+                  <div>
+                    <label className={labelClass}>
+                      Correo electrónico del acudiente *
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) =>
+                          manejarCambioEmail(e.target.value)
+                        }
+                        onBlur={() => {
+                          if (formData.email.trim()) {
+                            verificarExistenciaEmail(formData.email);
+                          }
+                        }}
+                        placeholder="acudiente@ejemplo.com"
+                        className={`${inputClass} ${
+                          errorEmail
+                            ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-200'
+                            : emailVerificado === formData.email.trim().toLowerCase()
+                            ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-200'
+                            : ''
+                        }`}
+                      />
+                    </label>
+                    {validandoEmail && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-sky-700">
+                        <span className="inline-block animate-spin">⏳</span> Verificando existencia del correo...
+                      </p>
+                    )}
+                    {errorEmail && !validandoEmail && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-rose-600">
+                        <span>⚠️</span> {errorEmail}
+                      </p>
+                    )}
+                    {emailVerificado &&
+                      emailVerificado === formData.email.trim().toLowerCase() &&
+                      !validandoEmail &&
+                      !errorEmail && (
+                        <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                          <span>✓</span> Correo existente y verificado
+                        </p>
+                      )}
+                  </div>
                 </div>
               )}
 
@@ -225,35 +454,135 @@ export default function SolicitarCitaPage() {
                   />
                 </label>
 
-                <label className={labelClass}>
-                  Edad *
-                  <input
-                    type="text"
-                    required
-                    value={formData.edadPaciente}
-                    onChange={(e) =>
-                      actualizarCampo('edadPaciente', e.target.value)
-                    }
-                    placeholder="Ej. 4 años"
-                    className={inputClass}
-                  />
-                </label>
+                <div>
+                  <label className={labelClass}>
+                    Edad *
+                    <input
+                      type="text"
+                      required
+                      value={formData.edadPaciente}
+                      onChange={(e) =>
+                        manejarCambioEdad(e.target.value)
+                      }
+                      placeholder={formData.esMenorEdad ? 'Ej. 4' : 'Ej. 28'}
+                      className={`${inputClass} ${
+                        errorEdad
+                          ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-200'
+                          : ''
+                      }`}
+                    />
+                  </label>
+                  {errorEdad && (
+                    <p className="mt-1 text-xs font-semibold text-rose-600">
+                      ⚠️ {errorEdad}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {/* Teléfono */}
-              <label className={labelClass}>
-                Teléfono de contacto *
-                <input
-                  type="tel"
-                  required
-                  value={formData.telefono}
-                  onChange={(e) =>
-                    actualizarCampo('telefono', e.target.value)
-                  }
-                  placeholder="Ej. 3001234567"
-                  className={inputClass}
-                />
-              </label>
+              {/* Teléfono y Correo */}
+              {formData.esMenorEdad ? (
+                <div>
+                  <label className={labelClass}>
+                    Teléfono de contacto *
+                    <input
+                      type="tel"
+                      required
+                      value={formData.telefono}
+                      onChange={(e) =>
+                        manejarCambioTelefono(e.target.value)
+                      }
+                      onBlur={manejarBlurTelefono}
+                      placeholder="Ej. 3001234567"
+                      maxLength={10}
+                      className={`${inputClass} ${
+                        errorTelefono
+                          ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-200'
+                          : ''
+                      }`}
+                    />
+                  </label>
+                  {errorTelefono && (
+                    <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-rose-600">
+                      <span>⚠️</span> {errorTelefono}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass}>
+                      Teléfono de contacto *
+                      <input
+                        type="tel"
+                        required
+                        value={formData.telefono}
+                        onChange={(e) =>
+                          manejarCambioTelefono(e.target.value)
+                        }
+                        onBlur={manejarBlurTelefono}
+                        placeholder="Ej. 3001234567"
+                        maxLength={10}
+                        className={`${inputClass} ${
+                          errorTelefono
+                            ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-200'
+                            : ''
+                        }`}
+                      />
+                    </label>
+                    {errorTelefono && (
+                      <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-rose-600">
+                        <span>⚠️</span> {errorTelefono}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>
+                      Correo electrónico *
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) =>
+                          manejarCambioEmail(e.target.value)
+                        }
+                        onBlur={() => {
+                          if (formData.email.trim()) {
+                            verificarExistenciaEmail(formData.email);
+                          }
+                        }}
+                        placeholder="paciente@ejemplo.com"
+                        className={`${inputClass} ${
+                          errorEmail
+                            ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-200'
+                            : emailVerificado === formData.email.trim().toLowerCase()
+                            ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-200'
+                            : ''
+                        }`}
+                      />
+                    </label>
+                    {validandoEmail && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-sky-700">
+                        <span className="inline-block animate-spin">⏳</span> Verificando existencia del correo...
+                      </p>
+                    )}
+                    {errorEmail && !validandoEmail && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-rose-600">
+                        <span>⚠️</span> {errorEmail}
+                      </p>
+                    )}
+                    {emailVerificado &&
+                      emailVerificado === formData.email.trim().toLowerCase() &&
+                      !validandoEmail &&
+                      !errorEmail && (
+                        <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                          <span>✓</span> Correo existente y verificado
+                        </p>
+                      )}
+                  </div>
+                </div>
+              )}
 
               {/* Servicio y jornada */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -334,9 +663,17 @@ export default function SolicitarCitaPage() {
               <div className="border-t border-slate-100 pt-4">
                 <button
                   type="submit"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0AA896] px-5 py-3.5 text-sm font-extrabold text-white shadow-md transition hover:bg-[#078F80] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#0AA896]/20"
+                  disabled={validandoEmail}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0AA896] px-5 py-3.5 text-sm font-extrabold text-white shadow-md transition hover:bg-[#078F80] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#0AA896]/20 disabled:cursor-not-allowed disabled:opacity-75"
                 >
-                  📲 Enviar solicitud por WhatsApp
+                  {validandoEmail ? (
+                    <>
+                      <span className="inline-block animate-spin">⏳</span>
+                      <span>Verificando correo en el servidor...</span>
+                    </>
+                  ) : (
+                    <>📲 Enviar solicitud por WhatsApp</>
+                  )}
                 </button>
                 <p className="mt-2 text-center text-xs text-slate-500">
                   Tu solicitud se preparará para enviarla a recepción.
