@@ -43,6 +43,8 @@ export default function SolicitarCitaPage() {
   const [validandoEmail, setValidandoEmail] = useState(false);
   const [emailVerificado, setEmailVerificado] = useState<string | null>(null);
 
+  const PREFIJOS_OPERADOR_VALIDOS = ['300', '310', '315', '320'];
+
   const validarTelefono = (valor: string): string | null => {
     const trimmed = valor.trim();
     if (!trimmed) {
@@ -51,6 +53,14 @@ export default function SolicitarCitaPage() {
 
     if (!/^\d+$/.test(trimmed)) {
       return 'El número de teléfono solo debe contener dígitos numéricos.';
+    }
+
+    // Validar prefijo del operador (debe iniciar con 300, 310, 315 o 320)
+    if (trimmed.length >= 3) {
+      const prefijo = trimmed.slice(0, 3);
+      if (!PREFIJOS_OPERADOR_VALIDOS.includes(prefijo)) {
+        return `El prefijo (${prefijo}) no es válido. Debe iniciar con 300, 310, 315 o 320.`;
+      }
     }
 
     if (trimmed.length !== 10) {
@@ -66,10 +76,21 @@ export default function SolicitarCitaPage() {
 
     if (nuevoValor !== soloDigitos && !/^\d*$/.test(nuevoValor)) {
       setErrorTelefono('El número de teléfono solo debe contener dígitos numéricos.');
-    } else if (soloDigitos.length === 10) {
-      setErrorTelefono(null);
-    } else if (errorTelefono) {
-      setErrorTelefono(validarTelefono(soloDigitos));
+    } else if (soloDigitos.length >= 3) {
+      const prefijo = soloDigitos.slice(0, 3);
+      if (!PREFIJOS_OPERADOR_VALIDOS.includes(prefijo)) {
+        setErrorTelefono(
+          `El prefijo (${prefijo}) no es válido. Debe iniciar con 300, 310, 315 o 320.`,
+        );
+      } else if (soloDigitos.length === 10) {
+        setErrorTelefono(null);
+      } else if (errorTelefono && errorTelefono.includes('prefijo')) {
+        setErrorTelefono(null);
+      }
+    } else {
+      if (errorTelefono && errorTelefono.includes('prefijo')) {
+        setErrorTelefono(null);
+      }
     }
   };
 
