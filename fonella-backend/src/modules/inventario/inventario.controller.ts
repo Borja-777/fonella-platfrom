@@ -38,6 +38,17 @@ export class InventarioController {
   }
 
   /**
+   * Endpoint para listar historial de ventas de juguetes
+   * Ruta: GET /api/v1/inventario/ventas
+   * Acceso: FONOAUDIOLOGA y ASISTENTE
+   */
+  @Get("ventas")
+  listarVentas(@Req() req: any) {
+    const rolUsuario: RolUsuario = req.usuario.rol;
+    return this.inventarioService.listarVentas(rolUsuario);
+  }
+
+  /**
    * Endpoint para registrar nuevo juguete didáctico con cálculo de margen
    * Ruta: POST /api/v1/inventario/juguetes
    * Acceso: Exclusivo FONOAUDIOLOGA

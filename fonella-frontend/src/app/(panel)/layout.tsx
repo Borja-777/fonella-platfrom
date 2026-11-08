@@ -73,9 +73,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const esFonoaudiologa = usuario?.rol === 'FONOAUDIOLOGA';
 
   return (
-    <div className="min-h-screen w-full flex overflow-x-hidden bg-[#FAF6F0]">
-      {/* 1. SIDEBAR ADMINISTRATIVO: Ancho optimizado y responsive */}
-      <aside className="w-64 lg:w-72 shrink-0 h-screen sticky top-0 bg-gradient-to-b from-[#094A57] via-[#106A7C] via-65% to-[#EAF5F6] text-white flex flex-col justify-between p-5 lg:p-6 border-r border-[#136A7B]/20 shadow-2xl z-30">
+    <div className="min-h-screen w-full flex bg-[#FAF6F0]">
+      {/* 1. SIDEBAR ADMINISTRATIVO: Fijo a toda la altura de la pantalla con degradado oficial */}
+      <aside className="w-64 lg:w-72 fixed inset-y-0 left-0 h-screen bg-gradient-to-b from-[#094A57] via-[#106A7C] via-65% to-[#EAF5F6] text-white flex flex-col justify-between p-5 lg:p-6 border-r border-[#136A7B]/20 shadow-2xl z-30 overflow-y-auto">
         <div className="space-y-5 lg:space-y-6">
           {/* Header Marca FONELLA con Cápsula Crema Oficial */}
           <div className="flex flex-col items-center pb-3 border-b border-white/20">
@@ -184,7 +184,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Footer del Sidebar */}
-        <div className="mt-6 pt-4 border-t border-[#136A7B]/20">
+        <div className="mt-6 pt-4 border-t border-[#136A7B]/20 shrink-0">
           <div className="flex items-center justify-center gap-2 text-[10.5px] font-semibold text-[#0E5666] mb-2.5">
             <Clock className="w-3.5 h-3.5 text-[#0AA896] animate-pulse" />
             <span>Cierre automático por inactividad: 30m</span>
@@ -287,8 +287,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </div>
       )}
 
-      {/* 2. ÁREA DE CONTENIDO PRINCIPAL: Responsive sin desbordamiento */}
-      <div className="flex-1 min-w-0 relative flex flex-col min-h-screen">
+      {/* 2. ÁREA DE CONTENIDO PRINCIPAL: Con margen para el sidebar fijo y scroll natural */}
+      <div className="flex-1 min-w-0 ml-64 lg:ml-72 relative flex flex-col min-h-screen overflow-x-hidden">
         {/* Capa de Fotografía Clínica Oficial con Bárbara y la Niña enfrente */}
         <div
           className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none filter brightness-95"

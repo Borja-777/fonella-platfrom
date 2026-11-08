@@ -54,6 +54,30 @@ export interface RegistrarVentaData {
   pacienteId?: string;
 }
 
+export interface VentaHistorial {
+  id: string;
+  jugueteId: string;
+  cantidad: number;
+  metodoPago: 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
+  precioUnitarioVenta: number;
+  totalVenta: number;
+  costoUnitarioSnapshot?: number;
+  gananciaNeta?: number;
+  fechaVenta: string;
+  juguete: {
+    id: string;
+    codigoSku: string;
+    nombre: string;
+    imagenUrl?: string;
+    areaEstimulacion: string;
+  };
+  vendidoPor: {
+    id: string;
+    nombreCompleto: string;
+    rol: string;
+  };
+}
+
 export interface LoginResponse {
   mensaje: string;
   usuario: Usuario;
@@ -364,6 +388,22 @@ export const apiService = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Error al procesar la venta');
+    }
+    return data;
+  },
+
+  async listarVentas(): Promise<VentaHistorial[]> {
+    const res = await fetch(`${API_URL}/inventario/ventas`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al obtener historial de ventas');
     }
     return data;
   },

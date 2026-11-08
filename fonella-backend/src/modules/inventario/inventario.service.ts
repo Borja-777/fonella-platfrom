@@ -282,4 +282,59 @@ export class InventarioService {
       mensaje: `Juguete "${juguete.nombre}" eliminado exitosamente del inventario.`,
     };
   }
+
+  /**
+   * Obtener historial completo de ventas de juguetes con información del producto y vendedor
+   */
+  async listarVentas(rolUsuario: RolUsuario) {
+    const esFono = rolUsuario === RolUsuario.FONOAUDIOLOGA;
+
+    const ventas = await this.prisma.ventaJuguete.findMany({
+      orderBy: { fechaVenta: "desc" },
+      include: {
+        juguete: {
+          select: {
+            id: true,
+            codigoSku: true,
+            nombre: true,
+            imagenUrl: true,
+            areaEstimulacion: true,
+            costoUnitario: esFono,
+            precioVenta: true,
+          },
+        },
+        vendidoPor: {
+          select: {
+            id: true,
+            nombreCompleto: true,
+            rol: true,
+          },
+        },
+      },
+    });
+
+    return ventas.map((v) => ({
+      id: v.id,
+      jugueteId: v.jugueteId,
+      cantidad: v.cantidad,
+      metodoPago: v.metodoPago,
+      precioUnitarioVenta: Number(v.precioUnitarioVenta),
+      totalVenta: Number(v.totalVenta),
+      costoUnitarioSnapshot: esFono ? Number(v.costoUnitarioSnapshot) : undefined,
+      gananciaNeta: esFono ? Number(v.gananciaNeta) : undefined,
+      fechaVenta: v.fechaVenta,
+      juguete: {
+        id: v.juguete.id,
+        codigoSku: v.juguete.codigoSku,
+        nombre: v.juguete.nombre,
+        imagenUrl: v.juguete.imagenUrl,
+        areaEstimulacion: v.juguete.areaEstimulacion,
+      },
+      vendidoPor: {
+        id: v.vendidoPor.id,
+        nombreCompleto: v.vendidoPor.nombreCompleto,
+        rol: v.vendidoPor.rol,
+      },
+    }));
+  }
 }
