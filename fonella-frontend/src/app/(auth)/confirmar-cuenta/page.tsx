@@ -15,6 +15,7 @@ function ConfirmarCuentaContent() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [exito, setExito] = useState(false);
   const [nombreUsuario, setNombreUsuario] = useState('');
+  const [rolUsuario, setRolUsuario] = useState<string>('');
 
   useEffect(() => {
     if (!token) {
@@ -29,6 +30,9 @@ function ConfirmarCuentaContent() {
         setExito(true);
         if (res.usuario?.nombreCompleto) {
           setNombreUsuario(res.usuario.nombreCompleto);
+        }
+        if (res.usuario?.rol) {
+          setRolUsuario(res.usuario.rol);
         }
       } catch (err: any) {
         setErrorMsg(err.message || 'El enlace de confirmación es inválido o ha expirado.');
@@ -101,7 +105,11 @@ function ConfirmarCuentaContent() {
                   </p>
                 )}
                 <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                  Tu correo electrónico ha sido verificado correctamente. Tu perfil como <strong>Especialista Titular</strong> ya se encuentra activo en la base de datos de FONELLA.
+                  Tu correo electrónico ha sido verificado correctamente. Tu perfil como{' '}
+                  <strong>
+                    {rolUsuario === 'ASISTENTE' ? 'Asistente de Recepción' : 'Especialista Titular'}
+                  </strong>{' '}
+                  ya se encuentra activo en la base de datos de FONELLA.
                 </p>
               </div>
 

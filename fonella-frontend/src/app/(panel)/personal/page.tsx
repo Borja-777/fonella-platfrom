@@ -244,7 +244,7 @@ export default function PersonalPage() {
 
     try {
       if (modoModal === 'crear') {
-        await apiService.crearPersonal({
+        const res = await apiService.crearPersonal({
           nombreCompleto,
           email,
           password,
@@ -255,7 +255,7 @@ export default function PersonalPage() {
 
         setFeedback({
           tipo: 'exito',
-          texto: `Cuenta para "${nombreCompleto}" registrada exitosamente.`,
+          texto: res.mensaje || `Cuenta para "${nombreCompleto}" registrada exitosamente. Se envió un correo a ${email} para su activación.`,
         });
       } else if (usuarioSeleccionado) {
         await apiService.actualizarPersonal(usuarioSeleccionado.id, {
@@ -346,6 +346,25 @@ export default function PersonalPage() {
         tipo: 'error',
         texto: err.message || 'No se pudo restaurar la cuenta.',
       });
+    }
+  };
+
+  const handleReenviarActivacion = async (u: Usuario) => {
+    try {
+      setLoading(true);
+      const res = await apiService.reenviarActivacionPersonal(u.id);
+      setFeedback({
+        tipo: 'exito',
+        texto: res.mensaje || `Correo de activación reenviado a ${u.email}.`,
+      });
+      await cargarPersonal();
+    } catch (err: any) {
+      setFeedback({
+        tipo: 'error',
+        texto: err.message || 'Error al reenviar el correo de activación.',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -559,35 +578,53 @@ export default function PersonalPage() {
 
                       {/* Estado */}
                       <td className="py-3 px-2 sm:px-3 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-semibold ${
-                            activo
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-gray-100 text-gray-600 border border-gray-200'
-                          }`}
-                        >
+                        {activo ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <span>ACTIVO</span>
+                          </span>
+                        ) : u.resetToken ? (
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              activo ? 'bg-emerald-500' : 'bg-gray-400'
-                            }`}
-                          />
-                          {u.estado}
-                        </span>
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-xs"
+                            title="Cuenta creada, pendiente de confirmación vía correo"
+                          >
+                            <Mail className="w-3 h-3 text-amber-600" />
+                            <span>Pendiente Activación</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                            <span>INACTIVO</span>
+                          </span>
+                        )}
                       </td>
 
                       {/* Acciones Integradas */}
                       <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap relative">
                         {esFonoaudiologa ? (
-                          /* Rol Fonoaudióloga: Solo botón simple de Editar (sin flecha ni dropdown) */
-                          <button
-                            type="button"
-                            onClick={() => abrirModalEditar(u)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#0084FF] text-[#0084FF] hover:bg-sky-50 transition-colors text-xs font-semibold shadow-xs cursor-pointer bg-white"
-                            title="Editar información"
-                          >
-                            <Pencil className="w-3.5 h-3.5 text-[#0084FF]" />
-                            <span>Editar</span>
-                          </button>
+                          /* Rol Fonoaudióloga: Botón Editar y Reenviar si está pendiente */
+                          <div className="flex items-center justify-end gap-1.5">
+                            {!activo && u.resetToken && (
+                              <button
+                                type="button"
+                                onClick={() => handleReenviarActivacion(u)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors text-xs font-semibold shadow-xs cursor-pointer"
+                                title="Reenviar enlace de activación por correo"
+                              >
+                                <Mail className="w-3.5 h-3.5 text-amber-600" />
+                                <span>Reenviar</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => abrirModalEditar(u)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#0084FF] text-[#0084FF] hover:bg-sky-50 transition-colors text-xs font-semibold shadow-xs cursor-pointer bg-white"
+                              title="Editar información"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-[#0084FF]" />
+                              <span>Editar</span>
+                            </button>
+                          </div>
                         ) : (
                           /* Rol Asistente: Botón Split Editar con Menú Apilado */
                           <div className="relative inline-block text-left menu-acciones-container">
@@ -676,7 +713,25 @@ export default function PersonalPage() {
                 </button>
               </div>
 
-              {/* 2. Activar / Desactivar */}
+              {/* 2. Reenviar Activación (Solo si está pendiente) */}
+              {!activo && u.resetToken && (
+                <div className="py-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuAbiertoId(null);
+                      setMenuPosicion(null);
+                      handleReenviarActivacion(u);
+                    }}
+                    className="w-full px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                  >
+                    <Mail className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Reenviar Activación</span>
+                  </button>
+                </div>
+              )}
+
+              {/* 3. Activar / Desactivar */}
               <div className="py-0.5">
                 {activo ? (
                   <button
@@ -863,6 +918,11 @@ export default function PersonalPage() {
                       className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
                     />
                   </div>
+                  {modoModal === 'crear' && (
+                    <p className="text-[10.5px] text-slate-500 mt-1 flex items-center gap-1">
+                      <span>ℹ️ Se enviará un enlace de confirmación a este correo para activar la cuenta.</span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Contraseña con Regla de Complejidad */}

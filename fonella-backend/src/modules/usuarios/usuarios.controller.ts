@@ -71,4 +71,17 @@ export class UsuariosController {
   ) {
     return this.usuariosService.cambiarEstado(id, dto);
   }
+
+  /**
+   * Endpoint para reenviar correo de confirmación y activación
+   * Ruta: POST /api/v1/usuarios/personal/:id/reenviar-activacion
+   * Acceso: Solo FONOAUDIOLOGA
+   */
+  @Post("personal/:id/reenviar-activacion")
+  @HttpCode(HttpStatus.OK)
+  reenviarActivacion(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+  ) {
+    return this.usuariosService.reenviarActivacion(id);
+  }
 }

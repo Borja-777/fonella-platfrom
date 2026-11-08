@@ -725,6 +725,9 @@ export default function LoginPage() {
                         className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#136A7B] bg-white"
                       />
                     </div>
+                    <p className="text-[10.5px] text-slate-500 mt-1 flex items-center gap-1">
+                      <span>ℹ️ Se validará la existencia del dominio y se enviará un enlace de activación.</span>
+                    </p>
                   </div>
 
                   {/* 4. Contraseña Segura con Reglas */}

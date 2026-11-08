@@ -9,6 +9,8 @@ export interface Usuario {
   fotoPerfilUrl?: string | null;
   ocultoEnPanel?: boolean;
   estado: 'ACTIVO' | 'INACTIVO';
+  resetToken?: string | null;
+  resetTokenExpira?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -255,6 +257,19 @@ export const apiService = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Error al cambiar estado');
+    }
+    return data;
+  },
+
+  async reenviarActivacionPersonal(id: string): Promise<{ mensaje: string }> {
+    const res = await fetch(`${API_URL}/usuarios/personal/${id}/reenviar-activacion`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al reenviar correo de activación');
     }
     return data;
   },

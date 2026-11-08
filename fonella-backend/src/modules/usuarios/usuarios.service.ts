@@ -5,23 +5,32 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
+import * as crypto from "crypto";
 import { EstadoRegistro, RolUsuario } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
+import { MailService } from "../mail/mail.service";
 import { CrearPersonalDto } from "./dto/crear-personal.dto";
 import { ActualizarEstadoDto } from "./dto/actualizar-estado.dto";
 import { ActualizarPersonalDto } from "./dto/actualizar-personal.dto";
 
 @Injectable()
 export class UsuariosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
 
   /**
    * Registra una nueva cuenta de personal (asistente o fonoaudióloga)
+   * Valida existencia real del correo y envía confirmación/activación por email
    */
   async crearPersonal(dto: CrearPersonalDto) {
     const emailNormalizado = dto.email.toLowerCase().trim();
 
-    // 1. Validar que no exista otro usuario con el mismo email (409 Conflict)
+    // 1. Validar que el dominio del correo electrónico exista en internet (registros MX)
+    await this.mailService.validarDominioEmail(emailNormalizado);
+
+    // 2. Validar que no exista otro usuario con el mismo email (409 Conflict)
     const usuarioExistente = await this.prisma.usuario.findUnique({
       where: { email: emailNormalizado },
     });
@@ -32,11 +41,15 @@ export class UsuariosService {
       );
     }
 
-    // 2. Hashear la contraseña con bcrypt (10 rondas de salt)
+    // 3. Hashear la contraseña con bcrypt (10 rondas de salt)
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(dto.password, saltRounds);
 
-    // 3. Crear el registro en PostgreSQL
+    // 4. Generar token criptográfico para activación vía email (24 horas de vigencia)
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiracion = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    // 5. Crear el registro en PostgreSQL en estado INACTIVO (pendiente de activación por correo)
     const nuevoUsuario = await this.prisma.usuario.create({
       data: {
         nombreCompleto: dto.nombreCompleto.trim(),
@@ -46,7 +59,9 @@ export class UsuariosService {
         registroRethus: dto.registroRethus?.trim() || null,
         fotoPerfilUrl: dto.fotoPerfilUrl || null,
         ocultoEnPanel: false,
-        estado: EstadoRegistro.ACTIVO,
+        estado: EstadoRegistro.INACTIVO,
+        resetToken: token,
+        resetTokenExpira: expiracion,
       },
       select: {
         id: true,
@@ -57,13 +72,66 @@ export class UsuariosService {
         fotoPerfilUrl: true,
         ocultoEnPanel: true,
         estado: true,
+        resetToken: true,
+        resetTokenExpira: true,
         createdAt: true,
       },
     });
 
+    // 6. Enviar correo de activación con enlace seguro
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const enlaceConfirmacion = `${frontendUrl}/confirmar-cuenta?token=${token}`;
+
+    await this.mailService.enviarEmailConfirmacion(
+      nuevoUsuario.email,
+      nuevoUsuario.nombreCompleto,
+      enlaceConfirmacion,
+      nuevoUsuario.rol,
+    );
+
     return {
-      mensaje: "Personal registrado exitosamente en el sistema Fonella.",
+      mensaje: `Personal registrado exitosamente. Se ha enviado un correo a ${nuevoUsuario.email} para confirmar y activar la cuenta.`,
       usuario: nuevoUsuario,
+    };
+  }
+
+  /**
+   * Reenvía el correo de activación para cuentas pendientes
+   */
+  async reenviarActivacion(id: string) {
+    const usuario = await this.prisma.usuario.findUnique({ where: { id } });
+
+    if (!usuario) {
+      throw new NotFoundException("El colaborador no existe en el sistema.");
+    }
+
+    if (usuario.estado === EstadoRegistro.ACTIVO) {
+      throw new BadRequestException("Esta cuenta ya se encuentra activa y confirmada.");
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiracion = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await this.prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        resetToken: token,
+        resetTokenExpira: expiracion,
+      },
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const enlaceConfirmacion = `${frontendUrl}/confirmar-cuenta?token=${token}`;
+
+    await this.mailService.enviarEmailConfirmacion(
+      usuario.email,
+      usuario.nombreCompleto,
+      enlaceConfirmacion,
+      usuario.rol,
+    );
+
+    return {
+      mensaje: `Correo de activación reenviado exitosamente a ${usuario.email}.`,
     };
   }
 
@@ -81,6 +149,8 @@ export class UsuariosService {
         fotoPerfilUrl: true,
         ocultoEnPanel: true,
         estado: true,
+        resetToken: true,
+        resetTokenExpira: true,
         createdAt: true,
         updatedAt: true,
       },
