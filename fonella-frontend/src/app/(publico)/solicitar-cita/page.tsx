@@ -1,4 +1,4 @@
-﻿
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -10,6 +10,7 @@ type FormularioCita = {
   nombrePaciente: string;
   edadPaciente: string;
   telefono: string;
+  email: string;
   nombreAcudiente: string;
   parentescoAcudiente: string;
   servicioInteres: string;
@@ -26,6 +27,7 @@ export default function SolicitarCitaPage() {
     nombrePaciente: '',
     edadPaciente: '',
     telefono: '',
+    email: '',
     nombreAcudiente: '',
     parentescoAcudiente: 'Madre',
     servicioInteres: 'Evaluación e intervención del lenguaje y del habla',
@@ -33,6 +35,62 @@ export default function SolicitarCitaPage() {
     motivoBreve: '',
     jornadaPreferida: 'Mañana (8:00 a.m. - 12:00 m.)',
   });
+
+  const [errorEdad, setErrorEdad] = useState<string | null>(null);
+
+  const validarEdad = (valor: string, esMenor: boolean): string | null => {
+    const trimmed = valor.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    // 1. Validar que no contenga decimales (punto o coma)
+    if (trimmed.includes('.') || trimmed.includes(',')) {
+      return 'La edad debe ser un número entero sin decimales.';
+    }
+
+    // 2. Extraer sufijo "años" si el usuario lo escribe
+    const soloDigitos = trimmed.replace(/\s*(años|año|anios|anio)\s*$/i, '');
+    if (!/^\d+$/.test(soloDigitos)) {
+      return 'La edad debe ser un número entero válido.';
+    }
+
+    const num = parseInt(soloDigitos, 10);
+    if (isNaN(num) || num < 0) {
+      return 'Ingresa una edad válida en años cumplidos.';
+    }
+
+    // 3. Reglas específicas por tipo de paciente
+    if (esMenor) {
+      if (num >= 18) {
+        return 'Para paciente pediátrico, la edad debe ser menor a 18 años.';
+      }
+    } else {
+      if (num < 18) {
+        return 'Para paciente adulto, la edad debe ser mayor o igual a 18 años.';
+      }
+      if (num > 125) {
+        return 'Ingresa una edad válida.';
+      }
+    }
+
+    return null;
+  };
+
+  const cambiarModoPaciente = (esMenor: boolean) => {
+    setFormData((actual) => ({
+      ...actual,
+      esMenorEdad: esMenor,
+    }));
+    if (formData.edadPaciente) {
+      setErrorEdad(validarEdad(formData.edadPaciente, esMenor));
+    }
+  };
+
+  const manejarCambioEdad = (nuevoValor: string) => {
+    actualizarCampo('edadPaciente', nuevoValor);
+    setErrorEdad(validarEdad(nuevoValor, formData.esMenorEdad));
+  };
 
   const actualizarCampo = <K extends keyof FormularioCita>(
     campo: K,
@@ -53,6 +111,12 @@ export default function SolicitarCitaPage() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const err = validarEdad(formData.edadPaciente, formData.esMenorEdad);
+    if (err) {
+      setErrorEdad(err);
+      return;
+    }
 
     const enlace = generarLinkSolicitudCitaAsistida(formData);
     window.open(enlace, '_blank', 'noopener,noreferrer');
@@ -129,7 +193,7 @@ export default function SolicitarCitaPage() {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <button
                     type="button"
-                    onClick={() => actualizarCampo('esMenorEdad', true)}
+                    onClick={() => cambiarModoPaciente(true)}
                     aria-pressed={formData.esMenorEdad}
                     className={`rounded-xl border-2 p-3 text-left transition ${
                       formData.esMenorEdad
@@ -147,7 +211,7 @@ export default function SolicitarCitaPage() {
 
                   <button
                     type="button"
-                    onClick={() => actualizarCampo('esMenorEdad', false)}
+                    onClick={() => cambiarModoPaciente(false)}
                     aria-pressed={!formData.esMenorEdad}
                     className={`rounded-xl border-2 p-3 text-left transition ${
                       !formData.esMenorEdad
@@ -204,6 +268,20 @@ export default function SolicitarCitaPage() {
                       </select>
                     </label>
                   </div>
+
+                  <label className={labelClass}>
+                    Correo electrónico del acudiente *
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) =>
+                        actualizarCampo('email', e.target.value)
+                      }
+                      placeholder="acudiente@ejemplo.com"
+                      className={inputClass}
+                    />
+                  </label>
                 </div>
               )}
 
@@ -225,35 +303,78 @@ export default function SolicitarCitaPage() {
                   />
                 </label>
 
+                <div>
+                  <label className={labelClass}>
+                    Edad *
+                    <input
+                      type="text"
+                      required
+                      value={formData.edadPaciente}
+                      onChange={(e) =>
+                        manejarCambioEdad(e.target.value)
+                      }
+                      placeholder={formData.esMenorEdad ? 'Ej. 4' : 'Ej. 28'}
+                      className={`${inputClass} ${
+                        errorEdad
+                          ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-200'
+                          : ''
+                      }`}
+                    />
+                  </label>
+                  {errorEdad && (
+                    <p className="mt-1 text-xs font-semibold text-rose-600">
+                      ⚠️ {errorEdad}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Teléfono y Correo */}
+              {formData.esMenorEdad ? (
                 <label className={labelClass}>
-                  Edad *
+                  Teléfono de contacto *
                   <input
-                    type="text"
+                    type="tel"
                     required
-                    value={formData.edadPaciente}
+                    value={formData.telefono}
                     onChange={(e) =>
-                      actualizarCampo('edadPaciente', e.target.value)
+                      actualizarCampo('telefono', e.target.value)
                     }
-                    placeholder="Ej. 4 años"
+                    placeholder="Ej. 3001234567"
                     className={inputClass}
                   />
                 </label>
-              </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label className={labelClass}>
+                    Teléfono de contacto *
+                    <input
+                      type="tel"
+                      required
+                      value={formData.telefono}
+                      onChange={(e) =>
+                        actualizarCampo('telefono', e.target.value)
+                      }
+                      placeholder="Ej. 3001234567"
+                      className={inputClass}
+                    />
+                  </label>
 
-              {/* Teléfono */}
-              <label className={labelClass}>
-                Teléfono de contacto *
-                <input
-                  type="tel"
-                  required
-                  value={formData.telefono}
-                  onChange={(e) =>
-                    actualizarCampo('telefono', e.target.value)
-                  }
-                  placeholder="Ej. 3001234567"
-                  className={inputClass}
-                />
-              </label>
+                  <label className={labelClass}>
+                    Correo electrónico *
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) =>
+                        actualizarCampo('email', e.target.value)
+                      }
+                      placeholder="paciente@ejemplo.com"
+                      className={inputClass}
+                    />
+                  </label>
+                </div>
+              )}
 
               {/* Servicio y jornada */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
