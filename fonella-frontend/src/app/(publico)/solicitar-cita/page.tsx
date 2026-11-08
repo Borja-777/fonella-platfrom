@@ -38,9 +38,46 @@ export default function SolicitarCitaPage() {
   });
 
   const [errorEdad, setErrorEdad] = useState<string | null>(null);
+  const [errorTelefono, setErrorTelefono] = useState<string | null>(null);
   const [errorEmail, setErrorEmail] = useState<string | null>(null);
   const [validandoEmail, setValidandoEmail] = useState(false);
   const [emailVerificado, setEmailVerificado] = useState<string | null>(null);
+
+  const validarTelefono = (valor: string): string | null => {
+    const trimmed = valor.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    if (!/^\d+$/.test(trimmed)) {
+      return 'El número de teléfono solo debe contener dígitos numéricos.';
+    }
+
+    if (trimmed.length !== 10) {
+      return 'El número de teléfono debe contener exactamente 10 dígitos.';
+    }
+
+    return null;
+  };
+
+  const manejarCambioTelefono = (nuevoValor: string) => {
+    const soloDigitos = nuevoValor.replace(/\D/g, '').slice(0, 10);
+    actualizarCampo('telefono', soloDigitos);
+
+    if (nuevoValor !== soloDigitos && !/^\d*$/.test(nuevoValor)) {
+      setErrorTelefono('El número de teléfono solo debe contener dígitos numéricos.');
+    } else if (soloDigitos.length === 10) {
+      setErrorTelefono(null);
+    } else if (errorTelefono) {
+      setErrorTelefono(validarTelefono(soloDigitos));
+    }
+  };
+
+  const manejarBlurTelefono = () => {
+    if (formData.telefono.trim()) {
+      setErrorTelefono(validarTelefono(formData.telefono));
+    }
+  };
 
   const validarEdad = (valor: string, esMenor: boolean): string | null => {
     const trimmed = valor.trim();
@@ -163,6 +200,14 @@ export default function SolicitarCitaPage() {
     const err = validarEdad(formData.edadPaciente, formData.esMenorEdad);
     if (err) {
       setErrorEdad(err);
+      return;
+    }
+
+    const errTelefono = validarTelefono(formData.telefono);
+    if (errTelefono || formData.telefono.trim().length !== 10) {
+      setErrorTelefono(
+        errTelefono || 'El número de teléfono debe contener exactamente 10 dígitos.',
+      );
       return;
     }
 
@@ -416,21 +461,7 @@ export default function SolicitarCitaPage() {
 
               {/* Teléfono y Correo */}
               {formData.esMenorEdad ? (
-                <label className={labelClass}>
-                  Teléfono de contacto *
-                  <input
-                    type="tel"
-                    required
-                    value={formData.telefono}
-                    onChange={(e) =>
-                      actualizarCampo('telefono', e.target.value)
-                    }
-                    placeholder="Ej. 3001234567"
-                    className={inputClass}
-                  />
-                </label>
-              ) : (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
                   <label className={labelClass}>
                     Teléfono de contacto *
                     <input
@@ -438,12 +469,52 @@ export default function SolicitarCitaPage() {
                       required
                       value={formData.telefono}
                       onChange={(e) =>
-                        actualizarCampo('telefono', e.target.value)
+                        manejarCambioTelefono(e.target.value)
                       }
+                      onBlur={manejarBlurTelefono}
                       placeholder="Ej. 3001234567"
-                      className={inputClass}
+                      maxLength={10}
+                      className={`${inputClass} ${
+                        errorTelefono
+                          ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-200'
+                          : ''
+                      }`}
                     />
                   </label>
+                  {errorTelefono && (
+                    <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-rose-600">
+                      <span>⚠️</span> {errorTelefono}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass}>
+                      Teléfono de contacto *
+                      <input
+                        type="tel"
+                        required
+                        value={formData.telefono}
+                        onChange={(e) =>
+                          manejarCambioTelefono(e.target.value)
+                        }
+                        onBlur={manejarBlurTelefono}
+                        placeholder="Ej. 3001234567"
+                        maxLength={10}
+                        className={`${inputClass} ${
+                          errorTelefono
+                            ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-200'
+                            : ''
+                        }`}
+                      />
+                    </label>
+                    {errorTelefono && (
+                      <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-rose-600">
+                        <span>⚠️</span> {errorTelefono}
+                      </p>
+                    )}
+                  </div>
 
                   <div>
                     <label className={labelClass}>
