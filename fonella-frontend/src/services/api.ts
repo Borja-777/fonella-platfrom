@@ -13,6 +13,45 @@ export interface Usuario {
   updatedAt?: string;
 }
 
+export interface Juguete {
+  id: string;
+  codigoSku: string;
+  nombre: string;
+  descripcionTerapeutica: string;
+  areaEstimulacion: string;
+  edadSugerida: string;
+  imagenUrl?: string;
+  stockDisponible: number;
+  stockMinimoAlerta: number;
+  costoUnitario?: number;
+  precioVenta: number;
+  gananciaNetaUnitaria?: number;
+  margenPorcentual?: number;
+  publicadoCatalogo: boolean;
+  estado: 'ACTIVO' | 'INACTIVO';
+  createdAt?: string;
+}
+
+export interface CrearJugueteData {
+  codigoSku: string;
+  nombre: string;
+  descripcionTerapeutica: string;
+  areaEstimulacion: string;
+  edadSugerida: string;
+  imagenUrl?: string;
+  stockDisponible: number;
+  stockMinimoAlerta?: number;
+  costoUnitario: number;
+  precioVenta: number;
+  publicadoCatalogo?: boolean;
+}
+
+export interface RegistrarVentaData {
+  cantidad: number;
+  metodoPago: 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
+  pacienteId?: string;
+}
+
 export interface LoginResponse {
   mensaje: string;
   usuario: Usuario;
@@ -216,6 +255,67 @@ export const apiService = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Error al cambiar estado');
+    }
+    return data;
+  },
+
+  // --------------------------------------------------------------------------
+  // MÓDULO DE INVENTARIO DIDÁCTICO Y MARGEN DE GANANCIA (HU-001, HU-002)
+  // --------------------------------------------------------------------------
+  async getJuguetes(): Promise<Juguete[]> {
+    const res = await fetch(`${API_URL}/inventario/juguetes`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al consultar inventario de juguetes');
+    }
+    return data;
+  },
+
+  async crearJuguete(datos: CrearJugueteData): Promise<Juguete & { mensaje: string }> {
+    const res = await fetch(`${API_URL}/inventario/juguetes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al registrar producto en inventario');
+    }
+    return data;
+  },
+
+  async registrarVentaJuguete(
+    id: string,
+    datos: RegistrarVentaData,
+  ): Promise<{
+    ventaId: string;
+    jugueteId: string;
+    nombre: string;
+    cantidadVendida: number;
+    stockRestante: number;
+    totalVenta: number;
+    mensaje: string;
+  }> {
+    const res = await fetch(`${API_URL}/inventario/juguetes/${id}/venta`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al procesar la venta');
     }
     return data;
   },

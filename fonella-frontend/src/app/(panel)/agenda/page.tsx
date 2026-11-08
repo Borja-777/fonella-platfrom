@@ -144,9 +144,9 @@ export default function AgendaPage() {
                 </h4>
               </div>
               <p className="text-xs text-amber-100 mt-1 leading-relaxed max-w-3xl">
-                Tu cuenta tiene rol operativo de <strong>{usuario?.rol || 'ASISTENTE / RECEPCIÓN'}</strong>. 
-                Por normatividad legal de reserva médica y protección de datos (Ley 1581 de 2012), 
-                la <strong>Gestión de Cuentas de Personal</strong> y las <strong>Historias Clínicas</strong> están 
+                Tu cuenta tiene rol operativo de <strong>{usuario?.rol || 'ASISTENTE / RECEPCIÓN'}</strong>.
+                Por normatividad legal de reserva médica y protección de datos (Ley 1581 de 2012),
+                la <strong>Gestión de Cuentas de Personal</strong> y las <strong>Historias Clínicas</strong> están
                 reservadas con exclusividad a la <strong>Fonoaudióloga Titular</strong>. Has sido redirigido a tu módulo autorizado de Agenda.
               </p>
             </div>
@@ -215,19 +215,6 @@ export default function AgendaPage() {
             <Plus className="w-4 h-4" />
             <span>+ Agendar Cita en Recepción</span>
           </button>
-        </div>
-      </div>
-
-      {/* 3. Garantía de Confidencialidad y Reserva Legal (DoD HU-03) */}
-      <div className="bg-[#EAF5F6] border border-[#0AA896]/30 p-3.5 rounded-2xl flex items-start gap-3 shadow-xs">
-        <Info className="w-4 h-4 text-[#0AA896] shrink-0 mt-0.5" />
-        <div className="text-xs text-[#094A57] leading-relaxed">
-          <strong className="font-extrabold text-[#0E5666]">Garantía de Confidencialidad Médica (HU-03):</strong>
-          <span className="ml-1 opacity-90">
-            Esta pantalla opera bajo el principio de privilegio mínimo de seguridad (RBAC). El personal asistente 
-            accede exclusivamente a la información de coordinación, correos y teléfonos. Los expedientes de anamnesis, 
-            diagnósticos y notas clínicas privadas permanecen estrictamente resguardados para la fonoaudióloga.
-          </span>
         </div>
       </div>
 
@@ -460,11 +447,10 @@ export default function AgendaPage() {
                 <button
                   type="button"
                   onClick={() => setTipoPaciente('MENOR')}
-                  className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    tipoPaciente === 'MENOR'
-                      ? 'bg-white text-[#094A57] shadow-sm border border-gray-200/80'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${tipoPaciente === 'MENOR'
+                    ? 'bg-white text-[#094A57] shadow-sm border border-gray-200/80'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
                 >
                   <Baby className="w-4 h-4 text-amber-600" />
                   <span>Menor (Pediátrico)</span>
@@ -473,11 +459,10 @@ export default function AgendaPage() {
                 <button
                   type="button"
                   onClick={() => setTipoPaciente('ADULTO')}
-                  className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    tipoPaciente === 'ADULTO'
-                      ? 'bg-white text-[#094A57] shadow-sm border border-gray-200/80'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${tipoPaciente === 'ADULTO'
+                    ? 'bg-white text-[#094A57] shadow-sm border border-gray-200/80'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
                 >
                   <UserCheck className="w-4 h-4 text-sky-600" />
                   <span>Paciente Adulto</span>

@@ -165,15 +165,21 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               </span>
             </div>
 
-            <div className="px-3.5 py-3 rounded-2xl bg-white/15 text-white/85 flex items-center justify-between border border-white/10 cursor-not-allowed">
+            <Link
+              href="/inventario"
+              className={`px-3.5 py-3 rounded-2xl flex items-center justify-between transition-all ${pathname.startsWith('/inventario')
+                ? 'bg-white text-[#0E5666] shadow-lg border border-white font-extrabold'
+                : 'text-white hover:bg-white/15'
+                }`}
+            >
               <span className="flex items-center gap-2.5">
-                <Package className="w-4 h-4 text-white/70" />
+                <Package className="w-4 h-4 text-[#0AA896]" />
                 <span>Inventario Juguetes</span>
               </span>
-              <span className="text-[9px] font-semibold bg-white/20 px-2 py-0.5 rounded-full text-white/90">
-                Próx.
-              </span>
-            </div>
+              {pathname.startsWith('/inventario') && (
+                <span className="w-2.5 h-2.5 rounded-full bg-[#0AA896] shadow-xs" />
+              )}
+            </Link>
           </nav>
         </div>
 
