@@ -133,25 +133,27 @@ export class MailService {
           if (codigo === "250" || respuesta.startsWith("250")) {
             this.logger.log(`✅ Casilla validada con éxito en ${mxHost}: ${email}`);
             terminar();
-          } else if (
-            codigo.startsWith("5") ||
-            respuesta.includes("550") ||
-            respuesta.includes("551") ||
-            respuesta.includes("553") ||
-            respuesta.includes("NoSuchUser") ||
-            respuesta.toLowerCase().includes("does not exist") ||
-            respuesta.toLowerCase().includes("user unknown") ||
-            respuesta.toLowerCase().includes("recipient address rejected")
-          ) {
-            this.logger.warn(`❌ Casilla rechazada por servidor ${mxHost}: ${respuesta}`);
-            terminar(
-              new BadRequestException(
-                `El correo electrónico "${email}" no existe o no ha sido creado en el servidor de correo (${dominio}). Por favor verifica que la dirección esté bien escrita.`,
-              ),
-            );
           } else {
-            // Respuestas 4xx (greylisting) o provisionales se consideran aceptables
-            terminar();
+            // Cualquier respuesta distinta de 250 (550 inexistente, 452 buzón lleno, etc.) indica que no puede recibir correos
+            this.logger.warn(`❌ Casilla no apta o rechazada por servidor ${mxHost}: ${respuesta}`);
+            let mensajeError = `El correo electrónico "${email}" no existe o no ha sido creado en el servidor de correo (${dominio}).`;
+
+            if (
+              respuesta.includes("452") ||
+              respuesta.toLowerCase().includes("storage space") ||
+              respuesta.toLowerCase().includes("quota")
+            ) {
+              mensajeError = `El correo electrónico "${email}" no puede recibir mensajes (su buzón de entrada no tiene espacio de almacenamiento disponible o no es válido).`;
+            } else if (
+              respuesta.includes("550") ||
+              respuesta.includes("NoSuchUser") ||
+              respuesta.toLowerCase().includes("does not exist") ||
+              respuesta.toLowerCase().includes("user unknown")
+            ) {
+              mensajeError = `El correo electrónico "${email}" no existe en ${dominio}. Por favor verifica que esté bien escrito.`;
+            }
+
+            terminar(new BadRequestException(mensajeError));
           }
         }
       });
