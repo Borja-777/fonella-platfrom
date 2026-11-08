@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import * as nodemailer from "nodemailer";
 import * as dns from "dns";
+import * as net from "net";
 import { RolUsuario } from "@prisma/client";
 
 @Injectable()
@@ -14,8 +15,8 @@ export class MailService {
   private readonly logger = new Logger(MailService.name);
 
   /**
-   * Valida sintaxis y verifica si el dominio del correo electrónico realmente existe en internet
-   * mediante la resolución de registros MX (Mail Exchange) de DNS.
+   * Valida sintaxis, verifica que el dominio tenga registros MX y comprueba mediante
+   * protocolo SMTP (handshake RCPT TO) si la cuenta de correo realmente existe en el servidor destinatario.
    */
   async validarDominioEmail(email: string): Promise<void> {
     const emailLimpio = email.trim().toLowerCase();
@@ -33,20 +34,23 @@ export class MailService {
       return;
     }
 
+    let mxRecords: dns.MxRecord[] = [];
+
+    // 1. Verificar registros MX en DNS
     try {
-      // Timeout de 4 segundos para evitar que la solicitud se cuelgue si el DNS está lento
-      const mxRecords = await Promise.race([
+      const records = await Promise.race([
         dns.promises.resolveMx(dominio),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("TIMEOUT_DNS")), 4000),
         ),
       ]);
 
-      if (!mxRecords || mxRecords.length === 0) {
+      if (!records || records.length === 0) {
         throw new BadRequestException(
           `El dominio del correo ("@${dominio}") no cuenta con servidores de correo (registros MX) válidos para recibir mensajes.`,
         );
       }
+      mxRecords = records;
     } catch (error: any) {
       if (error instanceof BadRequestException) {
         throw error;
@@ -62,9 +66,107 @@ export class MailService {
         );
       }
 
-      // Si es un timeout o error de red temporal, registramos advertencia pero no bloqueamos
       this.logger.warn(`Advertencia al verificar MX de ${dominio}: ${error.message}`);
+      return;
     }
+
+    // 2. Verificación directa de existencia del buzón vía SMTP (RCPT TO)
+    mxRecords.sort((a, b) => a.priority - b.priority);
+    const mxHost = mxRecords[0].exchange;
+
+    try {
+      await this.verificarBuzonDirectoSmtp(emailLimpio, dominio, mxHost);
+    } catch (error: any) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.warn(`SMTP handshake no concluyente para ${emailLimpio}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Conecta con el servidor MX en el puerto 25 y ejecuta handshake SMTP para validar la existencia de la casilla
+   */
+  private verificarBuzonDirectoSmtp(
+    email: string,
+    dominio: string,
+    mxHost: string,
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const socket = net.createConnection(25, mxHost);
+      let paso = 0;
+      let finalizado = false;
+
+      socket.setEncoding("utf-8");
+      socket.setTimeout(4500);
+
+      const terminar = (err?: any) => {
+        if (!finalizado) {
+          finalizado = true;
+          try {
+            socket.write("QUIT\r\n");
+            socket.end();
+          } catch (_) {}
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        }
+      };
+
+      socket.on("data", (data: string) => {
+        const respuesta = data.trim();
+        const codigo = respuesta.slice(0, 3);
+
+        if (paso === 0 && (codigo === "220" || respuesta.startsWith("220"))) {
+          paso = 1;
+          socket.write("HELO fonella.co\r\n");
+        } else if (paso === 1 && (codigo === "250" || respuesta.startsWith("250"))) {
+          paso = 2;
+          socket.write("MAIL FROM:<soporte@fonella.co>\r\n");
+        } else if (paso === 2 && (codigo === "250" || respuesta.startsWith("250"))) {
+          paso = 3;
+          socket.write(`RCPT TO:<${email}>\r\n`);
+        } else if (paso === 3) {
+          // Evaluar respuesta al destinatario (RCPT TO)
+          if (codigo === "250" || respuesta.startsWith("250")) {
+            this.logger.log(`✅ Casilla validada con éxito en ${mxHost}: ${email}`);
+            terminar();
+          } else if (
+            codigo.startsWith("5") ||
+            respuesta.includes("550") ||
+            respuesta.includes("551") ||
+            respuesta.includes("553") ||
+            respuesta.includes("NoSuchUser") ||
+            respuesta.toLowerCase().includes("does not exist") ||
+            respuesta.toLowerCase().includes("user unknown") ||
+            respuesta.toLowerCase().includes("recipient address rejected")
+          ) {
+            this.logger.warn(`❌ Casilla rechazada por servidor ${mxHost}: ${respuesta}`);
+            terminar(
+              new BadRequestException(
+                `El correo electrónico "${email}" no existe o no ha sido creado en el servidor de correo (${dominio}). Por favor verifica que la dirección esté bien escrita.`,
+              ),
+            );
+          } else {
+            // Respuestas 4xx (greylisting) o provisionales se consideran aceptables
+            terminar();
+          }
+        }
+      });
+
+      socket.on("error", (err) => {
+        this.logger.warn(`Error de socket en verificación SMTP para ${email}: ${err.message}`);
+        terminar(); // Fallback silencioso si el puerto 25 está restringido
+      });
+
+      socket.on("timeout", () => {
+        this.logger.warn(`Timeout en verificación SMTP para ${email}`);
+        socket.destroy();
+        terminar();
+      });
+    });
   }
 
   /**

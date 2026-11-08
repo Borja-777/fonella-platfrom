@@ -140,6 +140,16 @@ export class UsuariosService {
    */
   async listarPersonal() {
     return this.prisma.usuario.findMany({
+      where: {
+        // Cuentas de fonoaudiólogas externas pendientes de confirmación de email no aparecen en el panel
+        NOT: {
+          AND: [
+            { estado: "INACTIVO" },
+            { resetToken: { not: null } },
+            { rol: "FONOAUDIOLOGA" },
+          ],
+        },
+      },
       select: {
         id: true,
         nombreCompleto: true,
