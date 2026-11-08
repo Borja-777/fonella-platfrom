@@ -4,6 +4,7 @@
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { generarLinkSolicitudCitaAsistida } from '@/utils/whatsapp-link';
+import { api } from '@/services/api';
 
 type FormularioCita = {
   esMenorEdad: boolean;
@@ -37,6 +38,9 @@ export default function SolicitarCitaPage() {
   });
 
   const [errorEdad, setErrorEdad] = useState<string | null>(null);
+  const [errorEmail, setErrorEmail] = useState<string | null>(null);
+  const [validandoEmail, setValidandoEmail] = useState(false);
+  const [emailVerificado, setEmailVerificado] = useState<string | null>(null);
 
   const validarEdad = (valor: string, esMenor: boolean): string | null => {
     const trimmed = valor.trim();
@@ -92,6 +96,50 @@ export default function SolicitarCitaPage() {
     setErrorEdad(validarEdad(nuevoValor, formData.esMenorEdad));
   };
 
+  const manejarCambioEmail = (nuevoEmail: string) => {
+    actualizarCampo('email', nuevoEmail);
+    if (errorEmail) setErrorEmail(null);
+    if (emailVerificado && emailVerificado !== nuevoEmail.trim().toLowerCase()) {
+      setEmailVerificado(null);
+    }
+  };
+
+  const verificarExistenciaEmail = async (
+    emailAValidar: string,
+  ): Promise<boolean> => {
+    const emailLimpio = emailAValidar.trim().toLowerCase();
+    if (!emailLimpio) {
+      setErrorEmail('El correo electrónico es obligatorio.');
+      return false;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLimpio)) {
+      setErrorEmail('Ingresa un correo electrónico con formato válido.');
+      return false;
+    }
+
+    if (emailVerificado === emailLimpio) {
+      return true;
+    }
+
+    setValidandoEmail(true);
+    setErrorEmail(null);
+
+    try {
+      await api.validarEmail(emailLimpio);
+      setEmailVerificado(emailLimpio);
+      return true;
+    } catch (err: any) {
+      setErrorEmail(
+        err.message ||
+          'El correo electrónico ingresado no existe en el servidor o no puede recibir mensajes.',
+      );
+      return false;
+    } finally {
+      setValidandoEmail(false);
+    }
+  };
+
   const actualizarCampo = <K extends keyof FormularioCita>(
     campo: K,
     valor: FormularioCita[K]
@@ -109,12 +157,18 @@ export default function SolicitarCitaPage() {
     return new URL(enlace).searchParams.get('text') ?? '';
   }, [formData]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const err = validarEdad(formData.edadPaciente, formData.esMenorEdad);
     if (err) {
       setErrorEdad(err);
+      return;
+    }
+
+    // Validar existencia real del correo electrónico vía backend
+    const correoEsValido = await verificarExistenciaEmail(formData.email);
+    if (!correoEsValido) {
       return;
     }
 
@@ -269,19 +323,50 @@ export default function SolicitarCitaPage() {
                     </label>
                   </div>
 
-                  <label className={labelClass}>
-                    Correo electrónico del acudiente *
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) =>
-                        actualizarCampo('email', e.target.value)
-                      }
-                      placeholder="acudiente@ejemplo.com"
-                      className={inputClass}
-                    />
-                  </label>
+                  <div>
+                    <label className={labelClass}>
+                      Correo electrónico del acudiente *
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) =>
+                          manejarCambioEmail(e.target.value)
+                        }
+                        onBlur={() => {
+                          if (formData.email.trim()) {
+                            verificarExistenciaEmail(formData.email);
+                          }
+                        }}
+                        placeholder="acudiente@ejemplo.com"
+                        className={`${inputClass} ${
+                          errorEmail
+                            ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-200'
+                            : emailVerificado === formData.email.trim().toLowerCase()
+                            ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-200'
+                            : ''
+                        }`}
+                      />
+                    </label>
+                    {validandoEmail && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-sky-700">
+                        <span className="inline-block animate-spin">⏳</span> Verificando existencia del correo...
+                      </p>
+                    )}
+                    {errorEmail && !validandoEmail && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-rose-600">
+                        <span>⚠️</span> {errorEmail}
+                      </p>
+                    )}
+                    {emailVerificado &&
+                      emailVerificado === formData.email.trim().toLowerCase() &&
+                      !validandoEmail &&
+                      !errorEmail && (
+                        <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                          <span>✓</span> Correo existente y verificado
+                        </p>
+                      )}
+                  </div>
                 </div>
               )}
 
@@ -360,19 +445,50 @@ export default function SolicitarCitaPage() {
                     />
                   </label>
 
-                  <label className={labelClass}>
-                    Correo electrónico *
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) =>
-                        actualizarCampo('email', e.target.value)
-                      }
-                      placeholder="paciente@ejemplo.com"
-                      className={inputClass}
-                    />
-                  </label>
+                  <div>
+                    <label className={labelClass}>
+                      Correo electrónico *
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) =>
+                          manejarCambioEmail(e.target.value)
+                        }
+                        onBlur={() => {
+                          if (formData.email.trim()) {
+                            verificarExistenciaEmail(formData.email);
+                          }
+                        }}
+                        placeholder="paciente@ejemplo.com"
+                        className={`${inputClass} ${
+                          errorEmail
+                            ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-200'
+                            : emailVerificado === formData.email.trim().toLowerCase()
+                            ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-200'
+                            : ''
+                        }`}
+                      />
+                    </label>
+                    {validandoEmail && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-sky-700">
+                        <span className="inline-block animate-spin">⏳</span> Verificando existencia del correo...
+                      </p>
+                    )}
+                    {errorEmail && !validandoEmail && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-rose-600">
+                        <span>⚠️</span> {errorEmail}
+                      </p>
+                    )}
+                    {emailVerificado &&
+                      emailVerificado === formData.email.trim().toLowerCase() &&
+                      !validandoEmail &&
+                      !errorEmail && (
+                        <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                          <span>✓</span> Correo existente y verificado
+                        </p>
+                      )}
+                  </div>
                 </div>
               )}
 
@@ -455,9 +571,17 @@ export default function SolicitarCitaPage() {
               <div className="border-t border-slate-100 pt-4">
                 <button
                   type="submit"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0AA896] px-5 py-3.5 text-sm font-extrabold text-white shadow-md transition hover:bg-[#078F80] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#0AA896]/20"
+                  disabled={validandoEmail}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0AA896] px-5 py-3.5 text-sm font-extrabold text-white shadow-md transition hover:bg-[#078F80] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#0AA896]/20 disabled:cursor-not-allowed disabled:opacity-75"
                 >
-                  📲 Enviar solicitud por WhatsApp
+                  {validandoEmail ? (
+                    <>
+                      <span className="inline-block animate-spin">⏳</span>
+                      <span>Verificando correo en el servidor...</span>
+                    </>
+                  ) : (
+                    <>📲 Enviar solicitud por WhatsApp</>
+                  )}
                 </button>
                 <p className="mt-2 text-center text-xs text-slate-500">
                   Tu solicitud se preparará para enviarla a recepción.

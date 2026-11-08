@@ -367,4 +367,26 @@ export const apiService = {
     }
     return data;
   },
+
+  async validarEmail(
+    email: string,
+  ): Promise<{ valido: boolean; email: string; mensaje: string }> {
+    const res = await fetch(`${API_URL}/auth/validar-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(
+        data.message || 'El correo electrónico ingresado no existe o no es válido.',
+      );
+    }
+    return data;
+  },
 };
+
+export const api = apiService;

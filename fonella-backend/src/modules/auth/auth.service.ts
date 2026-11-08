@@ -396,4 +396,16 @@ export class AuthService {
       },
     };
   }
+
+  /**
+   * Valida sintaxis, registros MX y existencia real de un correo vía SMTP
+   */
+  async validarExistenciaEmail(email: string) {
+    await this.mailService.validarDominioEmail(email);
+    return {
+      valido: true,
+      email: email.trim().toLowerCase(),
+      mensaje: "El correo electrónico existe y está habilitado.",
+    };
+  }
 }
