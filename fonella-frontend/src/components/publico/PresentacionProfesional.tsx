@@ -4,14 +4,56 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import {
+  CalendarHeart,
+  Shapes,
+  MessageSquareHeart,
+  Baby,
+  BookOpenCheck,
+  AudioLines,
+  Smile,
+  BrainCircuit,
+  BadgeCheck,
+  Building2,
+} from 'lucide-react';
 
 const especialidades = [
-  { nombre: 'Habla y lenguaje', icono: '💬', color: 'border-fonella-turquesa' },
-  { nombre: 'Estimulación temprana', icono: '🌱', color: 'border-fonella-secundario' },
-  { nombre: 'Lectoescritura', icono: '📖', color: 'border-fonella-cielo' },
-  { nombre: 'Voz y comunicación', icono: '🗣️', color: 'border-fonella-turquesa' },
-  { nombre: 'Terapia miofuncional', icono: '👄', color: 'border-fonella-secundario' },
-  { nombre: 'Terapia ABA', icono: '🧩', color: 'border-fonella-cielo' },
+  {
+    nombre: 'Habla y lenguaje',
+    Icono: MessageSquareHeart,
+    colorIcono: 'text-[#0AA896]',
+    bgIcono: 'bg-teal-50',
+  },
+  {
+    nombre: 'Estimulación temprana',
+    Icono: Baby,
+    colorIcono: 'text-[#DF9B78]',
+    bgIcono: 'bg-amber-50',
+  },
+  {
+    nombre: 'Lectoescritura',
+    Icono: BookOpenCheck,
+    colorIcono: 'text-[#5A96C8]',
+    bgIcono: 'bg-sky-50',
+  },
+  {
+    nombre: 'Voz y comunicación',
+    Icono: AudioLines,
+    colorIcono: 'text-[#0AA896]',
+    bgIcono: 'bg-teal-50',
+  },
+  {
+    nombre: 'Terapia miofuncional',
+    Icono: Smile,
+    colorIcono: 'text-[#DF9B78]',
+    bgIcono: 'bg-amber-50',
+  },
+  {
+    nombre: 'Terapia ABA',
+    Icono: BrainCircuit,
+    colorIcono: 'text-[#5A96C8]',
+    bgIcono: 'bg-sky-50',
+  },
 ];
 
 const fotografias = [
@@ -59,10 +101,14 @@ export default function PresentacionProfesional() {
   return (
     <section
       id="inicio"
-      className="border-b border-fonella-secundario/30 bg-fonella-crema"
+      className="relative border-b border-[#DF9B78]/20 bg-[#FAF6F0] overflow-hidden"
     >
+      {/* SUTIL LUZ AMBIENTAL TRASERA */}
+      <div className="pointer-events-none absolute -top-24 -left-20 h-96 w-96 rounded-full bg-[#0AA896]/12 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-16 left-1/4 h-80 w-80 rounded-full bg-[#5A96C8]/10 blur-3xl" />
+
       {/* PRESENTACIÓN PRINCIPAL */}
-      <div className="px-5 py-12 md:py-16">
+      <div className="relative z-10 px-5 py-12 md:py-16">
         <div className="mx-auto grid max-w-6xl items-stretch gap-10 lg:grid-cols-7">
 
           {/* INFORMACIÓN PRINCIPAL */}
@@ -70,117 +116,120 @@ export default function PresentacionProfesional() {
 
             {/* BLOQUE DE PRESENTACIÓN */}
             <div>
-              <span className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-fonella-turquesa shadow-sm">
-                Consultorio Fonoaudiológico Especializado
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur-xl border border-white/90 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#0AA896] shadow-[0_4px_14px_rgba(0,0,0,0.03),inset_0_1px_1px_rgba(255,255,255,0.9)]">
+                <span className="w-2 h-2 rounded-full bg-[#0AA896] animate-pulse" />
+                <span>Consultorio Fonoaudiológico Especializado</span>
               </span>
 
               <div className="mt-5">
-                <h1 className="text-3xl font-extrabold leading-tight text-fonella-primario md:text-5xl">
+                <h1 className="text-3xl font-black leading-tight text-[#094A57] md:text-5xl tracking-tight">
                   Bárbara Ccucho Delgado
                 </h1>
 
-                <p className="mt-3 text-lg font-bold uppercase tracking-wide text-fonella-turquesa">
+                <p className="mt-3 text-lg font-black uppercase tracking-wide text-[#0AA896]">
                   Fonoaudióloga clínica y neurodesarrollo
                 </p>
 
-                <p className="mt-2 text-xl font-semibold italic text-fonella-secundario">
+                <p className="mt-2 text-xl font-bold italic text-[#DF9B78]">
                   "Comunicación que Transforma"
                 </p>
               </div>
 
-              {/* SEPARADOR DECORATIVO */}
+              {/* SEPARADOR DECORATIVO CON CORAZÓN CRISTALINO */}
               <div className="mt-6 flex items-center gap-3">
-                <span className="h-1 flex-1 rounded-full bg-fonella-turquesa/50" />
-                <span className="text-fonella-turquesa">♥</span>
-                <span className="h-1 flex-1 rounded-full bg-fonella-turquesa/50" />
+                <span className="h-0.5 flex-1 rounded-full bg-gradient-to-r from-transparent via-[#0AA896]/35 to-[#0AA896]/65" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 backdrop-blur-md border border-white/90 text-xs text-[#0AA896] shadow-2xs font-black">
+                  ♥
+                </span>
+                <span className="h-0.5 flex-1 rounded-full bg-gradient-to-l from-transparent via-[#0AA896]/35 to-[#0AA896]/65" />
               </div>
 
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-gray-700">
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-gray-700 font-medium">
                 Acompañamiento integral y cálido en evaluación, diagnóstico e
                 intervención del lenguaje, habla, voz, deglución y
-                neurodesarrollo infantil y adulto.
-                <strong className="text-fonella-primario">
-                  {' '}Hablamos contigo en cada etapa de tu vida.
+                neurodesarrollo infantil y adulto.{' '}
+                <strong className="text-[#094A57] font-bold">
+                  Hablamos contigo en cada etapa de tu vida.
                 </strong>
               </p>
             </div>
 
-            {/* BLOQUE DE INFORMACIÓN DE ATENCIÓN */}
+            {/* BLOQUE DE INFORMACIÓN DE ATENCIÓN (iOS GLASS TILES) */}
             <div>
               <div className="mb-3">
-                <p className="text-xs font-bold uppercase tracking-widest text-fonella-primario/60">
+                <p className="text-xs font-black uppercase tracking-widest text-[#094A57]/60">
                   Atención profesional
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-fonella-primario/15 bg-white p-3 shadow-sm transition hover:-translate-y-1">
-                  <p className="text-xs font-bold uppercase text-fonella-turquesa">
+              <div className="grid gap-3.5 sm:grid-cols-3">
+                <div className="group rounded-2xl bg-white/75 backdrop-blur-xl border border-[#136A7B]/20 hover:border-[#0AA896]/60 p-3.5 shadow-[0_8px_20px_-4px_rgba(19,106,123,0.06),inset_0_1px_1px_0_rgba(255,255,255,0.95)] hover:bg-white hover:shadow-[0_12px_28px_-6px_rgba(19,106,123,0.12)] hover:-translate-y-1 transition-all duration-300">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-[#0AA896]">
                     Duración
                   </p>
-                  <p className="mt-1 font-extrabold text-fonella-primario">
+                  <p className="mt-1 text-base font-black text-[#094A57]">
                     45 minutos
                   </p>
-                  <p className="text-xs text-gray-500">Por sesión</p>
+                  <p className="text-xs text-gray-500 font-medium">Por sesión</p>
                 </div>
 
-                <div className="rounded-xl border border-fonella-primario/15 bg-white p-3 shadow-sm transition hover:-translate-y-1">
-                  <p className="text-xs font-bold uppercase text-fonella-secundario">
+                <div className="group rounded-2xl bg-white/75 backdrop-blur-xl border border-[#136A7B]/20 hover:border-[#0AA896]/60 p-3.5 shadow-[0_8px_20px_-4px_rgba(19,106,123,0.06),inset_0_1px_1px_0_rgba(255,255,255,0.95)] hover:bg-white hover:shadow-[0_12px_28px_-6px_rgba(19,106,123,0.12)] hover:-translate-y-1 transition-all duration-300">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-[#DF9B78]">
                     Atención
                   </p>
-                  <p className="mt-1 font-extrabold text-fonella-primario">
+                  <p className="mt-1 text-base font-black text-[#094A57]">
                     Pediátrica
                   </p>
-                  <p className="text-xs text-gray-500">Atención infantil</p>
+                  <p className="text-xs text-gray-500 font-medium">Atención infantil</p>
                 </div>
 
-                <div className="rounded-xl border border-fonella-primario/15 bg-white p-3 shadow-sm transition hover:-translate-y-1">
-                  <p className="text-xs font-bold uppercase text-fonella-cielo">
+                <div className="group rounded-2xl bg-white/75 backdrop-blur-xl border border-[#136A7B]/20 hover:border-[#0AA896]/60 p-3.5 shadow-[0_8px_20px_-4px_rgba(19,106,123,0.06),inset_0_1px_1px_0_rgba(255,255,255,0.95)] hover:bg-white hover:shadow-[0_12px_28px_-6px_rgba(19,106,123,0.12)] hover:-translate-y-1 transition-all duration-300">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-[#5A96C8]">
                     Atención
                   </p>
-                  <p className="mt-1 font-extrabold text-fonella-primario">
+                  <p className="mt-1 text-base font-black text-[#094A57]">
                     Adultos
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 font-medium">
                     Atención personalizada
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* BLOQUE DE BOTONES */}
-            <div className="flex flex-wrap items-center gap-3 border-t border-fonella-primario/10 pt-5">
+            {/* BLOQUE DE BOTONES (CTAs CRISTALINOS CON METÁFORAS MODERNAS) */}
+            <div className="flex flex-wrap items-center gap-3.5 border-t border-[#094A57]/10 pt-5">
               <Link
                 href="/solicitar-cita"
-                className="rounded-xl bg-fonella-primario px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-fonella-turquesa"
+                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#0AA896] via-[#0E8A85] to-[#136A7B] px-6 py-3.5 text-sm font-black text-white shadow-[0_10px_25px_-4px_rgba(10,168,150,0.4),inset_0_1px_1px_rgba(255,255,255,0.35)] hover:shadow-[0_14px_32px_-6px_rgba(10,168,150,0.5)] transition-all active:scale-95 cursor-pointer"
               >
-                📅 Solicitar cita asistida
+                <CalendarHeart className="w-4 h-4 text-white" />
+                <span>Solicitar cita asistida</span>
               </Link>
 
               <a
                 href="#seccion-juguetes"
-                className="rounded-xl border border-fonella-primario/20 bg-white px-5 py-3 text-sm font-bold text-fonella-primario transition hover:bg-fonella-secundario/20"
+                className="inline-flex items-center gap-2 rounded-2xl bg-white/85 backdrop-blur-xl border-2 border-[#136A7B]/25 hover:border-[#136A7B]/60 hover:bg-white px-6 py-3.5 text-sm font-black text-[#094A57] shadow-[0_4px_14px_rgba(0,0,0,0.04),inset_0_1px_1px_rgba(255,255,255,0.95)] transition-all active:scale-95 cursor-pointer"
               >
-                🧸 Ver didácticos
+                <Shapes className="w-4 h-4 text-[#DF9B78]" />
+                <span>Ver didácticos</span>
               </a>
             </div>
           </div>
 
-          {/* TARJETA PROFESIONAL DE BÁRBARA */}
+          {/* TARJETA PROFESIONAL DE BÁRBARA (CRISTAL ULTRA-PULIDO iOS 27) */}
           <div className="relative lg:col-span-3">
 
-            {/* MANCHA TERRACOTA PRINCIPAL */}
+            {/* CÍRCULOS GEOMÉTRICOS TERRACOTA ORIGINALES */}
             <div className="pointer-events-none absolute -right-12 top-12 z-0 h-80 w-80 rounded-full bg-[#DF9B78]/65" />
-
-            {/* SEGUNDA FIGURA DECORATIVA */}
             <div className="pointer-events-none absolute -bottom-5 -left-7 z-0 h-28 w-28 rounded-full bg-[#DF9B78]/35" />
 
-            {/* TARJETA BLANCA */}
-            <div className="relative z-10 mx-auto max-w-md rounded-3xl border border-fonella-turquesa/20 bg-white p-4 shadow-xl sm:p-5">
+            {/* TARJETA DE CRISTAL TRANSLÚCIDO (GLASSMORPHISM) */}
+            <div className="relative z-10 mx-auto max-w-md rounded-[2.5rem] bg-white/70 backdrop-blur-2xl border border-white/90 p-5 sm:p-6 shadow-[0_25px_60px_-12px_rgba(19,106,123,0.18),inset_0_1px_2px_0_rgba(255,255,255,0.95)]">
 
               {/* FOTOGRAFÍA PRINCIPAL */}
               <div className="relative">
-                <div className="relative aspect-square overflow-hidden rounded-2xl bg-fonella-crema shadow-sm">
+                <div className="relative aspect-square overflow-hidden rounded-3xl bg-gradient-to-b from-white/40 to-white/10 shadow-[inset_0_0_20px_rgba(0,0,0,0.06)] border border-white/70">
                   <Image
                     src="/images/barbara-avatar.jpg"
                     alt="Dra. Bárbara Ccucho Delgado"
@@ -190,58 +239,48 @@ export default function PresentacionProfesional() {
                     className="object-cover object-top"
                   />
                 </div>
-
-                {/* DISTINTIVO RETHUS */}
-                <div className="absolute left-0 top-5 rounded-r-full bg-white px-4 py-2 text-xs font-bold text-fonella-primario shadow-md">
-                  ✓ RETHUS · MinSalud
-                </div>
-
-                {/* DISTINTIVO ESPACIO HABILITADO */}
-                <div className="absolute bottom-4 right-0 rounded-l-full bg-fonella-turquesa px-4 py-2 text-xs font-bold text-white shadow-md">
-                  Espacio habilitado
-                </div>
               </div>
 
               {/* IDENTIFICACIÓN PROFESIONAL */}
-              <div className="px-2 pb-4 pt-4 text-center">
-                <h2 className="text-lg font-extrabold text-fonella-primario">
+              <div className="px-2 pb-3 pt-4 text-center">
+                <h2 className="text-xl font-black text-[#094A57] tracking-tight">
                   Dra. Bárbara Ccucho Delgado
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-0.5 text-xs font-bold text-[#0AA896] uppercase tracking-wider">
                   Fonoaudiología y neurodesarrollo
                 </p>
               </div>
 
-              {/* SEPARADOR */}
-              <div className="mx-2 border-t border-fonella-turquesa/15" />
+              {/* SEPARADOR CRISTALINO */}
+              <div className="mx-2 my-1 border-t border-[#0AA896]/15" />
 
-              {/* ESPECIALIDADES COMPACTAS */}
-              <div className="px-1 pb-1 pt-4">
+              {/* ESPECIALIDADES COMPACTAS (iOS GLASS WIDGETS) */}
+              <div className="px-1 pb-1 pt-3">
                 <div className="mb-3 text-center">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-fonella-turquesa">
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#0AA896]">
                     Nuestras áreas de atención
                   </span>
 
-                  <h3 className="mt-1 text-lg font-extrabold text-fonella-primario">
+                  <h3 className="mt-0.5 text-base font-black text-[#094A57]">
                     Especialidades Clínicas
                   </h3>
 
-                  <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-fonella-secundario" />
+                  <div className="mx-auto mt-1.5 h-1 w-12 rounded-full bg-gradient-to-r from-[#0AA896] to-[#DF9B78]" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  {especialidades.map((especialidad) => (
+                <div className="grid grid-cols-2 gap-2.5">
+                  {especialidades.map(({ nombre, Icono, colorIcono, bgIcono }) => (
                     <div
-                      key={especialidad.nombre}
-                      className={`flex min-h-[55px] items-center gap-2 rounded-xl border-l-4 ${especialidad.color} bg-fonella-crema/60 px-2.5 py-2 transition duration-200 hover:bg-fonella-crema`}
+                      key={nombre}
+                      className="group flex min-h-[56px] items-center gap-2.5 rounded-2xl bg-white/80 backdrop-blur-md border border-[#136A7B]/20 hover:border-[#0AA896]/60 hover:bg-white px-3 py-2 transition-all duration-200 shadow-xs hover:shadow-sm hover:-translate-y-0.5 cursor-default"
                     >
-                      <span className="shrink-0 text-lg">
-                        {especialidad.icono}
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${bgIcono} ${colorIcono} shadow-2xs border border-[#136A7B]/10`}>
+                        <Icono className="w-4 h-4" />
                       </span>
 
-                      <span className="text-xs font-semibold leading-tight text-fonella-primario">
-                        {especialidad.nombre}
+                      <span className="text-xs font-bold leading-tight text-[#094A57]">
+                        {nombre}
                       </span>
                     </div>
                   ))}
@@ -369,8 +408,10 @@ export default function PresentacionProfesional() {
 
             {/* ACREDITACIONES */}
             <div className="mt-auto grid gap-4 pt-8 sm:grid-cols-2">
-              <div className="rounded-2xl border border-fonella-secundario/30 bg-fonella-secundario/10 p-5">
-                <div className="text-3xl">🏅</div>
+              <div className="group rounded-2xl border border-fonella-secundario/30 bg-fonella-secundario/10 p-5 hover:bg-white hover:border-[#DF9B78]/60 hover:shadow-md transition-all duration-300">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white border border-[#DF9B78]/30 text-[#DF9B78] shadow-xs group-hover:scale-105 transition-transform">
+                  <BadgeCheck className="w-6 h-6 text-[#DF9B78]" />
+                </div>
 
                 <h3 className="mt-3 font-bold text-fonella-primario">
                   Habilitación RETHUS
@@ -381,8 +422,10 @@ export default function PresentacionProfesional() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-fonella-turquesa/25 bg-fonella-turquesa/10 p-5">
-                <div className="text-3xl">🏥</div>
+              <div className="group rounded-2xl border border-fonella-turquesa/25 bg-fonella-turquesa/10 p-5 hover:bg-white hover:border-[#0AA896]/60 hover:shadow-md transition-all duration-300">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white border border-[#0AA896]/30 text-[#0AA896] shadow-xs group-hover:scale-105 transition-transform">
+                  <Building2 className="w-6 h-6 text-[#0AA896]" />
+                </div>
 
                 <h3 className="mt-3 font-bold text-fonella-primario">
                   Espacio Habilitado MinSalud

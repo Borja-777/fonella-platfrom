@@ -1,18 +1,19 @@
-
 import Link from 'next/link';
+import { Calendar, Lock } from 'lucide-react';
 
 export default function HeaderPublico() {
   return (
-    <header className="relative z-50 border-b border-fonella-secundario/30 bg-fonella-crema">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#136A7B]/25 shadow-[0_4px_20px_-2px_rgba(19,106,123,0.08)] transition-all">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
 
-        <Link href="/" className="flex items-center gap-3">
-          <div className="flex items-center text-3xl font-extrabold tracking-wider">
-            <span className="text-fonella-turquesa">F</span>
+        {/* 1. Logotipo Oficial con Cápsula Institucional FONELLA */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="bg-[#FAF6F0] border border-[#DF9B78]/40 group-hover:border-[#0AA896]/50 shadow-xs px-3.5 py-1.5 rounded-2xl flex items-center transition-all">
+            <span className="text-2xl font-black tracking-wider text-[#0AA896]">F</span>
 
-            {/* Isotipo de oreja */}
+            {/* Isotipo Oficial de la Oreja Fonella */}
             <svg
-              className="mx-0.5 h-8 w-7"
+              className="mx-0.5 h-7 w-6 transition-transform group-hover:scale-105"
               viewBox="0 0 28 32"
               fill="none"
               stroke="#5A96C8"
@@ -24,38 +25,56 @@ export default function HeaderPublico() {
               <circle cx="13.5" cy="16.5" r="2" fill="#5A96C8" />
             </svg>
 
-            <span className="text-fonella-turquesa">N</span>
-            <span className="text-fonella-cielo">E</span>
-            <span className="text-fonella-secundario">L</span>
-            <span className="text-fonella-turquesa">L</span>
-            <span className="text-fonella-cielo">A</span>
+            <span className="text-2xl font-black tracking-wider text-[#0AA896]">N</span>
+            <span className="text-2xl font-black tracking-wider text-[#5A96C8]">E</span>
+            <span className="text-2xl font-black tracking-wider text-[#DF9B78]">L</span>
+            <span className="text-2xl font-black tracking-wider text-[#0AA896]">L</span>
+            <span className="text-2xl font-black tracking-wider text-[#5A96C8]">A</span>
           </div>
 
-          <div className="hidden border-l-2 border-fonella-turquesa/40 pl-3 sm:block">
-            <p className="text-xs font-bold text-fonella-primario">
+          <div className="hidden border-l-2 border-[#0AA896]/30 pl-3 sm:block">
+            <p className="text-xs font-black text-[#094A57] leading-tight">
               Dra. Bárbara Ccucho Delgado
             </p>
-            <p className="text-xs font-semibold tracking-wide text-fonella-turquesa">
-              FONOAUDIÓLOGA
+            <p className="text-[10px] font-bold tracking-wider text-[#0AA896] uppercase mt-0.5 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+              <span>Fonoaudióloga</span>
             </p>
           </div>
         </Link>
 
+        {/* 2. Menú de Navegación y Botones de Acción */}
         <nav className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <a href="#seccion-servicios" className="px-2 py-2 text-xs font-semibold text-fonella-primario hover:text-fonella-turquesa">
+          <a
+            href="#seccion-servicios"
+            className="px-3 py-2 text-xs font-bold text-gray-700 hover:text-[#0AA896] hover:bg-teal-50/70 rounded-xl transition-all"
+          >
             Servicios Clínicos
           </a>
 
-          <a href="#seccion-juguetes" className="px-2 py-2 text-xs font-semibold text-fonella-primario hover:text-fonella-turquesa">
+          <a
+            href="#seccion-juguetes"
+            className="px-3 py-2 text-xs font-bold text-gray-700 hover:text-[#0AA896] hover:bg-teal-50/70 rounded-xl transition-all"
+          >
             Juguetes Didácticos
           </a>
 
-          <Link href="/solicitar-cita" className="rounded-full bg-fonella-turquesa px-4 py-2 text-xs font-bold text-white hover:bg-fonella-primario">
-            Agendar Cita
+          {/* CTA Principal: Agendar Cita */}
+          <Link
+            href="/solicitar-cita"
+            className="rounded-full bg-gradient-to-r from-[#0AA896] to-[#136A7B] hover:from-[#099787] hover:to-[#0f5462] px-4 py-2 text-xs font-black text-white shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+          >
+            <Calendar className="w-3.5 h-3.5 text-white" />
+            <span>Agendar Cita</span>
           </Link>
 
-          <Link href="/login" className="rounded-full border border-fonella-primario/30 px-4 py-2 text-xs font-semibold text-fonella-primario transition hover:bg-fonella-primario hover:text-white">
-            Acceso Personal
+          {/* CTA Secundario: Portal Administrativo / Especialista */}
+          <Link
+            href="/login"
+            className="rounded-full bg-white/90 border border-[#136A7B]/25 hover:border-[#136A7B]/50 px-3.5 py-2 text-xs font-bold text-[#094A57] hover:bg-teal-50/70 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
+          >
+            <Lock className="w-3.5 h-3.5 text-[#0AA896]" />
+            <span>Portal Especialista</span>
           </Link>
         </nav>
 
