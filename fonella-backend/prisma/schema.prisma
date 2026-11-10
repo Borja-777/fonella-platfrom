@@ -75,6 +75,10 @@ model Usuario {
   passwordHash     String         @map("password_hash") @db.VarChar(255)
   rol              RolUsuario
   registroRethus   String?        @map("registro_rethus") @db.VarChar(50)
+  fotoPerfilUrl    String?        @map("foto_perfil_url") @db.Text
+  ocultoEnPanel    Boolean        @default(false) @map("oculto_en_panel")
+  resetToken       String?        @map("reset_token") @db.VarChar(255)
+  resetTokenExpira DateTime?      @map("reset_token_expira")
   firmaDigitalUrl  String?        @map("firma_digital_url") @db.VarChar(500)
   intentosFallidos Int            @default(0) @map("intentos_fallidos")
   bloqueadoHasta   DateTime?      @map("bloqueado_hasta")
@@ -280,7 +284,7 @@ model JugueteDidactico {
   descripcionTerapeutica String         @map("descripcion_terapeutica") @db.Text
   areaEstimulacion       String         @map("area_estimulacion") @db.VarChar(100)
   edadSugerida           String         @map("edad_sugerida") @db.VarChar(50)
-  imagenUrl              String         @map("imagen_url") @db.VarChar(500)
+  imagenUrl              String         @map("imagen_url") @db.Text
   stockDisponible        Int            @default(0) @map("stock_disponible")
   stockMinimoAlerta      Int            @default(3) @map("stock_minimo_alerta")
   costoUnitario          Decimal        @map("costo_unitario") @db.Decimal(10, 2)
