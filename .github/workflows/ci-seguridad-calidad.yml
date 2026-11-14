@@ -1,4 +1,4 @@
-name: CI - Validación de Seguridad y Código (Fonella)
+name: CI - Validación de Seguridad y Calidad (Fonella)
 
 on:
   pull_request:
@@ -6,9 +6,35 @@ on:
   push:
     branches: [ "main", "develop" ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  validar-monorepo:
+  seguridad-repo:
+    name: Seguridad y Secretos
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Verificar que no existan archivos .env comprometidos
+        run: |
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$'; then
+            echo "❌ ERROR DE SEGURIDAD: Se detectó un archivo .env en el repositorio."
+            exit 1
+          fi
+          echo "✅ Sin archivos .env expuestos."
+
+  validar-backend:
+    name: Backend (Prisma + TypeScript + Build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./fonella-backend
+    env:
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/fonella_ci?schema=public"
+      JWT_SECRET: "ci_dummy_jwt_secret_for_build_only"
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
@@ -17,17 +43,56 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: fonella-backend/package-lock.json
 
-      - name: Verificar que no existan archivos .env comprometidos
+      - name: Instalar dependencias del Backend
+        run: npm ci --no-audit --no-fund
+
+      - name: Validar esquema Prisma
+        run: npx prisma validate
+
+      - name: Generar cliente Prisma
+        run: npx prisma generate
+
+      - name: Verificar tipos TypeScript
+        run: npx tsc --noEmit
+
+      - name: Compilar Backend (NestJS Build)
+        run: npm run build
+
+      - name: Ejecutar pruebas unitarias (si existen)
         run: |
-          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$'; then
-            echo "❌ ERROR DE SEGURIDAD: Se detectó un archivo .env en el commit."
-            exit 1
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
+            npm test
+          else
+            echo "ℹ️ Sin script de pruebas aún (se activará al agregar tests en Sprint 2)."
           fi
-          echo "✅ Sin archivos .env expuestos."
 
-      - name: Validar Esquema Prisma (Backend)
-        working-directory: ./fonella-backend
-        run: |
-          npm install --no-audit --no-fund
-          npx prisma validate
+  validar-frontend:
+    name: Frontend (TypeScript + Next.js Build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./fonella-frontend
+    env:
+      NEXT_PUBLIC_API_URL: "http://localhost:4000/api/v1"
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: fonella-frontend/package-lock.json
+
+      - name: Instalar dependencias del Frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Verificar tipos TypeScript
+        run: npx tsc --noEmit
+
+      - name: Compilar Frontend (Next.js Build)
+        run: npm run build
