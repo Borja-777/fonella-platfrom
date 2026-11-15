@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+﻿const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
 export interface Usuario {
   id: string;
@@ -78,6 +78,70 @@ export interface VentaHistorial {
   };
 }
 
+export interface EvaluacionOfa {
+  labios: string;
+  lengua: string;
+  paladar: string;
+  dientesOclusion: string;
+  respiracion: string;
+  deglucion: string;
+  observacionesOfa?: string;
+}
+
+export interface Paciente {
+  id: string;
+  tipoDocumento: 'RC' | 'TI' | 'CC' | 'CE' | 'PA';
+  numeroDocumento: string;
+  nombres: string;
+  apellidos: string;
+  fechaNacimiento: string;
+  genero?: string | null;
+  telefonoContacto: string;
+  email?: string | null;
+  ciudad: string;
+  direccion?: string | null;
+  tipoRemision: 'PARTICULAR' | 'REMISION_EXTERNA';
+  institucionRemitente?: string | null;
+  estado: 'ACTIVO' | 'INACTIVO';
+  historiaClinica?: {
+    id: string;
+    numeroExpediente: string;
+    estado: 'BORRADOR' | 'CERRADA';
+    diagnosticoCie10Codigo: string;
+    diagnosticoCie10Desc: string;
+  } | null;
+}
+
+export interface HistoriaClinica {
+  id: string;
+  numeroExpediente: string;
+  pacienteId: string;
+  creadoPorId: string;
+  fechaApertura: string;
+  motivoConsulta: string;
+  antecedentesPerinatales?: string | null;
+  evaluacionOfa: EvaluacionOfa;
+  evaluacionHabla?: string | null;
+  evaluacionLenguaje?: string | null;
+  evaluacionVoz?: string | null;
+  diagnosticoCie10Codigo: string;
+  diagnosticoCie10Desc: string;
+  planTratamiento: string;
+  estado: 'BORRADOR' | 'CERRADA';
+  createdAt: string;
+  updatedAt: string;
+  paciente: Paciente;
+  creadoPor: {
+    id: string;
+    nombreCompleto: string;
+    registroRethus?: string | null;
+  };
+  _count?: {
+    notasEvolucion: number;
+    archivosAnexos: number;
+  };
+}
+
 export interface LoginResponse {
   mensaje: string;
   usuario: Usuario;
@@ -96,7 +160,7 @@ export const apiService = {
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include', // Imprescindible para cookies HttpOnly
+      credentials: 'include',
       body: JSON.stringify({ email, password }),
     });
 
@@ -299,7 +363,7 @@ export const apiService = {
   },
 
   // --------------------------------------------------------------------------
-  // MÓDULO DE INVENTARIO DIDÁCTICO Y MARGEN DE GANANCIA (HU-001, HU-002)
+  // MÓDULO DE INVENTARIO DIDÁCTICO Y MARGEN DE GANANCIA
   // --------------------------------------------------------------------------
   async getJuguetes(): Promise<Juguete[]> {
     const res = await fetch(`${API_URL}/inventario/juguetes`, {
@@ -424,6 +488,136 @@ export const apiService = {
       throw new Error(
         data.message || 'El correo electrónico ingresado no existe o no es válido.',
       );
+    }
+    return data;
+  },
+
+  // --------------------------------------------------------------------------
+  // MÓDULO DE PACIENTES E HISTORIAS CLÍNICAS / ANAMNESIS (HU - Clínica - 003)
+  // --------------------------------------------------------------------------
+  async listarPacientes(q?: string): Promise<Paciente[]> {
+    const url = q ? `${API_URL}/pacientes?q=${encodeURIComponent(q)}` : `${API_URL}/pacientes`;
+    const res = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al listar pacientes');
+    }
+    return data;
+  },
+
+  async crearPaciente(datos: {
+    tipoDocumento: 'RC' | 'TI' | 'CC' | 'CE' | 'PA';
+    numeroDocumento: string;
+    nombres: string;
+    apellidos: string;
+    fechaNacimiento: string;
+    genero?: string;
+    telefonoContacto: string;
+    email?: string;
+    ciudad?: string;
+    direccion?: string;
+    tipoRemision?: 'PARTICULAR' | 'REMISION_EXTERNA';
+    institucionRemitente?: string;
+  }): Promise<Paciente> {
+    const res = await fetch(`${API_URL}/pacientes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al registrar paciente');
+    }
+    return data;
+  },
+
+  async listarHistoriasClinicas(q?: string): Promise<HistoriaClinica[]> {
+    const url = q
+      ? `${API_URL}/historias-clinicas?q=${encodeURIComponent(q)}`
+      : `${API_URL}/historias-clinicas`;
+    const res = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al obtener historias clínicas');
+    }
+    return data;
+  },
+
+  async obtenerHistoriaPorPaciente(pacienteId: string): Promise<HistoriaClinica> {
+    const res = await fetch(`${API_URL}/historias-clinicas/paciente/${pacienteId}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al obtener historia clínica del paciente');
+    }
+    return data;
+  },
+
+  async crearHistoriaClinica(datos: {
+    pacienteId: string;
+    motivoConsulta: string;
+    antecedentesPerinatales?: string;
+    evaluacionOfa: EvaluacionOfa;
+    evaluacionHabla?: string;
+    evaluacionLenguaje?: string;
+    evaluacionVoz?: string;
+    diagnosticoCie10Codigo: string;
+    diagnosticoCie10Desc: string;
+    planTratamiento: string;
+    estado?: 'BORRADOR' | 'CERRADA';
+  }): Promise<HistoriaClinica> {
+    const res = await fetch(`${API_URL}/historias-clinicas`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al crear historia clínica');
+    }
+    return data;
+  },
+
+  async actualizarHistoriaClinica(
+    id: string,
+    datos: {
+      motivoConsulta?: string;
+      antecedentesPerinatales?: string;
+      evaluacionOfa?: EvaluacionOfa;
+      evaluacionHabla?: string;
+      evaluacionLenguaje?: string;
+      evaluacionVoz?: string;
+      diagnosticoCie10Codigo?: string;
+      diagnosticoCie10Desc?: string;
+      planTratamiento?: string;
+      estado?: 'BORRADOR' | 'CERRADA';
+    },
+  ): Promise<HistoriaClinica> {
+    const res = await fetch(`${API_URL}/historias-clinicas/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al actualizar historia clínica');
     }
     return data;
   },
