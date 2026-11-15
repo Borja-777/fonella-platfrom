@@ -18,11 +18,16 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Bell,
+  Activity,
+  FileText,
+  PlusCircle,
 } from 'lucide-react';
 import {
   apiService,
   EvaluacionOfa,
   HistoriaClinica,
+  NotaEvolucion,
   Paciente,
 } from '@/services/api';
 
@@ -56,6 +61,23 @@ export default function HistoriasClinicasPage() {
     ofa: true,
     areas: false,
     diagnostico: true,
+  });
+
+  // Estados para HU - Clínica - 004: Notas de Evolución y Control Trimestral
+  const [modalEvoluciones, setModalEvoluciones] = useState(false);
+  const [historiaEvolucion, setHistoriaEvolucion] = useState<HistoriaClinica | null>(null);
+  const [notasEvolucion, setNotasEvolucion] = useState<NotaEvolucion[]>([]);
+  const [siguienteSesion, setSiguienteSesion] = useState(1);
+  const [cargandoEvoluciones, setCargandoEvoluciones] = useState(false);
+  const [addendumNotaId, setAddendumNotaId] = useState<string | null>(null);
+  const [textoAddendum, setTextoAddendum] = useState('');
+  const [mostrarInformeTrimestral, setMostrarInformeTrimestral] = useState(false);
+
+  const [formEvolucion, setFormEvolucion] = useState({
+    fechaSesion: new Date().toISOString().slice(0, 16),
+    objetivosTrabajados: '',
+    descripcionEvolucion: '',
+    planSiguienteSesion: '',
   });
 
   const [formPaciente, setFormPaciente] = useState({
@@ -100,8 +122,8 @@ export default function HistoriasClinicasPage() {
     try {
       setCargando(true);
       const [listaHistorias, listaPacientes] = await Promise.all([
-        apiService.listarHistoriasClinicas(filtro),
-        apiService.listarPacientes(),
+        (apiService as any).listarHistoriasClinicas(filtro),
+        (apiService as any).listarPacientes(),
       ]);
       setHistorias(listaHistorias);
       setPacientes(listaPacientes);
@@ -116,7 +138,6 @@ export default function HistoriasClinicasPage() {
     cargarDatos();
   }, []);
 
-  // Autoguardado silencioso de borrador cada 30 segundos mientras el modal está abierto
   useEffect(() => {
     if (!modalHistoria) return;
     if (historiaActiva?.estado === 'CERRADA') return;
@@ -128,7 +149,7 @@ export default function HistoriasClinicasPage() {
 
       try {
         if (activa && activa.estado === 'BORRADOR') {
-          await apiService.actualizarHistoriaClinica(activa.id, {
+          await (apiService as any).actualizarHistoriaClinica(activa.id, {
             motivoConsulta: actual.motivoConsulta,
             antecedentesPerinatales: actual.antecedentesPerinatales || undefined,
             evaluacionOfa: actual.evaluacionOfa,
@@ -140,20 +161,32 @@ export default function HistoriasClinicasPage() {
             planTratamiento: actual.planTratamiento,
             estado: 'BORRADOR',
           });
-          setUltimoAutoguardado(new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+          setUltimoAutoguardado(
+            new Date().toLocaleTimeString('es-CO', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            }),
+          );
         } else if (!activa && actual.motivoConsulta.trim().length > 3) {
-          const creada = await apiService.crearHistoriaClinica({
+          const creada = await (apiService as any).crearHistoriaClinica({
             ...actual,
             diagnosticoCie10Codigo: actual.diagnosticoCie10Codigo || 'PENDIENTE',
             diagnosticoCie10Desc: actual.diagnosticoCie10Desc || 'Evaluación en curso (Borrador)',
             estado: 'BORRADOR',
           });
           setHistoriaActiva(creada);
-          setUltimoAutoguardado(new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+          setUltimoAutoguardado(
+            new Date().toLocaleTimeString('es-CO', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            }),
+          );
           cargarDatos(busqueda);
         }
       } catch {
-        // Silencioso en autoguardado para no interrumpir sesión
+        // Silencioso en autoguardado
       }
     }, 30000);
 
@@ -199,12 +232,94 @@ export default function HistoriasClinicasPage() {
       evaluacionHabla: hc.evaluacionHabla || '',
       evaluacionLenguaje: hc.evaluacionLenguaje || '',
       evaluacionVoz: hc.evaluacionVoz || '',
-      diagnosticoCie10Codigo: hc.diagnosticoCie10Codigo === 'PENDIENTE' ? '' : hc.diagnosticoCie10Codigo,
-      diagnosticoCie10Desc: hc.diagnosticoCie10Desc === 'Evaluación en curso (Borrador)' ? '' : hc.diagnosticoCie10Desc,
+      diagnosticoCie10Codigo:
+        hc.diagnosticoCie10Codigo === 'PENDIENTE' ? '' : hc.diagnosticoCie10Codigo,
+      diagnosticoCie10Desc:
+        hc.diagnosticoCie10Desc === 'Evaluación en curso (Borrador)' ? '' : hc.diagnosticoCie10Desc,
       planTratamiento: hc.planTratamiento,
       estado: hc.estado,
     });
     setModalHistoria(true);
+  };
+
+  const abrirEvoluciones = async (hc: HistoriaClinica, abrirInforme = false) => {
+    setError(null);
+    setHistoriaEvolucion(hc);
+    setMostrarInformeTrimestral(abrirInforme);
+    setAddendumNotaId(null);
+    setTextoAddendum('');
+    setFormEvolucion({
+      fechaSesion: new Date().toISOString().slice(0, 16),
+      objetivosTrabajados: '',
+      descripcionEvolucion: '',
+      planSiguienteSesion: '',
+    });
+    setModalEvoluciones(true);
+
+    try {
+      setCargandoEvoluciones(true);
+      const data = await (apiService as any).listarEvoluciones(hc.id);
+      setHistoriaEvolucion(data.historia);
+      setNotasEvolucion(data.notas);
+      setSiguienteSesion(data.siguienteNumeroSesion);
+    } catch (err: any) {
+      setError(err.message || 'Error al cargar línea de tiempo de evoluciones');
+    } finally {
+      setCargandoEvoluciones(false);
+    }
+  };
+
+  const handleCrearEvolucion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!historiaEvolucion) return;
+    setError(null);
+    try {
+      setGuardando(true);
+      await (apiService as any).crearNotaEvolucion(historiaEvolucion.id, {
+        fechaSesion: new Date(formEvolucion.fechaSesion).toISOString(),
+        objetivosTrabajados: formEvolucion.objetivosTrabajados,
+        descripcionEvolucion: formEvolucion.descripcionEvolucion,
+        planSiguienteSesion: formEvolucion.planSiguienteSesion || undefined,
+      });
+
+      const data = await (apiService as any).listarEvoluciones(historiaEvolucion.id);
+      setNotasEvolucion(data.notas);
+      setSiguienteSesion(data.siguienteNumeroSesion);
+      setFormEvolucion({
+        fechaSesion: new Date().toISOString().slice(0, 16),
+        objetivosTrabajados: '',
+        descripcionEvolucion: '',
+        planSiguienteSesion: '',
+      });
+      setExito(`Sesión #${data.notas[0]?.numeroSesion} registrada en la línea de tiempo clínica.`);
+      await cargarDatos(busqueda);
+    } catch (err: any) {
+      setError(err.message || 'No se pudo registrar la nota de evolución');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleGuardarAddendum = async (notaId: string) => {
+    if (!historiaEvolucion || !textoAddendum.trim()) return;
+    setError(null);
+    try {
+      setGuardando(true);
+      await (apiService as any).agregarAddendumEvolucion(
+        historiaEvolucion.id,
+        notaId,
+        textoAddendum,
+      );
+      const data = await (apiService as any).listarEvoluciones(historiaEvolucion.id);
+      setNotasEvolucion(data.notas);
+      setAddendumNotaId(null);
+      setTextoAddendum('');
+      setExito('Addendum legal incorporado correctamente sin alterar el registro original.');
+    } catch (err: any) {
+      setError(err.message || 'No se pudo agregar el addendum');
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const handleCrearPaciente = async (e: React.FormEvent) => {
@@ -212,7 +327,7 @@ export default function HistoriasClinicasPage() {
     setError(null);
     try {
       setGuardando(true);
-      const nuevo = await apiService.crearPaciente({
+      const nuevo = await (apiService as any).crearPaciente({
         ...formPaciente,
         email: formPaciente.email || undefined,
         direccion: formPaciente.direccion || undefined,
@@ -237,15 +352,19 @@ export default function HistoriasClinicasPage() {
     try {
       setGuardando(true);
       if (historiaActiva) {
-        await apiService.actualizarHistoriaClinica(historiaActiva.id, {
+        await (apiService as any).actualizarHistoriaClinica(historiaActiva.id, {
           motivoConsulta: formHistoria.motivoConsulta,
           antecedentesPerinatales: formHistoria.antecedentesPerinatales || undefined,
           evaluacionOfa: formHistoria.evaluacionOfa,
           evaluacionHabla: formHistoria.evaluacionHabla || undefined,
           evaluacionLenguaje: formHistoria.evaluacionLenguaje || undefined,
           evaluacionVoz: formHistoria.evaluacionVoz || undefined,
-          diagnosticoCie10Codigo: formHistoria.diagnosticoCie10Codigo || (estadoDestino === 'BORRADOR' ? 'PENDIENTE' : ''),
-          diagnosticoCie10Desc: formHistoria.diagnosticoCie10Desc || (estadoDestino === 'BORRADOR' ? 'Evaluación en curso (Borrador)' : ''),
+          diagnosticoCie10Codigo:
+            formHistoria.diagnosticoCie10Codigo ||
+            (estadoDestino === 'BORRADOR' ? 'PENDIENTE' : ''),
+          diagnosticoCie10Desc:
+            formHistoria.diagnosticoCie10Desc ||
+            (estadoDestino === 'BORRADOR' ? 'Evaluación en curso (Borrador)' : ''),
           planTratamiento: formHistoria.planTratamiento,
           estado: estadoDestino,
         });
@@ -258,14 +377,18 @@ export default function HistoriasClinicasPage() {
         if (!formHistoria.pacienteId) {
           throw new Error('Debes seleccionar un paciente para abrir la historia clínica.');
         }
-        const creada = await apiService.crearHistoriaClinica({
+        const creada = await (apiService as any).crearHistoriaClinica({
           ...formHistoria,
           antecedentesPerinatales: formHistoria.antecedentesPerinatales || undefined,
           evaluacionHabla: formHistoria.evaluacionHabla || undefined,
           evaluacionLenguaje: formHistoria.evaluacionLenguaje || undefined,
           evaluacionVoz: formHistoria.evaluacionVoz || undefined,
-          diagnosticoCie10Codigo: formHistoria.diagnosticoCie10Codigo || (estadoDestino === 'BORRADOR' ? 'PENDIENTE' : ''),
-          diagnosticoCie10Desc: formHistoria.diagnosticoCie10Desc || (estadoDestino === 'BORRADOR' ? 'Evaluación en curso (Borrador)' : ''),
+          diagnosticoCie10Codigo:
+            formHistoria.diagnosticoCie10Codigo ||
+            (estadoDestino === 'BORRADOR' ? 'PENDIENTE' : ''),
+          diagnosticoCie10Desc:
+            formHistoria.diagnosticoCie10Desc ||
+            (estadoDestino === 'BORRADOR' ? 'Evaluación en curso (Borrador)' : ''),
           estado: estadoDestino,
         });
         setExito(
@@ -295,14 +418,14 @@ export default function HistoriasClinicasPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0AA896]/15 text-[#0E5666]">
-                Dominio Clínico • HU-003 • Ley 1581 / Res. 1995
+                Dominio Clínico • HU-003 & HU-004 • Ley 1581 / Res. 1995
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-[#094A57] mt-1">
-              Historias Clínicas y Anamnesis
+              Historias Clínicas y Notas de Evolución
             </h1>
             <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-              Apertura de expedientes fonoaudiológicos, valoración OFA, diagnóstico CIE-10 y plan terapéutico.
+              Anamnesis inicial, valoración OFA, seguimiento cronológico por sesión y alertas de control trimestral (RN-05).
             </p>
           </div>
         </div>
@@ -343,7 +466,7 @@ export default function HistoriasClinicasPage() {
         </div>
       )}
 
-      {error && !modalHistoria && !modalPaciente && (
+      {error && !modalHistoria && !modalPaciente && !modalEvoluciones && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl flex items-center justify-between text-xs font-bold shadow-xs">
           <span className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
@@ -404,9 +527,9 @@ export default function HistoriasClinicasPage() {
                   <th className="py-3.5 px-4 font-extrabold">Expediente</th>
                   <th className="py-3.5 px-4 font-extrabold">Paciente</th>
                   <th className="py-3.5 px-4 font-extrabold">Diagnóstico CIE-10</th>
-                  <th className="py-3.5 px-4 font-extrabold">Estado Legal</th>
-                  <th className="py-3.5 px-4 font-extrabold">Apertura</th>
-                  <th className="py-3.5 px-4 font-extrabold text-right">Acciones</th>
+                  <th className="py-3.5 px-4 font-extrabold">Estado y Control Trimestral</th>
+                  <th className="py-3.5 px-4 font-extrabold text-center">Sesiones</th>
+                  <th className="py-3.5 px-4 font-extrabold text-right">Acciones Clínicas</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-xs">
@@ -414,6 +537,9 @@ export default function HistoriasClinicasPage() {
                   <tr key={hc.id} className="hover:bg-[#FAF6F0]/80 transition-colors">
                     <td className="py-3.5 px-4 font-mono font-black text-[#094A57]">
                       {hc.numeroExpediente}
+                      <span className="block text-[10px] font-sans font-normal text-gray-400">
+                        {new Date(hc.fechaApertura).toLocaleDateString('es-CO')}
+                      </span>
                     </td>
                     <td className="py-3.5 px-4">
                       <p className="font-extrabold text-gray-900">
@@ -431,7 +557,7 @@ export default function HistoriasClinicasPage() {
                         {hc.diagnosticoCie10Desc}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 space-y-1">
                       {hc.estado === 'CERRADA' ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px]">
                           <Lock className="w-3 h-3" />
@@ -443,17 +569,37 @@ export default function HistoriasClinicasPage() {
                           BORRADOR
                         </span>
                       )}
+
+                      {hc.requiereReevaluacion && (
+                        <div className="block">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 font-black text-[10px]">
+                            <Bell className="w-3 h-3" />
+                            Hito Trimestral (RN-05)
+                          </span>
+                        </div>
+                      )}
                     </td>
-                    <td className="py-3.5 px-4 text-gray-500 font-medium">
-                      {new Date(hc.fechaApertura).toLocaleDateString('es-CO')}
+                    <td className="py-3.5 px-4 text-center">
+                      <span className="px-2.5 py-1 rounded-xl bg-[#094A57]/10 text-[#094A57] font-black text-[11px]">
+                        {hc._count?.notasEvolucion ?? 0}
+                      </span>
                     </td>
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right space-x-2">
                       <button
                         type="button"
                         onClick={() => abrirEditarVerHistoria(hc)}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#0AA896]/15 hover:bg-[#0AA896] text-[#094A57] hover:text-white font-extrabold text-[11px] transition-all cursor-pointer"
+                        className="px-3 py-1.5 rounded-xl border border-[#136A7B]/30 text-[#094A57] hover:bg-[#136A7B]/10 font-extrabold text-[11px] transition-all cursor-pointer"
                       >
-                        {hc.estado === 'CERRADA' ? 'Consultar Expediente' : 'Continuar Anamnesis'}
+                        {hc.estado === 'CERRADA' ? 'Anamnesis' : 'Continuar'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => abrirEvoluciones(hc, false)}
+                        className="px-3 py-1.5 rounded-xl bg-[#0AA896] hover:bg-[#099686] text-white font-extrabold text-[11px] inline-flex items-center gap-1 transition-all cursor-pointer"
+                      >
+                        <Activity className="w-3.5 h-3.5" />
+                        <span>Evoluciones</span>
                       </button>
                     </td>
                   </tr>
@@ -692,7 +838,6 @@ export default function HistoriasClinicasPage() {
             )}
 
             <div className="mt-5 space-y-4 text-xs">
-              {/* Selección de Paciente */}
               <div className="bg-[#FAF6F0] p-4 rounded-2xl border border-[#DF9B78]/30">
                 <label className="block font-black text-[#094A57] mb-1.5">
                   Paciente Titular del Expediente *
@@ -735,7 +880,6 @@ export default function HistoriasClinicasPage() {
                 )}
               </div>
 
-              {/* ACORDEÓN 1: Motivo y Antecedentes */}
               <div className="border border-gray-200 rounded-2xl overflow-hidden">
                 <button
                   type="button"
@@ -784,7 +928,6 @@ export default function HistoriasClinicasPage() {
                 )}
               </div>
 
-              {/* ACORDEÓN 2: Evaluación OFA */}
               <div className="border border-[#136A7B]/20 rounded-2xl overflow-hidden">
                 <button
                   type="button"
@@ -899,7 +1042,6 @@ export default function HistoriasClinicasPage() {
                 )}
               </div>
 
-              {/* ACORDEÓN 3: Áreas Fonoaudiológicas */}
               <div className="border border-gray-200 rounded-2xl overflow-hidden">
                 <button
                   type="button"
@@ -960,7 +1102,6 @@ export default function HistoriasClinicasPage() {
                 )}
               </div>
 
-              {/* ACORDEÓN 4: Diagnóstico CIE-10 y Plan */}
               <div className="border border-gray-200 rounded-2xl overflow-hidden">
                 <button
                   type="button"
@@ -1024,7 +1165,6 @@ export default function HistoriasClinicasPage() {
                 )}
               </div>
 
-              {/* Botonera */}
               <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-gray-100">
                 <button
                   type="button"
@@ -1062,6 +1202,300 @@ export default function HistoriasClinicasPage() {
           </div>
         </div>
       )}
+
+      {/* MODAL 3: NOTAS DE EVOLUCIÓN Y CONTROL TRIMESTRAL (HU - Clínica - 004) */}
+      {modalEvoluciones && historiaEvolucion && (
+        <div className="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-7 border border-[#136A7B]/20">
+            <div className="flex items-start justify-between pb-4 border-b border-gray-100 gap-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#094A57] text-white font-mono text-[10px] font-bold">
+                    {historiaEvolucion.numeroExpediente}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-teal-50 text-[#136A7B] font-bold text-[10px]">
+                    CIE-10: {historiaEvolucion.diagnosticoCie10Codigo}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 font-bold text-[10px]">
+                    {historiaEvolucion.diasDesdeApertura ?? 0} días desde valoración inicial
+                  </span>
+                </div>
+                <h2 className="text-lg font-black text-[#094A57] mt-1">
+                  Evoluciones Terapéuticas — {historiaEvolucion.paciente.nombres}{' '}
+                  {historiaEvolucion.paciente.apellidos}
+                </h2>
+              </div>
+
+              <button
+                onClick={() => setModalEvoluciones(false)}
+                className="p-2 rounded-xl hover:bg-gray-100 text-gray-500 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* ALERTA DE HITO TRIMESTRAL (RN-05) */}
+            {historiaEvolucion.requiereReevaluacion && (
+              <div className="mt-4 bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <Bell className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="text-xs">
+                    <p className="font-black text-rose-900">
+                      🔔 Hito Trimestral Cumplido: Requiere Reevaluación / Informe de Progreso (RN-05)
+                    </p>
+                    <p className="text-rose-700 mt-0.5">
+                      Han transcurrido {historiaEvolucion.diasDesdeApertura} días desde la valoración inicial. Corresponde documentar el corte trimestral para padres o institución educativa.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setMostrarInformeTrimestral(!mostrarInformeTrimestral)}
+                  className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs shrink-0 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>{mostrarInformeTrimestral ? 'Ocultar Informe' : 'Generar Informe de Progreso'}</span>
+                </button>
+              </div>
+            )}
+
+            {/* RESUMEN DE INFORME DE PROGRESO TRIMESTRAL */}
+            {mostrarInformeTrimestral && (
+              <div className="mt-4 bg-[#FAF6F0] border border-[#DF9B78] rounded-2xl p-4 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-black text-[#094A57] uppercase tracking-wider">
+                    Borrador de Informe de Progreso Trimestral (RN-05)
+                  </h3>
+                  <span className="text-[11px] font-bold text-gray-500">
+                    Total sesiones registradas: {notasEvolucion.length}
+                  </span>
+                </div>
+                <p className="text-gray-700">
+                  <strong>Paciente:</strong> {historiaEvolucion.paciente.nombres}{' '}
+                  {historiaEvolucion.paciente.apellidos} ({historiaEvolucion.paciente.tipoDocumento}{' '}
+                  {historiaEvolucion.paciente.numeroDocumento})
+                </p>
+                <p className="text-gray-700">
+                  <strong>Diagnóstico Base:</strong> {historiaEvolucion.diagnosticoCie10Codigo} —{' '}
+                  {historiaEvolucion.diagnosticoCie10Desc}
+                </p>
+                <p className="text-gray-700">
+                  <strong>Plan Terapéutico Inicial:</strong> {historiaEvolucion.planTratamiento}
+                </p>
+                <p className="text-gray-700">
+                  <strong>Último avance documentado:</strong>{' '}
+                  {notasEvolucion[0]?.descripcionEvolucion || 'Sin sesiones registradas aún.'}
+                </p>
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs font-bold">
+                {error}
+              </div>
+            )}
+
+            {/* FORMULARIO DE NUEVA NOTA DE EVOLUCIÓN */}
+            <form
+              onSubmit={handleCrearEvolucion}
+              className="mt-5 bg-[#EAF5F6]/60 border border-[#136A7B]/20 rounded-2xl p-4 space-y-3 text-xs"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-black text-[#094A57] flex items-center gap-1.5">
+                  <PlusCircle className="w-4 h-4 text-[#0AA896]" />
+                  <span>+ Nueva Nota de Evolución — Sesión #{siguienteSesion}</span>
+                </h3>
+                <div className="flex items-center gap-2">
+                  <label className="font-bold text-gray-700">Fecha y Hora:</label>
+                  <input
+                    required
+                    type="datetime-local"
+                    value={formEvolucion.fechaSesion}
+                    onChange={(e) =>
+                      setFormEvolucion({ ...formEvolucion, fechaSesion: e.target.value })
+                    }
+                    className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-extrabold text-[#094A57] mb-1">
+                    Objetivos Terapéuticos Abordados *
+                  </label>
+                  <textarea
+                    required
+                    rows={2}
+                    value={formEvolucion.objetivosTrabajados}
+                    onChange={(e) =>
+                      setFormEvolucion({ ...formEvolucion, objetivosTrabajados: e.target.value })
+                    }
+                    placeholder="Ej. Praxias linguales de elevación apical y discriminación auditiva del fonema /r/..."
+                    className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-extrabold text-[#094A57] mb-1">
+                    Recomendaciones y Tareas para la Casa
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formEvolucion.planSiguienteSesion}
+                    onChange={(e) =>
+                      setFormEvolucion({ ...formEvolucion, planSiguienteSesion: e.target.value })
+                    }
+                    placeholder="Ej. Realizar 10 repeticiones diarias frente al espejo con apoyo de acudiente..."
+                    className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-extrabold text-[#094A57] mb-1">
+                  Desempeño Cualitativo y Respuesta del Paciente *
+                </label>
+                <textarea
+                  required
+                  rows={2}
+                  value={formEvolucion.descripcionEvolucion}
+                  onChange={(e) =>
+                    setFormEvolucion({ ...formEvolucion, descripcionEvolucion: e.target.value })
+                  }
+                  placeholder="Describe los logros alcanzados, nivel de atención, tolerancia a la actividad y respuesta clínica..."
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={guardando}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#0AA896] to-[#136A7B] hover:from-[#099686] hover:to-[#0f5563] text-white font-black flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{guardando ? 'Guardando...' : 'Guardar Evolución'}</span>
+                </button>
+              </div>
+            </form>
+
+            {/* LÍNEA DE TIEMPO CRONOLÓGICA INMUTABLE */}
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black uppercase tracking-wider text-[#094A57]">
+                  Línea de Tiempo Cronológica (Inmutable • Res. 1995/1999)
+                </h3>
+                <span className="text-[11px] font-bold text-gray-500">
+                  Orden: Más reciente primero
+                </span>
+              </div>
+
+              {cargandoEvoluciones ? (
+                <div className="p-8 text-center text-xs font-bold text-[#136A7B]">
+                  Cargando historial de sesiones...
+                </div>
+              ) : notasEvolucion.length === 0 ? (
+                <div className="p-8 text-center bg-gray-50 rounded-2xl text-xs text-gray-500">
+                  Aún no hay sesiones registradas para este expediente. Registra la Sesión #1 arriba.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {notasEvolucion.map((nota) => (
+                    <div
+                      key={nota.id}
+                      className="border border-gray-200 rounded-2xl p-4 bg-white shadow-2xs space-y-2 text-xs"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#0AA896] text-white font-black text-[11px]">
+                            Sesión #{nota.numeroSesion}
+                          </span>
+                          <span className="font-bold text-gray-700">
+                            {new Date(nota.fechaSesion).toLocaleString('es-CO', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short',
+                            })}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                            <Lock className="w-3 h-3" /> Registro Inmutable
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAddendumNotaId(addendumNotaId === nota.id ? null : nota.id);
+                              setTextoAddendum('');
+                            }}
+                            className="text-[11px] font-extrabold text-[#136A7B] hover:underline cursor-pointer"
+                          >
+                            + Añadir Addendum
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="font-black text-[#094A57]">Objetivos abordados: </span>
+                        <span className="text-gray-800">{nota.objetivosTrabajados}</span>
+                      </div>
+
+                      <div>
+                        <span className="font-black text-[#094A57]">Evolución y respuesta: </span>
+                        <p className="text-gray-800 whitespace-pre-line mt-0.5">
+                          {nota.descripcionEvolucion}
+                        </p>
+                      </div>
+
+                      {nota.planSiguienteSesion && (
+                        <div className="bg-[#FAF6F0] px-3 py-2 rounded-xl text-gray-700">
+                          <span className="font-black text-[#094A57]">Tareas / Casa: </span>
+                          {nota.planSiguienteSesion}
+                        </div>
+                      )}
+
+                      {addendumNotaId === nota.id && (
+                        <div className="pt-2 border-t border-gray-100 space-y-2">
+                          <label className="block font-extrabold text-amber-800">
+                            Nota Aclaratoria / Addendum Legal (se anexa con marca temporal sin borrar el texto original):
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={textoAddendum}
+                            onChange={(e) => setTextoAddendum(e.target.value)}
+                            placeholder="Escribe la aclaración clínica..."
+                            className="w-full p-2.5 rounded-xl border border-amber-300 bg-amber-50/40"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setAddendumNotaId(null)}
+                              className="px-3 py-1.5 rounded-xl border border-gray-200 font-bold text-gray-600 cursor-pointer"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              disabled={guardando}
+                              onClick={() => handleGuardarAddendum(nota.id)}
+                              className="px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black cursor-pointer"
+                            >
+                              Firmar Addendum
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
