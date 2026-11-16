@@ -20,8 +20,21 @@ export class HistoriasClinicasService {
     return `HC-${anio}-${consecutivo}`;
   }
 
+  private enriquecerHitoTrimestral<T extends { fechaApertura: Date }>(historia: T) {
+    const msPorDia = 1000 * 60 * 60 * 24;
+    const diasDesdeApertura = Math.max(
+      0,
+      Math.floor((Date.now() - new Date(historia.fechaApertura).getTime()) / msPorDia),
+    );
+    return {
+      ...historia,
+      diasDesdeApertura,
+      requiereReevaluacion: diasDesdeApertura >= 90,
+    };
+  }
+
   async listarTodas(busqueda?: string) {
-    return this.prisma.historiaClinica.findMany({
+    const lista = await this.prisma.historiaClinica.findMany({
       where: busqueda
         ? {
             OR: [
@@ -50,6 +63,8 @@ export class HistoriasClinicasService {
       },
       orderBy: { updatedAt: 'desc' },
     });
+
+    return lista.map((hc) => this.enriquecerHitoTrimestral(hc));
   }
 
   async obtenerPorPaciente(pacienteId: string) {
@@ -77,7 +92,7 @@ export class HistoriasClinicasService {
       throw new NotFoundException('El paciente aún no tiene una historia clínica abierta');
     }
 
-    return historia;
+    return this.enriquecerHitoTrimestral(historia);
   }
 
   async obtenerPorId(id: string) {
@@ -97,7 +112,7 @@ export class HistoriasClinicasService {
       throw new NotFoundException('Historia clínica no encontrada');
     }
 
-    return historia;
+    return this.enriquecerHitoTrimestral(historia);
   }
 
   async crear(creadoPorId: string, dto: CrearHistoriaClinicaDto) {
@@ -119,7 +134,7 @@ export class HistoriasClinicasService {
 
     const numeroExpediente = await this.generarNumeroExpediente();
 
-    return this.prisma.historiaClinica.create({
+    const creada = await this.prisma.historiaClinica.create({
       data: {
         numeroExpediente,
         pacienteId: dto.pacienteId,
@@ -142,6 +157,8 @@ export class HistoriasClinicasService {
         },
       },
     });
+
+    return this.enriquecerHitoTrimestral(creada);
   }
 
   async actualizar(id: string, dto: ActualizarHistoriaClinicaDto) {
@@ -179,7 +196,7 @@ export class HistoriasClinicasService {
       }
     }
 
-    return this.prisma.historiaClinica.update({
+    const actualizada = await this.prisma.historiaClinica.update({
       where: { id },
       data: {
         ...dto,
@@ -194,5 +211,7 @@ export class HistoriasClinicasService {
         },
       },
     });
+
+    return this.enriquecerHitoTrimestral(actualizada);
   }
 }
