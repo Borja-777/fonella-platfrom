@@ -95,20 +95,25 @@ export interface Paciente {
   nombres: string;
   apellidos: string;
   fechaNacimiento: string;
+  edad?: number;
   genero?: string | null;
   telefonoContacto: string;
   email?: string | null;
-  ciudad: string;
+  ciudad?: string | null;
   direccion?: string | null;
   tipoRemision: 'PARTICULAR' | 'REMISION_EXTERNA';
   institucionRemitente?: string | null;
-  estado: 'ACTIVO' | 'INACTIVO';
+  totalFaltasTardias: number;
+  estado?: 'ACTIVO' | 'INACTIVO';
+  activo?: boolean;
+  acudientes?: PacienteAcudienteRelacion[];
   historiaClinica?: {
     id: string;
     numeroExpediente: string;
     estado: 'BORRADOR' | 'CERRADA';
-    diagnosticoCie10Codigo: string;
-    diagnosticoCie10Desc: string;
+    diagnosticoCie10Codigo?: string;
+    diagnosticoCie10Desc?: string;
+    fechaApertura?: string;
   } | null;
 }
 
@@ -128,10 +133,12 @@ export interface HistoriaClinica {
   diagnosticoCie10Desc: string;
   planTratamiento: string;
   estado: 'BORRADOR' | 'CERRADA';
-  createdAt: string;
-  updatedAt: string;
+  diasDesdeApertura?: number;
+  requiereReevaluacion?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   paciente: Paciente;
-  creadoPor: {
+  creadoPor?: {
     id: string;
     nombreCompleto: string;
     registroRethus?: string | null;
@@ -184,26 +191,6 @@ export interface PacienteAcudienteRelacion {
   acudiente: Acudiente;
 }
 
-export interface Paciente {
-  id: string;
-  tipoDocumento: TipoDocumento;
-  numeroDocumento: string;
-  nombres: string;
-  apellidos: string;
-  fechaNacimiento: string;
-  edad?: number;
-  genero?: string | null;
-  telefonoContacto: string;
-  email?: string | null;
-  ciudad: string;
-  direccion?: string | null;
-  tipoRemision: TipoRemision;
-  institucionRemitente?: string | null;
-  totalFaltasTardias: number;
-  estado: 'ACTIVO' | 'INACTIVO';
-  acudientes: PacienteAcudienteRelacion[];
-}
-
 export interface CrearPacienteData {
   tipoDocumento: TipoDocumento;
   numeroDocumento: string;
@@ -211,7 +198,7 @@ export interface CrearPacienteData {
   apellidos: string;
   fechaNacimiento: string;
   genero?: string;
-  telefonoContacto: string;
+  telefonoContacto?: string;
   email?: string;
   ciudad?: string;
   direccion?: string;
@@ -853,39 +840,6 @@ export const api = apiService;
 // MÓDULO CLÍNICO: PACIENTES, HISTORIAS Y EVOLUCIONES (HU-003 y HU-004)
 // ==========================================
 
-export interface Paciente {
-  id: string;
-  tipoDocumento: 'RC' | 'TI' | 'CC' | 'CE' | 'PA';
-  numeroDocumento: string;
-  nombres: string;
-  apellidos: string;
-  fechaNacimiento: string;
-  genero?: string | null;
-  telefonoContacto: string;
-  email?: string | null;
-  ciudad?: string | null;
-  direccion?: string | null;
-  tipoRemision: 'PARTICULAR' | 'REMISION_EXTERNA';
-  institucionRemitente?: string | null;
-  activo: boolean;
-  historiaClinica?: {
-    id: string;
-    numeroExpediente: string;
-    estado: 'BORRADOR' | 'CERRADA';
-    fechaApertura: string;
-  } | null;
-}
-
-export interface EvaluacionOfa {
-  labios: string;
-  lengua: string;
-  paladar: string;
-  dientesOclusion: string;
-  respiracion: string;
-  deglucion: string;
-  observacionesOfa?: string;
-}
-
 export interface NotaEvolucion {
   id: string;
   historiaClinicaId: string;
@@ -896,36 +850,6 @@ export interface NotaEvolucion {
   descripcionEvolucion: string;
   planSiguienteSesion?: string | null;
   createdAt: string;
-}
-
-export interface HistoriaClinica {
-  id: string;
-  numeroExpediente: string;
-  pacienteId: string;
-  creadoPorId: string;
-  fechaApertura: string;
-  motivoConsulta: string;
-  antecedentesPerinatales?: string | null;
-  evaluacionOfa: EvaluacionOfa;
-  evaluacionHabla?: string | null;
-  evaluacionLenguaje?: string | null;
-  evaluacionVoz?: string | null;
-  diagnosticoCie10Codigo: string;
-  diagnosticoCie10Desc: string;
-  planTratamiento: string;
-  estado: 'BORRADOR' | 'CERRADA';
-  diasDesdeApertura?: number;
-  requiereReevaluacion?: boolean;
-  paciente: Paciente;
-  creadoPor?: {
-    id: string;
-    nombreCompleto: string;
-    registroRethus?: string | null;
-  };
-  _count?: {
-    notasEvolucion: number;
-    archivosAnexos: number;
-  };
 }
 
 export interface RespuestaEvoluciones {
