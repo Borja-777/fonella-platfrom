@@ -584,7 +584,7 @@ export default function InventarioPage() {
             className="bg-[#0AA896] hover:bg-[#136A7B] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Registrar Nuevo Juguete</span>
+            <span>Registrar Nuevo Juguete</span>
           </button>
         )}
       </div>

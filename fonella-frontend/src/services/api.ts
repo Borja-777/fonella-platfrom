@@ -89,6 +89,156 @@ export interface RecuperacionResponse {
   nombreCompleto?: string;
 }
 
+// ----------------------------------------------------------------------------
+// Tipos del dominio de Pacientes y Agenda Clínica (Sprint 2)
+// ----------------------------------------------------------------------------
+
+export type TipoDocumento = 'RC' | 'TI' | 'CC' | 'CE' | 'PA';
+export type TipoRemision = 'PARTICULAR' | 'REMISION_EXTERNA';
+export type EstadoCita =
+  | 'CONFIRMADA'
+  | 'ATENDIDA'
+  | 'CANCELADA_A_TIEMPO'
+  | 'CANCELADA_TARDIA'
+  | 'INASISTENCIA';
+
+export interface Acudiente {
+  id: string;
+  tipoDocumento: TipoDocumento;
+  numeroDocumento: string;
+  nombres: string;
+  apellidos: string;
+  telefonoPrincipal: string;
+  telefonoRespaldo?: string | null;
+  email?: string | null;
+}
+
+export interface PacienteAcudienteRelacion {
+  id: string;
+  parentesco: string;
+  esPrincipal: boolean;
+  acudiente: Acudiente;
+}
+
+export interface Paciente {
+  id: string;
+  tipoDocumento: TipoDocumento;
+  numeroDocumento: string;
+  nombres: string;
+  apellidos: string;
+  fechaNacimiento: string;
+  edad?: number;
+  genero?: string | null;
+  telefonoContacto: string;
+  email?: string | null;
+  ciudad: string;
+  direccion?: string | null;
+  tipoRemision: TipoRemision;
+  institucionRemitente?: string | null;
+  totalFaltasTardias: number;
+  estado: 'ACTIVO' | 'INACTIVO';
+  acudientes: PacienteAcudienteRelacion[];
+}
+
+export interface CrearPacienteData {
+  tipoDocumento: TipoDocumento;
+  numeroDocumento: string;
+  nombres: string;
+  apellidos: string;
+  fechaNacimiento: string;
+  genero?: string;
+  telefonoContacto: string;
+  email?: string;
+  ciudad?: string;
+  direccion?: string;
+  tipoRemision?: TipoRemision;
+  institucionRemitente?: string;
+  acudiente?: {
+    tipoDocumento: TipoDocumento;
+    numeroDocumento: string;
+    nombres: string;
+    apellidos: string;
+    parentesco: string;
+    telefonoPrincipal: string;
+    telefonoRespaldo?: string;
+    email?: string;
+  };
+}
+
+export interface ServicioTerapeutico {
+  id: string;
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  publicoObjetivo: string;
+  duracionMinutos: number;
+  precioReferencia: string | number;
+  estado: 'ACTIVO' | 'INACTIVO';
+}
+
+export interface Cita {
+  id: string;
+  pacienteId: string;
+  servicioId: string;
+  creadoPorId: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  estado: EstadoCita;
+  motivoCancelacion?: string | null;
+  fechaCancelacion?: string | null;
+  cancelacionTardia?: boolean;
+  paciente: Paciente;
+  servicio: ServicioTerapeutico;
+  creadoPor: {
+    id: string;
+    nombreCompleto: string;
+    rol: string;
+  };
+}
+
+export interface FranjaDisponibilidad {
+  horaInicio: string;
+  horaFin: string;
+  jornada: 'MANANA' | 'TARDE';
+  disponible: boolean;
+  motivoNoDisponible: 'OCUPADA' | 'PASADA' | null;
+  cita: Cita | null;
+}
+
+export interface DisponibilidadDia {
+  fecha: string;
+  abierto: boolean;
+  motivoCierre?: string;
+  duracionFranjaMinutos?: number;
+  bloqueReceso: { inicio: string; fin: string } | null;
+  franjas: FranjaDisponibilidad[];
+}
+
+/**
+ * Helper interno para centralizar peticiones autenticadas con cookie HttpOnly
+ * y normalizar mensajes de error del backend (NestJS puede devolver string o string[]).
+ */
+async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init.headers || {}),
+    },
+    credentials: 'include',
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const mensaje = Array.isArray(data.message)
+      ? data.message.join(' ')
+      : data.message;
+    throw new Error(mensaje || 'Error en la comunicación con el servidor.');
+  }
+  return data as T;
+}
+
 export const apiService = {
   async login(email: string, password: string): Promise<LoginResponse> {
     const res = await fetch(`${API_URL}/auth/login`, {
@@ -426,6 +576,115 @@ export const apiService = {
       );
     }
     return data;
+  },
+
+  // --------------------------------------------------------------------------
+  // Endpoints de Pacientes y Acudientes (HU - Agenda - 001 / RN-06)
+  // --------------------------------------------------------------------------
+
+  /** Búsqueda predictiva de pacientes por nombre, apellido o número de documento. */
+  buscarPacientes(q?: string): Promise<Paciente[]> {
+    const query = q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : '';
+    return requestJson<Paciente[]>(`/pacientes${query}`);
+  },
+
+  /** Consulta un acudiente existente por documento para reutilizarlo entre hermanos. */
+  buscarAcudientePorDocumento(numeroDocumento: string): Promise<Acudiente> {
+    return requestJson<Acudiente>(
+      `/pacientes/acudiente/${encodeURIComponent(numeroDocumento.trim())}`,
+    );
+  },
+
+  /** Registra un nuevo paciente (y su acudiente obligatorio si es menor de 18 años). */
+  crearPaciente(datos: CrearPacienteData): Promise<Paciente> {
+    return requestJson<Paciente>('/pacientes', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    });
+  },
+
+  /** Actualiza los datos de un paciente existente (y su acudiente si aplica). */
+  actualizarPaciente(
+    id: string,
+    datos: Partial<CrearPacienteData>,
+  ): Promise<Paciente> {
+    return requestJson<Paciente>(`/pacientes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(datos),
+    });
+  },
+
+  // --------------------------------------------------------------------------
+  // Endpoints de Agenda Clínica y Citas (HU - Agenda - 001, 002 y 003)
+  // --------------------------------------------------------------------------
+
+  /** Lista el catálogo de servicios terapéuticos activos. */
+  listarServiciosCitas(): Promise<ServicioTerapeutico[]> {
+    return requestJson<ServicioTerapeutico[]>('/citas/servicios');
+  },
+
+  /** Obtiene las franjas de 45 min y el bloque de receso para una fecha (YYYY-MM-DD). */
+  obtenerDisponibilidadAgenda(fecha: string): Promise<DisponibilidadDia> {
+    return requestJson<DisponibilidadDia>(
+      `/citas/disponibilidad?fecha=${encodeURIComponent(fecha)}`,
+    );
+  },
+
+  /** Lista citas por fecha puntual o rango (desde / hasta). */
+  listarCitas(params?: {
+    fecha?: string;
+    desde?: string;
+    hasta?: string;
+  }): Promise<Cita[]> {
+    const search = new URLSearchParams();
+    if (params?.fecha) search.set('fecha', params.fecha);
+    if (params?.desde) search.set('desde', params.desde);
+    if (params?.hasta) search.set('hasta', params.hasta);
+    const qs = search.toString();
+    return requestJson<Cita[]>(`/citas${qs ? `?${qs}` : ''}`);
+  },
+
+  /** Agenda una nueva cita en consultorio. */
+  crearCita(datos: {
+    pacienteId: string;
+    servicioId: string;
+    fecha: string;
+    horaInicio: string;
+  }): Promise<Cita> {
+    return requestJson<Cita>('/citas', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    });
+  },
+
+  /** Reprograma fecha y hora de una cita CONFIRMADA. */
+  reprogramarCita(
+    id: string,
+    datos: { fecha: string; horaInicio: string },
+  ): Promise<Cita> {
+    return requestJson<Cita>(`/citas/${id}/reprogramar`, {
+      method: 'PATCH',
+      body: JSON.stringify(datos),
+    });
+  },
+
+  /** Cancela una cita CONFIRMADA registrando motivo y aplicando regla de 24 horas. */
+  cancelarCita(id: string, motivoCancelacion: string): Promise<Cita> {
+    return requestJson<Cita>(`/citas/${id}/cancelar`, {
+      method: 'PATCH',
+      body: JSON.stringify({ motivoCancelacion }),
+    });
+  },
+
+  /** Marca una cita CONFIRMADA como ATENDIDA o INASISTENCIA. */
+  actualizarEstadoCita(
+    id: string,
+    estado: 'ATENDIDA' | 'INASISTENCIA',
+  ): Promise<Cita> {
+    return requestJson<Cita>(`/citas/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado }),
+    });
   },
 };
 

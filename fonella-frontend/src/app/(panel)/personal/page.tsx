@@ -418,7 +418,7 @@ export default function PersonalPage() {
             className="bg-[#0AA896] hover:bg-[#136A7B] text-white px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
-            <span>+ Registrar Nueva Secretaria</span>
+            <span>Registrar Nueva Secretaria</span>
           </button>
         </div>
       </div>
@@ -474,38 +474,35 @@ export default function PersonalPage() {
               <thead>
                 <tr className="bg-gradient-to-r from-[#C26B43] via-[#DF9B78] to-[#E5A885] text-white text-[10.5px] sm:text-xs uppercase font-extrabold tracking-wider shadow-sm">
                   <th className="py-3 px-3 sm:px-4 font-extrabold whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
-                      <span>Nombre Completo</span>
-                    </div>
+                    <span>Nombre Completo</span>
                   </th>
                   <th className="py-3 px-3 sm:px-4 font-extrabold whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
+                      <span className="h-3.5 w-[2px] bg-white/60 shrink-0" />
                       <span>Correo Institucional</span>
                     </div>
                   </th>
                   <th className="py-3 px-2 sm:px-3 font-extrabold whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
+                      <span className="h-3.5 w-[2px] bg-white/60 shrink-0" />
                       <span>Rol RBAC</span>
                     </div>
                   </th>
                   <th className="py-3 px-2 sm:px-3 font-extrabold whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
+                      <span className="h-3.5 w-[2px] bg-white/60 shrink-0" />
                       <span>Registro ReTHUS</span>
                     </div>
                   </th>
                   <th className="py-3 px-2 sm:px-3 font-extrabold whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
+                      <span className="h-3.5 w-[2px] bg-white/60 shrink-0" />
                       <span>Estado</span>
                     </div>
                   </th>
-                  <th className="py-3 px-3 sm:px-4 text-right font-extrabold whitespace-nowrap">
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="h-3.5 w-[1.5px] bg-white/40 shrink-0" />
+                  <th className="w-[1%] py-3 pl-3 pr-5 sm:pl-4 sm:pr-7 text-left font-extrabold whitespace-nowrap">
+                    <div className="flex items-center justify-start gap-2">
+                      <span className="h-3.5 w-[2px] bg-white/60 shrink-0" />
                       <span>Acciones</span>
                     </div>
                   </th>
@@ -600,10 +597,10 @@ export default function PersonalPage() {
                       </td>
 
                       {/* Acciones Integradas */}
-                      <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap relative">
+                      <td className="py-3 pl-3 pr-5 sm:pl-4 sm:pr-7 text-left whitespace-nowrap relative">
                         {esFonoaudiologa ? (
                           /* Rol Fonoaudióloga: Botón Editar y Reenviar si está pendiente */
-                          <div className="flex items-center justify-end gap-1.5">
+                          <div className="flex items-center justify-start gap-1.5">
                             {!activo && u.resetToken && (
                               <button
                                 type="button"
@@ -629,15 +626,9 @@ export default function PersonalPage() {
                           /* Rol Asistente: Botón Split Editar con Menú Apilado */
                           <div className="relative inline-block text-left menu-acciones-container">
                             <div className="inline-flex items-stretch rounded-lg border border-[#0084FF] bg-white shadow-xs overflow-hidden">
-                              <button
-                                type="button"
-                                onClick={() => abrirModalEditar(u)}
-                                className="px-3 py-1.5 text-xs font-semibold text-[#0084FF] hover:bg-sky-50 transition-colors flex items-center gap-1.5 cursor-pointer"
-                                title="Editar información de colaborador"
-                              >
-                                <Pencil className="w-3.5 h-3.5 text-[#0084FF]" />
-                                <span>Editar</span>
-                              </button>
+                              <span className="px-3 py-1.5 text-xs font-semibold text-[#0084FF] flex items-center select-none">
+                                Editar
+                              </span>
                               <button
                                 type="button"
                                 onClick={(e) => {
