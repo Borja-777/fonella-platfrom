@@ -31,13 +31,28 @@ import {
   Paciente,
 } from '@/services/api';
 
+function obtenerFechaHoraActualColombia(): string {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Bogota',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+  const map = Object.fromEntries(partes.map((p) => [p.type, p.value]));
+  const hora = map.hour === '24' ? '00' : map.hour;
+  return `${map.year}-${map.month}-${map.day}T${hora}:${map.minute}`;
+}
+
 const OFA_INICIAL: EvaluacionOfa = {
-  labios: 'Tono y sellado labial adecuado en reposo',
-  lengua: 'Tamaño, movilidad y frenillo lingual funcional',
-  paladar: 'Paladar duro y velo del paladar íntegros, movilidad simétrica',
-  dientesOclusion: 'Dentición acorde a la edad, oclusión funcional',
-  respiracion: 'Modo respiratorio nasal, tipo costodiafragmático',
-  deglucion: 'Deglución madura sin interposición lingual',
+  labios: '',
+  lengua: '',
+  paladar: '',
+  dientesOclusion: '',
+  respiracion: '',
+  deglucion: '',
   observacionesOfa: '',
 };
 
@@ -74,7 +89,7 @@ export default function HistoriasClinicasPage() {
   const [mostrarInformeTrimestral, setMostrarInformeTrimestral] = useState(false);
 
   const [formEvolucion, setFormEvolucion] = useState({
-    fechaSesion: new Date().toISOString().slice(0, 16),
+    fechaSesion: obtenerFechaHoraActualColombia(),
     objetivosTrabajados: '',
     descripcionEvolucion: '',
     planSiguienteSesion: '',
@@ -134,9 +149,25 @@ export default function HistoriasClinicasPage() {
     }
   };
 
+  const deepLinkProcesadoRef = useRef(false);
+
   useEffect(() => {
     cargarDatos();
   }, []);
+
+  // Si llega ?pacienteId=... desde Agenda, abre automáticamente su Historia Clínica
+  useEffect(() => {
+    if (deepLinkProcesadoRef.current || typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const pacienteIdParam = params.get('pacienteId');
+    if (!pacienteIdParam || historias.length === 0) return;
+
+    const encontrada = historias.find((h) => h.pacienteId === pacienteIdParam);
+    if (encontrada) {
+      deepLinkProcesadoRef.current = true;
+      abrirEditarVerHistoria(encontrada);
+    }
+  }, [historias]);
 
   useEffect(() => {
     if (!modalHistoria) return;
@@ -249,7 +280,7 @@ export default function HistoriasClinicasPage() {
     setAddendumNotaId(null);
     setTextoAddendum('');
     setFormEvolucion({
-      fechaSesion: new Date().toISOString().slice(0, 16),
+      fechaSesion: obtenerFechaHoraActualColombia(),
       objetivosTrabajados: '',
       descripcionEvolucion: '',
       planSiguienteSesion: '',
@@ -286,7 +317,7 @@ export default function HistoriasClinicasPage() {
       setNotasEvolucion(data.notas);
       setSiguienteSesion(data.siguienteNumeroSesion);
       setFormEvolucion({
-        fechaSesion: new Date().toISOString().slice(0, 16),
+        fechaSesion: obtenerFechaHoraActualColombia(),
         objetivosTrabajados: '',
         descripcionEvolucion: '',
         planSiguienteSesion: '',
@@ -416,16 +447,11 @@ export default function HistoriasClinicasPage() {
             <ClipboardList className="w-6 h-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0AA896]/15 text-[#0E5666]">
-                Dominio Clínico • HU-003 & HU-004 • Ley 1581 / Res. 1995
-              </span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black text-[#094A57] mt-1">
+            <h1 className="text-xl sm:text-2xl font-black text-[#094A57]">
               Historias Clínicas y Notas de Evolución
             </h1>
             <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-              Anamnesis inicial, valoración OFA, seguimiento cronológico por sesión y alertas de control trimestral (RN-05).
+              Anamnesis inicial, valoración OFA, seguimiento cronológico por sesión y alertas de control trimestral.
             </p>
           </div>
         </div>
@@ -524,12 +550,37 @@ export default function HistoriasClinicasPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[#094A57] text-white text-[11px] uppercase tracking-wider">
-                  <th className="py-3.5 px-4 font-extrabold">Expediente</th>
-                  <th className="py-3.5 px-4 font-extrabold">Paciente</th>
-                  <th className="py-3.5 px-4 font-extrabold">Diagnóstico CIE-10</th>
-                  <th className="py-3.5 px-4 font-extrabold">Estado y Control Trimestral</th>
-                  <th className="py-3.5 px-4 font-extrabold text-center">Sesiones</th>
-                  <th className="py-3.5 px-4 font-extrabold text-right">Acciones Clínicas</th>
+                  <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">Expediente</th>
+                  <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <span className="h-3.5 w-[2px] bg-white/60 shrink-0" />
+                      <span>Paciente</span>
+                    </div>
+                  </th>
+                  <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <span className="h-3.5 w-[2px] bg-white/60 shrink-0" />
+                      <span>Diagnóstico CIE-10</span>
+                    </div>
+                  </th>
+                  <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <span className="h-3.5 w-[2px] bg-white/60 shrink-0" />
+                      <span>Estado y Control Trimestral</span>
+                    </div>
+                  </th>
+                  <th className="py-3.5 px-4 font-extrabold text-left whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <span className="h-3.5 w-[2px] bg-white/60 shrink-0" />
+                      <span>Sesiones</span>
+                    </div>
+                  </th>
+                  <th className="w-[1%] py-3.5 pl-4 pr-6 font-extrabold text-left whitespace-nowrap">
+                    <div className="flex items-center justify-start gap-2">
+                      <span className="h-3.5 w-[2px] bg-white/60 shrink-0" />
+                      <span>Acciones Clínicas</span>
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-xs">
@@ -579,12 +630,12 @@ export default function HistoriasClinicasPage() {
                         </div>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-center">
+                    <td className="py-3.5 px-4 text-left">
                       <span className="px-2.5 py-1 rounded-xl bg-[#094A57]/10 text-[#094A57] font-black text-[11px]">
                         {hc._count?.notasEvolucion ?? 0}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-right space-x-2">
+                    <td className="py-3.5 pl-4 pr-6 text-left whitespace-nowrap space-x-2">
                       <button
                         type="button"
                         onClick={() => abrirEditarVerHistoria(hc)}
@@ -612,7 +663,7 @@ export default function HistoriasClinicasPage() {
 
       {/* MODAL 1: REGISTRO RÁPIDO DE PACIENTE */}
       {modalPaciente && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 !mt-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 border border-[#136A7B]/20">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2.5">
@@ -797,7 +848,7 @@ export default function HistoriasClinicasPage() {
 
       {/* MODAL 2: FORMULARIO CLÍNICO EN ACORDEÓN + AUTOGUARDADO (HU - Clínica - 003) */}
       {modalHistoria && (
-        <div className="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 !mt-0 bg-black/65 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-7 border border-[#136A7B]/20">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
               <div>
@@ -944,6 +995,7 @@ export default function HistoriasClinicasPage() {
                       <input
                         disabled={soloLectura}
                         type="text"
+                        placeholder="Ej. Tono y sellado labial adecuado en reposo"
                         value={formHistoria.evaluacionOfa.labios}
                         onChange={(e) =>
                           setFormHistoria({
@@ -951,7 +1003,7 @@ export default function HistoriasClinicasPage() {
                             evaluacionOfa: { ...formHistoria.evaluacionOfa, labios: e.target.value },
                           })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white disabled:bg-gray-50"
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white placeholder:text-gray-400 disabled:bg-gray-50"
                       />
                     </div>
                     <div>
@@ -959,6 +1011,7 @@ export default function HistoriasClinicasPage() {
                       <input
                         disabled={soloLectura}
                         type="text"
+                        placeholder="Ej. Tamaño, movilidad y frenillo lingual funcional"
                         value={formHistoria.evaluacionOfa.lengua}
                         onChange={(e) =>
                           setFormHistoria({
@@ -966,7 +1019,7 @@ export default function HistoriasClinicasPage() {
                             evaluacionOfa: { ...formHistoria.evaluacionOfa, lengua: e.target.value },
                           })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white disabled:bg-gray-50"
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white placeholder:text-gray-400 disabled:bg-gray-50"
                       />
                     </div>
                     <div>
@@ -974,6 +1027,7 @@ export default function HistoriasClinicasPage() {
                       <input
                         disabled={soloLectura}
                         type="text"
+                        placeholder="Ej. Paladar duro y velo íntegros, movilidad simétrica"
                         value={formHistoria.evaluacionOfa.paladar}
                         onChange={(e) =>
                           setFormHistoria({
@@ -981,7 +1035,7 @@ export default function HistoriasClinicasPage() {
                             evaluacionOfa: { ...formHistoria.evaluacionOfa, paladar: e.target.value },
                           })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white disabled:bg-gray-50"
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white placeholder:text-gray-400 disabled:bg-gray-50"
                       />
                     </div>
                     <div>
@@ -989,6 +1043,7 @@ export default function HistoriasClinicasPage() {
                       <input
                         disabled={soloLectura}
                         type="text"
+                        placeholder="Ej. Dentición acorde a la edad, oclusión funcional"
                         value={formHistoria.evaluacionOfa.dientesOclusion}
                         onChange={(e) =>
                           setFormHistoria({
@@ -999,7 +1054,7 @@ export default function HistoriasClinicasPage() {
                             },
                           })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white disabled:bg-gray-50"
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white placeholder:text-gray-400 disabled:bg-gray-50"
                       />
                     </div>
                     <div>
@@ -1007,6 +1062,7 @@ export default function HistoriasClinicasPage() {
                       <input
                         disabled={soloLectura}
                         type="text"
+                        placeholder="Ej. Modo respiratorio nasal, tipo costodiafragmático"
                         value={formHistoria.evaluacionOfa.respiracion}
                         onChange={(e) =>
                           setFormHistoria({
@@ -1017,7 +1073,7 @@ export default function HistoriasClinicasPage() {
                             },
                           })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white disabled:bg-gray-50"
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white placeholder:text-gray-400 disabled:bg-gray-50"
                       />
                     </div>
                     <div>
@@ -1025,6 +1081,7 @@ export default function HistoriasClinicasPage() {
                       <input
                         disabled={soloLectura}
                         type="text"
+                        placeholder="Ej. Deglución madura sin interposición lingual"
                         value={formHistoria.evaluacionOfa.deglucion}
                         onChange={(e) =>
                           setFormHistoria({
@@ -1035,7 +1092,7 @@ export default function HistoriasClinicasPage() {
                             },
                           })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white disabled:bg-gray-50"
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white placeholder:text-gray-400 disabled:bg-gray-50"
                       />
                     </div>
                   </div>
@@ -1205,7 +1262,7 @@ export default function HistoriasClinicasPage() {
 
       {/* MODAL 3: NOTAS DE EVOLUCIÓN Y CONTROL TRIMESTRAL (HU - Clínica - 004) */}
       {modalEvoluciones && historiaEvolucion && (
-        <div className="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 !mt-0 bg-black/65 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-7 border border-[#136A7B]/20">
             <div className="flex items-start justify-between pb-4 border-b border-gray-100 gap-4">
               <div>
@@ -1315,7 +1372,7 @@ export default function HistoriasClinicasPage() {
                     onChange={(e) =>
                       setFormEvolucion({ ...formEvolucion, fechaSesion: e.target.value })
                     }
-                    className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white font-semibold"
+                    className="input-fecha-animado px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white font-semibold"
                   />
                 </div>
               </div>

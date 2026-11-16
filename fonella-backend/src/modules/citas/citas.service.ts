@@ -171,6 +171,13 @@ export class CitasService {
           include: { acudiente: true },
           orderBy: { esPrincipal: "desc" as const },
         },
+        historiaClinica: {
+          select: {
+            id: true,
+            numeroExpediente: true,
+            estado: true,
+          },
+        },
       },
     },
     servicio: true,

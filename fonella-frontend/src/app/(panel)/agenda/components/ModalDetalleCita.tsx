@@ -168,25 +168,26 @@ export default function ModalDetalleCita({
 
           {/* Botones de acción rápida del Escenario 4 */}
           <div className="pt-3 border-t border-slate-100 space-y-2">
-            {esAsistente ? (
-              <button
-                type="button"
-                disabled
-                title="Acceso restringido a Fonoaudióloga Titular"
-                className="w-full py-2.5 px-4 rounded-xl bg-slate-100 text-slate-400 text-xs font-bold flex items-center justify-center gap-2 cursor-not-allowed"
-              >
-                <FileText className="w-4 h-4" />
-                Ir a Historia Clínica (Solo Fonoaudióloga)
-              </button>
-            ) : (
-              <Link
-                href={`/historia-clinica?pacienteId=${cita.paciente.id}`}
-                className="w-full py-2.5 px-4 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-extrabold flex items-center justify-center gap-2 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                Ir a Historia Clínica
-              </Link>
-            )}
+            {Boolean(cita.paciente.historiaClinica) &&
+              (esAsistente ? (
+                <button
+                  type="button"
+                  disabled
+                  title="Acceso restringido a Fonoaudióloga Titular"
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-100 text-slate-400 text-xs font-bold flex items-center justify-center gap-2 cursor-not-allowed"
+                >
+                  <FileText className="w-4 h-4" />
+                  Ir a Historia Clínica (Solo Fonoaudióloga)
+                </button>
+              ) : (
+                <Link
+                  href={`/historias-clinicas?pacienteId=${cita.paciente.id}`}
+                  className="w-full py-2.5 px-4 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-extrabold flex items-center justify-center gap-2 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  Ir a Historia Clínica
+                </Link>
+              ))}
 
             {esConfirmada && (
               <div className="grid grid-cols-2 gap-2">
