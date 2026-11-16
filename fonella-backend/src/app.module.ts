@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+﻿import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ScheduleModule } from "@nestjs/schedule";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -8,6 +8,7 @@ import { UsuariosModule } from "./modules/usuarios/usuarios.module";
 import { InventarioModule } from "./modules/inventario/inventario.module";
 import { PacientesModule } from "./modules/pacientes/pacientes.module";
 import { CitasModule } from "./modules/citas/citas.module";
+import { HistoriasClinicasModule } from "./modules/historias-clinicas/historias-clinicas.module";
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CitasModule } from "./modules/citas/citas.module";
     InventarioModule,
     PacientesModule,
     CitasModule,
+    HistoriasClinicasModule,
   ],
 })
 export class AppModule {}

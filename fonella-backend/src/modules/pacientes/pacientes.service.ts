@@ -84,6 +84,15 @@ export class PacientesService {
           },
           orderBy: { esPrincipal: "desc" },
         },
+        historiaClinica: {
+          select: {
+            id: true,
+            numeroExpediente: true,
+            estado: true,
+            diagnosticoCie10Codigo: true,
+            diagnosticoCie10Desc: true,
+          },
+        },
       },
       orderBy: [{ apellidos: "asc" }, { nombres: "asc" }],
       take: 20,
@@ -93,6 +102,24 @@ export class PacientesService {
       ...paciente,
       edad: this.calcularEdad(paciente.fechaNacimiento),
     }));
+  }
+
+  /** Consulta un paciente por su UUID incluyendo historia clínica y acudientes. */
+  async obtenerPorId(id: string) {
+    const paciente = await this.prisma.paciente.findUnique({
+      where: { id },
+      include: {
+        historiaClinica: true,
+        acudientes: { include: { acudiente: true }, orderBy: { esPrincipal: "desc" } },
+      },
+    });
+    if (!paciente) {
+      throw new NotFoundException("Paciente no encontrado.");
+    }
+    return {
+      ...paciente,
+      edad: this.calcularEdad(paciente.fechaNacimiento),
+    };
   }
 
   /**

@@ -41,6 +41,12 @@ export class PacientesController {
     return this.pacientesService.buscarAcudientePorDocumento(numeroDocumento);
   }
 
+  /** GET /api/v1/pacientes/:id — Consulta el detalle de un paciente por UUID. */
+  @Get(":id")
+  obtenerPorId(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
+    return this.pacientesService.obtenerPorId(id);
+  }
+
   /** POST /api/v1/pacientes — Registra un paciente nuevo y su acudiente si aplica. */
   @Post()
   crear(@Body() dto: CrearPacienteDto) {
