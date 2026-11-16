@@ -115,7 +115,7 @@ export class CrearPacienteDto {
 
   @IsOptional()
   @IsEnum(TipoRemision, {
-    message: "El tipo de remisión debe ser PARTICULAR o REMISION_EXTERNA.",
+    message: "El tipo de remisión debe ser PARTICULAR, REMISION_EXTERNA o ESCOLAR.",
   })
   tipoRemision?: TipoRemision;
 
@@ -123,6 +123,11 @@ export class CrearPacienteDto {
   @IsString()
   @MaxLength(150)
   institucionRemitente?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  profesionalRemitente?: string;
 
   // Acudiente opcional en el DTO; el servicio lo exige si edad < 18 (RN-06)
   @IsOptional()
@@ -195,7 +200,7 @@ export class ActualizarPacienteDto {
 
   @IsOptional()
   @IsEnum(TipoRemision, {
-    message: "El tipo de remisión debe ser PARTICULAR o REMISION_EXTERNA.",
+    message: "El tipo de remisión debe ser PARTICULAR, REMISION_EXTERNA o ESCOLAR.",
   })
   tipoRemision?: TipoRemision;
 
@@ -203,6 +208,11 @@ export class ActualizarPacienteDto {
   @IsString()
   @MaxLength(150)
   institucionRemitente?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  profesionalRemitente?: string;
 
   @IsOptional()
   @ValidateNested()

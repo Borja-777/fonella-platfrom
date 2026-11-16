@@ -323,6 +323,7 @@ export class PacientesService {
           direccion: dto.direccion?.trim() || null,
           tipoRemision: dto.tipoRemision ?? TipoRemision.PARTICULAR,
           institucionRemitente: dto.institucionRemitente?.trim() || null,
+          profesionalRemitente: dto.profesionalRemitente?.trim() || null,
         },
       });
 
@@ -458,6 +459,9 @@ export class PacientesService {
           }),
           ...(dto.institucionRemitente !== undefined && {
             institucionRemitente: dto.institucionRemitente.trim() || null,
+          }),
+          ...(dto.profesionalRemitente !== undefined && {
+            profesionalRemitente: dto.profesionalRemitente.trim() || null,
           }),
         },
       });

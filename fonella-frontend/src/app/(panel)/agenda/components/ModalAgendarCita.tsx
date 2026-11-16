@@ -77,6 +77,7 @@ export default function ModalAgendarCita({
   const [emailPaciente, setEmailPaciente] = useState('');
   const [tipoRemision, setTipoRemision] = useState<TipoRemision>('PARTICULAR');
   const [institucionRemitente, setInstitucionRemitente] = useState('');
+  const [profesionalRemitente, setProfesionalRemitente] = useState('');
 
   // Campos de acudiente (obligatorios si edad < 18 años por RN-06)
   const [acudTipoDoc, setAcudTipoDoc] = useState<TipoDocumento>('CC');
@@ -253,6 +254,7 @@ export default function ModalAgendarCita({
     setEmailPaciente('');
     setTipoRemision('PARTICULAR');
     setInstitucionRemitente('');
+    setProfesionalRemitente('');
     setAcudTipoDoc('CC');
     setAcudNumDoc('');
     setAcudNombres('');
@@ -277,6 +279,7 @@ export default function ModalAgendarCita({
     setEmailPaciente(p.email || '');
     setTipoRemision(p.tipoRemision);
     setInstitucionRemitente(p.institucionRemitente || '');
+    setProfesionalRemitente(p.profesionalRemitente || '');
 
     const relPrincipal = p.acudientes?.[0];
     if (relPrincipal) {
@@ -419,8 +422,12 @@ export default function ModalAgendarCita({
         email: emailPaciente.trim() || undefined,
         tipoRemision,
         institucionRemitente:
-          tipoRemision === 'REMISION_EXTERNA'
+          tipoRemision !== 'PARTICULAR'
             ? institucionRemitente.trim() || undefined
+            : undefined,
+        profesionalRemitente:
+          tipoRemision !== 'PARTICULAR'
+            ? profesionalRemitente.trim() || undefined
             : undefined,
         acudiente: requiereAcudiente
           ? {
@@ -856,22 +863,48 @@ export default function ModalAgendarCita({
                       className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold"
                     >
                       <option value="PARTICULAR">Particular</option>
-                      <option value="REMISION_EXTERNA">Remisión Externa</option>
+                      <option value="REMISION_EXTERNA">Remisión médica</option>
+                      <option value="ESCOLAR">Remisión escolar</option>
                     </select>
                   </div>
-                  {tipoRemision === 'REMISION_EXTERNA' && (
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                        Institución Remitente
-                      </label>
-                      <input
-                        type="text"
-                        value={institucionRemitente}
-                        onChange={(e) => setInstitucionRemitente(e.target.value)}
-                        placeholder="Ej. Clínica Palma Real"
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
-                      />
-                    </div>
+                  {tipoRemision !== 'PARTICULAR' && (
+                  <>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                          {tipoRemision === 'ESCOLAR'
+                            ? 'Institución educativa'
+                            : 'Institución remitente'}
+                        </label>
+                        <input
+                          type="text"
+                          value={institucionRemitente}
+                          onChange={(e) => setInstitucionRemitente(e.target.value)}
+                          placeholder={
+                            tipoRemision === 'ESCOLAR'
+                              ? 'Ej. Colegio San José'
+                              : 'Ej. Clínica Palma Real'
+                          }
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                          Profesional que remite
+                        </label>
+                        <input
+                          type="text"
+                          value={profesionalRemitente}
+                          onChange={(e) => setProfesionalRemitente(e.target.value)}
+                          placeholder={
+                            tipoRemision === 'ESCOLAR'
+                              ? 'Ej. Docente o psicólogo escolar'
+                              : 'Ej. Médico tratante'
+                          }
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
 
