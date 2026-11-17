@@ -21,6 +21,8 @@ import {
   Bell,
   Activity,
   FileText,
+  FileDown,
+  Eye,
   PlusCircle,
 } from 'lucide-react';
 import {
@@ -48,6 +50,59 @@ export default function HistoriasClinicasPage() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [cargando, setCargando] = useState(true);
+
+  // Estados y Handlers Modal Informe PDF (HU-005 / #17)
+  const [modalPdfAbierto, setModalPdfAbierto] = useState(false);
+  const [historiaPdf, setHistoriaPdf] = useState<HistoriaClinica | null>(null);
+  const [tipoInformePdf, setTipoInformePdf] = useState<'VALORACION_INICIAL' | 'PROGRESO_TRIMESTRAL' | 'ALTA'>('VALORACION_INICIAL');
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [pdfFilename, setPdfFilename] = useState<string>('Informe_Fonella.pdf');
+  const [cargandoPdf, setCargandoPdf] = useState(false);
+
+  const cargarPrevisualizacionPdf = async (
+    historia: HistoriaClinica,
+    tipo: 'VALORACION_INICIAL' | 'PROGRESO_TRIMESTRAL' | 'ALTA',
+  ) => {
+    setCargandoPdf(true);
+    setError('');
+    try {
+      if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+      const { blob, filename } = await (apiService as any).obtenerBlobInformePdf(historia.id, tipo);
+      const url = URL.createObjectURL(blob);
+      setPdfPreviewUrl(url);
+      setPdfFilename(filename);
+    } catch (err: any) {
+      setError(err.message || 'No se pudo generar el informe PDF.');
+      setModalPdfAbierto(false);
+    } finally {
+      setCargandoPdf(false);
+    }
+  };
+
+  const abrirModalInformePdf = async (
+    historia: HistoriaClinica,
+    tipoInicial: 'VALORACION_INICIAL' | 'PROGRESO_TRIMESTRAL' | 'ALTA' = 'VALORACION_INICIAL',
+  ) => {
+    if (!historia.diagnosticoCie10Codigo?.trim() || !historia.diagnosticoCie10Desc?.trim()) {
+      setError('No es posible generar el informe: El paciente no cuenta con diagnóstico clínico registrado');
+      return;
+    }
+    setHistoriaPdf(historia);
+    setTipoInformePdf(tipoInicial);
+    setModalPdfAbierto(true);
+    await cargarPrevisualizacionPdf(historia, tipoInicial);
+  };
+
+  const descargarArchivoPdf = () => {
+    if (!pdfPreviewUrl) return;
+    const link = document.createElement('a');
+    link.href = pdfPreviewUrl;
+    link.download = pdfFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setExito(`Informe descargado: ${pdfFilename}`);
+  };
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
 
@@ -591,6 +646,16 @@ export default function HistoriasClinicasPage() {
                         className="px-3 py-1.5 rounded-xl border border-[#136A7B]/30 text-[#094A57] hover:bg-[#136A7B]/10 font-extrabold text-[11px] transition-all cursor-pointer"
                       >
                         {hc.estado === 'CERRADA' ? 'Anamnesis' : 'Continuar'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => abrirModalInformePdf(hc, hc.requiereReevaluacion ? 'PROGRESO_TRIMESTRAL' : 'VALORACION_INICIAL')}
+                        className="px-3 py-1.5 rounded-xl bg-[#DF9B78] hover:bg-[#cf8965] text-white font-extrabold text-[11px] inline-flex items-center gap-1 transition-all cursor-pointer"
+                        title="Previsualizar y descargar Informe PDF Membretado RETHUS"
+                      >
+                        <FileDown className="w-3.5 h-3.5" />
+                        <span>Informe PDF</span>
                       </button>
 
                       <button
@@ -1495,7 +1560,86 @@ export default function HistoriasClinicasPage() {
           </div>
         </div>
       )}
+      {/* MODAL PREVISUALIZACIÓN Y DESCARGA INFORME PDF MEMBRETADO (HU-005 / #17) */}
+      {modalPdfAbierto && historiaPdf && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#136A7B]/20 w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
+            {/* Cabecera Modal */}
+            <div className="bg-[#136A7B] text-white px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-xs text-emerald-200 font-semibold">
+                  <span>{historiaPdf.numeroExpediente}</span>
+                  <span>•</span>
+                  <span>CIE-10: {historiaPdf.diagnosticoCie10Codigo}</span>
+                  <span>•</span>
+                  <span>RETHUS 760014829</span>
+                </div>
+                <h2 className="text-lg font-bold">
+                  Previsualización Informe Oficial — {historiaPdf.paciente.nombres} {historiaPdf.paciente.apellidos}
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={tipoInformePdf}
+                  onChange={async (e) => {
+                    const nuevoTipo = e.target.value as 'VALORACION_INICIAL' | 'PROGRESO_TRIMESTRAL' | 'ALTA';
+                    setTipoInformePdf(nuevoTipo);
+                    await cargarPrevisualizacionPdf(historiaPdf, nuevoTipo);
+                  }}
+                  className="bg-white/15 text-white border border-white/30 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none"
+                >
+                  <option value="VALORACION_INICIAL" className="text-gray-800">Informe de Valoración Inicial</option>
+                  <option value="PROGRESO_TRIMESTRAL" className="text-gray-800">Informe de Progreso Trimestral (RN-05)</option>
+                  <option value="ALTA" className="text-gray-800">Informe de Alta Fonoaudiológica</option>
+                </select>
+
+                <button
+                  onClick={descargarArchivoPdf}
+                  disabled={cargandoPdf || !pdfPreviewUrl}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold bg-[#19AF9C] hover:bg-[#148f80] text-white shadow disabled:opacity-50 transition"
+                >
+                  <FileDown className="w-4 h-4" />
+                  Descargar PDF
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                    setPdfPreviewUrl(null);
+                    setModalPdfAbierto(false);
+                  }}
+                  className="p-1.5 rounded-lg hover:bg-white/15 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Visor Integrado del Documento */}
+            <div className="flex-1 bg-[#FBF8F2] p-4 flex items-center justify-center overflow-hidden">
+              {cargandoPdf ? (
+                <div className="text-center">
+                  <div className="w-10 h-10 border-4 border-[#19AF9C] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-[#136A7B]">Compilando informe membretado de Fonella...</p>
+                </div>
+              ) : pdfPreviewUrl ? (
+                <iframe
+                  src={`${pdfPreviewUrl}#toolbar=1`}
+                  title="Previsualización Informe PDF Fonella"
+                  className="w-full h-full rounded-xl border border-gray-300 shadow-inner bg-white"
+                />
+              ) : (
+                <p className="text-sm text-gray-500">No se pudo cargar la vista previa del documento.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+
+
 
