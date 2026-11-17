@@ -128,7 +128,7 @@ export interface Paciente {
   apellidos: string;
   fechaNacimiento: string;
   edad?: number;
-  genero?: string | null;
+  genero: string;
   telefonoContacto: string;
   email?: string | null;
   ciudad: string;
@@ -147,10 +147,10 @@ export interface CrearPacienteData {
   nombres: string;
   apellidos: string;
   fechaNacimiento: string;
-  genero?: string;
+  genero: string;
   telefonoContacto: string;
   email?: string;
-  ciudad?: string;
+  ciudad: string;
   direccion?: string;
   tipoRemision?: TipoRemision;
   institucionRemitente?: string;
