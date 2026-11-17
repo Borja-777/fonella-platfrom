@@ -9,8 +9,10 @@ import {
   AlertCircle,
   UserRound,
   RefreshCw,
+  Plus,
 } from 'lucide-react';
 import { apiService, Paciente } from '@/services/api';
+import FormularioPaciente from '@/components/pacientes/FormularioPaciente';
 
 export default function PacientesPage() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
@@ -18,6 +20,7 @@ export default function PacientesPage() {
   const [cargando, setCargando] = useState(true);
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState('');
+  const [modalNuevoPaciente, setModalNuevoPaciente] = useState(false);
 
   const cargarPacientes = async (termino?: string) => {
     try {
@@ -73,6 +76,8 @@ export default function PacientesPage() {
     }
   };
 
+
+
   return (
     <div className="min-h-screen bg-[#FAF6F0] p-4 md:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -94,18 +99,31 @@ export default function PacientesPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 rounded-xl border border-[#DCEAE8] bg-white px-4 py-3 shadow-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F5F1] text-[#0AA896]">
-              <Users size={21} />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Pacientes encontrados</p>
-              <p className="text-xl font-bold text-[#136A7B]">
-                {pacientes.length}
-              </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={() => setModalNuevoPaciente(true)}
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#136A7B] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0E5664]"
+            >
+              <Plus size={19} />
+              Nuevo paciente
+            </button>
+
+            <div className="flex items-center gap-3 rounded-xl border border-[#DCEAE8] bg-white px-4 py-3 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F5F1] text-[#0AA896]">
+                <Users size={21} />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Pacientes encontrados</p>
+                <p className="text-xl font-bold text-[#136A7B]">
+                  {pacientes.length}
+                </p>
+              </div>
             </div>
           </div>
         </div>
+
+
 
         {/* Buscador */}
         <div className="rounded-2xl border border-[#EAE5DC] bg-white p-4 shadow-sm md:p-6">
@@ -290,10 +308,20 @@ export default function PacientesPage() {
           )}
         </div>
 
+
         <p className="text-xs text-gray-400">
           El directorio muestra los resultados disponibles según los permisos de tu cuenta.
         </p>
       </div>
+
+      {/* Modal para registrar pacientes desde el directorio */}
+      <FormularioPaciente
+        abierto={modalNuevoPaciente}
+        onCerrar={() => setModalNuevoPaciente(false)}
+        onPacienteCreado={() => {
+          cargarPacientes(busqueda.trim() || undefined);
+        }}
+      />
     </div>
   );
 }
