@@ -1,10 +1,10 @@
 ﻿'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import {
   ClipboardList,
   Search,
-  UserPlus,
   FilePlus2,
   Lock,
   Edit3,
@@ -14,7 +14,6 @@ import {
   X,
   Save,
   ShieldCheck,
-  User,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -66,7 +65,6 @@ export default function HistoriasClinicasPage() {
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
 
-  const [modalPaciente, setModalPaciente] = useState(false);
   const [modalHistoria, setModalHistoria] = useState(false);
   const [historiaActiva, setHistoriaActiva] = useState<HistoriaClinica | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -93,21 +91,6 @@ export default function HistoriasClinicasPage() {
     objetivosTrabajados: '',
     descripcionEvolucion: '',
     planSiguienteSesion: '',
-  });
-
-  const [formPaciente, setFormPaciente] = useState({
-    tipoDocumento: 'TI' as 'RC' | 'TI' | 'CC' | 'CE' | 'PA',
-    numeroDocumento: '',
-    nombres: '',
-    apellidos: '',
-    fechaNacimiento: '',
-    genero: 'Masculino',
-    telefonoContacto: '',
-    email: '',
-    ciudad: 'Palmira',
-    direccion: '',
-    tipoRemision: 'PARTICULAR' as 'PARTICULAR' | 'REMISION_EXTERNA',
-    institucionRemitente: '',
   });
 
   const [formHistoria, setFormHistoria] = useState({
@@ -353,31 +336,6 @@ export default function HistoriasClinicasPage() {
     }
   };
 
-  const handleCrearPaciente = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    try {
-      setGuardando(true);
-      const nuevo = await (apiService as any).crearPaciente({
-        ...formPaciente,
-        email: formPaciente.email || undefined,
-        direccion: formPaciente.direccion || undefined,
-        institucionRemitente:
-          formPaciente.tipoRemision === 'REMISION_EXTERNA'
-            ? formPaciente.institucionRemitente
-            : undefined,
-      });
-      setModalPaciente(false);
-      setExito(`Paciente ${nuevo.nombres} ${nuevo.apellidos} registrado correctamente.`);
-      await cargarDatos(busqueda);
-      abrirNuevaHistoria(nuevo.id);
-    } catch (err: any) {
-      setError(err.message || 'No se pudo registrar el paciente');
-    } finally {
-      setGuardando(false);
-    }
-  };
-
   const handleGuardarHistoria = async (estadoDestino: 'BORRADOR' | 'CERRADA') => {
     setError(null);
     try {
@@ -459,18 +417,6 @@ export default function HistoriasClinicasPage() {
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => {
-              setError(null);
-              setModalPaciente(true);
-            }}
-            className="px-4 py-2.5 rounded-2xl border-2 border-[#136A7B] text-[#094A57] hover:bg-[#136A7B]/10 text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4 text-[#0AA896]" />
-            <span>Registrar Paciente</span>
-          </button>
-
-          <button
-            type="button"
             onClick={() => abrirNuevaHistoria()}
             className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#0AA896] to-[#136A7B] hover:from-[#099686] hover:to-[#0f5563] text-white text-xs font-black flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer"
           >
@@ -492,7 +438,7 @@ export default function HistoriasClinicasPage() {
         </div>
       )}
 
-      {error && !modalHistoria && !modalPaciente && !modalEvoluciones && (
+      {error && !modalHistoria && !modalEvoluciones && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl flex items-center justify-between text-xs font-bold shadow-xs">
           <span className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
@@ -661,192 +607,7 @@ export default function HistoriasClinicasPage() {
         )}
       </div>
 
-      {/* MODAL 1: REGISTRO RÁPIDO DE PACIENTE */}
-      {modalPaciente && (
-        <div className="fixed inset-0 !mt-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 border border-[#136A7B]/20">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-2.5">
-                <User className="w-5 h-5 text-[#0AA896]" />
-                <h2 className="text-base font-black text-[#094A57]">
-                  Registrar Nuevo Paciente
-                </h2>
-              </div>
-              <button
-                onClick={() => setModalPaciente(false)}
-                className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-500 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {error && (
-              <div className="mt-3 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs font-bold">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleCrearPaciente} className="mt-4 space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Tipo Doc. *</label>
-                  <select
-                    value={formPaciente.tipoDocumento}
-                    onChange={(e) =>
-                      setFormPaciente({ ...formPaciente, tipoDocumento: e.target.value as any })
-                    }
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white font-semibold"
-                  >
-                    <option value="RC">RC - Registro Civil</option>
-                    <option value="TI">TI - Tarjeta Identidad</option>
-                    <option value="CC">CC - Cédula Ciudadanía</option>
-                    <option value="CE">CE - Cédula Extranjería</option>
-                    <option value="PA">PA - Pasaporte</option>
-                  </select>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block font-bold text-gray-700 mb-1">Número de Documento *</label>
-                  <input
-                    required
-                    type="text"
-                    value={formPaciente.numeroDocumento}
-                    onChange={(e) =>
-                      setFormPaciente({ ...formPaciente, numeroDocumento: e.target.value })
-                    }
-                    placeholder="Ej. 1112345678"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Nombres *</label>
-                  <input
-                    required
-                    type="text"
-                    value={formPaciente.nombres}
-                    onChange={(e) => setFormPaciente({ ...formPaciente, nombres: e.target.value })}
-                    placeholder="Ej. Mateo"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Apellidos *</label>
-                  <input
-                    required
-                    type="text"
-                    value={formPaciente.apellidos}
-                    onChange={(e) => setFormPaciente({ ...formPaciente, apellidos: e.target.value })}
-                    placeholder="Ej. Gómez Rivera"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Fecha Nacimiento *</label>
-                  <input
-                    required
-                    type="date"
-                    value={formPaciente.fechaNacimiento}
-                    onChange={(e) =>
-                      setFormPaciente({ ...formPaciente, fechaNacimiento: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Género</label>
-                  <select
-                    value={formPaciente.genero}
-                    onChange={(e) => setFormPaciente({ ...formPaciente, genero: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white"
-                  >
-                    <option value="Masculino">Masculino</option>
-                    <option value="Femenino">Femenino</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Teléfono Contacto *</label>
-                  <input
-                    required
-                    type="text"
-                    value={formPaciente.telefonoContacto}
-                    onChange={(e) =>
-                      setFormPaciente({ ...formPaciente, telefonoContacto: e.target.value })
-                    }
-                    placeholder="3150000000"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Ciudad</label>
-                  <input
-                    type="text"
-                    value={formPaciente.ciudad}
-                    onChange={(e) => setFormPaciente({ ...formPaciente, ciudad: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Tipo de Remisión</label>
-                  <select
-                    value={formPaciente.tipoRemision}
-                    onChange={(e) =>
-                      setFormPaciente({ ...formPaciente, tipoRemision: e.target.value as any })
-                    }
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white"
-                  >
-                    <option value="PARTICULAR">Consulta Particular</option>
-                    <option value="REMISION_EXTERNA">Remisión Externa (EPS / Colegio)</option>
-                  </select>
-                </div>
-              </div>
-
-              {formPaciente.tipoRemision === 'REMISION_EXTERNA' && (
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Institución Remitente</label>
-                  <input
-                    type="text"
-                    value={formPaciente.institucionRemitente}
-                    onChange={(e) =>
-                      setFormPaciente({ ...formPaciente, institucionRemitente: e.target.value })
-                    }
-                    placeholder="Nombre de la clínica, pediatra o institución educativa"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200"
-                  />
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setModalPaciente(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 font-bold text-gray-600 cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={guardando}
-                  className="px-5 py-2 rounded-xl bg-[#0AA896] hover:bg-[#099686] text-white font-black cursor-pointer disabled:opacity-50"
-                >
-                  {guardando ? 'Guardando...' : 'Guardar y Abrir Historia'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: FORMULARIO CLÍNICO EN ACORDEÓN + AUTOGUARDADO (HU - Clínica - 003) */}
+      {/* MODAL 1: FORMULARIO CLÍNICO EN ACORDEÓN + AUTOGUARDADO (HU - Clínica - 003) */}
       {modalHistoria && (
         <div className="fixed inset-0 !mt-0 bg-black/65 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-7 border border-[#136A7B]/20">
@@ -901,18 +662,14 @@ export default function HistoriasClinicasPage() {
                 ) : pacientesSinHistoria.length === 0 ? (
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-amber-800 font-semibold">
-                      Todos los pacientes registrados ya tienen historia clínica. Registra uno nuevo primero.
+                      Todos los pacientes registrados ya tienen historia clínica. Registra uno nuevo desde Directorio de Pacientes o Agenda.
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setModalHistoria(false);
-                        setModalPaciente(true);
-                      }}
+                    <Link
+                      href="/pacientes"
                       className="px-3 py-1.5 rounded-xl bg-[#0AA896] text-white font-bold shrink-0 cursor-pointer"
                     >
-                      + Nuevo Paciente
-                    </button>
+                      Ir a Pacientes
+                    </Link>
                   </div>
                 ) : (
                   <select
