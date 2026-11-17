@@ -101,8 +101,9 @@ export interface Paciente {
   email?: string | null;
   ciudad?: string | null;
   direccion?: string | null;
-  tipoRemision: 'PARTICULAR' | 'REMISION_EXTERNA';
+  tipoRemision: TipoRemision;
   institucionRemitente?: string | null;
+  profesionalRemitente?: string | null;
   totalFaltasTardias: number;
   estado?: 'ACTIVO' | 'INACTIVO';
   activo?: boolean;
@@ -165,7 +166,7 @@ export interface RecuperacionResponse {
 // ----------------------------------------------------------------------------
 
 export type TipoDocumento = 'RC' | 'TI' | 'CC' | 'CE' | 'PA';
-export type TipoRemision = 'PARTICULAR' | 'REMISION_EXTERNA';
+export type TipoRemision = 'PARTICULAR' | 'REMISION_EXTERNA' | 'ESCOLAR';
 export type EstadoCita =
   | 'CONFIRMADA'
   | 'ATENDIDA'
@@ -204,6 +205,7 @@ export interface CrearPacienteData {
   direccion?: string;
   tipoRemision?: TipoRemision;
   institucionRemitente?: string;
+  profesionalRemitente?: string;
   acudiente?: {
     tipoDocumento: TipoDocumento;
     numeroDocumento: string;

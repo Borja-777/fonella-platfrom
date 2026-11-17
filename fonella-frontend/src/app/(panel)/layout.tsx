@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Users,
+  ContactRound,
   Calendar,
   ClipboardList,
   Package,
@@ -136,7 +137,21 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                 )}
               </Link>
             )}
-
+              <Link
+              href="/pacientes"
+              className={`px-3.5 py-3 rounded-2xl flex items-center justify-between transition-all ${pathname.startsWith('/pacientes')
+                ? 'bg-white text-[#0E5666] shadow-lg border border-white font-extrabold'
+                : 'text-white hover:bg-white/15'
+                }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <ContactRound className="w-4 h-4 text-[#0AA896]" />
+                <span>Directorio de Pacientes</span>
+              </span>
+              {pathname.startsWith('/pacientes') && (
+                <span className="w-2.5 h-2.5 rounded-full bg-[#0AA896] shadow-xs" />
+              )}
+            </Link>
             <Link
               href="/agenda"
               className={`px-3.5 py-3 rounded-2xl flex items-center justify-between transition-all ${pathname.startsWith('/agenda')
