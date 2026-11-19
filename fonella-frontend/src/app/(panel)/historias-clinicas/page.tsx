@@ -22,6 +22,8 @@ import {
   Activity,
   FileText,
   FileDown,
+  Send,
+  Mail,
   Eye,
   PlusCircle,
 } from 'lucide-react';
@@ -58,6 +60,43 @@ export default function HistoriasClinicasPage() {
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfFilename, setPdfFilename] = useState<string>('Informe_Fonella.pdf');
   const [cargandoPdf, setCargandoPdf] = useState(false);
+  const [enviandoInforme, setEnviandoInforme] = useState(false);
+  const [bitacoraEnvios, setBitacoraEnvios] = useState<any[]>([]);
+
+  const cargarBitacoraEnvios = async (historiaId: string) => {
+    try {
+      const logs = await (apiService as any).listarBitacoraEnviosInforme(historiaId);
+      setBitacoraEnvios(Array.isArray(logs) ? logs : []);
+    } catch {
+      setBitacoraEnvios([]);
+    }
+  };
+
+  const handleCompartirInforme = async (canal: 'WHATSAPP' | 'CORREO') => {
+    if (!historiaPdf) return;
+    setEnviandoInforme(true);
+    setError(null);
+    try {
+      const resp = await (apiService as any).enviarInformePdf(
+        historiaPdf.id,
+        canal,
+        tipoInformePdf,
+      );
+      setExito(resp.mensajeBitacora);
+      await cargarBitacoraEnvios(historiaPdf.id);
+
+      descargarArchivoPdf();
+      if (canal === 'WHATSAPP' && resp.whatsappUrl) {
+        window.open(resp.whatsappUrl, '_blank', 'noopener,noreferrer');
+      } else if (canal === 'CORREO' && !resp.enviadoPorSmtp && resp.mailtoUrl) {
+        window.location.href = resp.mailtoUrl;
+      }
+    } catch (err: any) {
+      setError(err.message || `No se pudo compartir el informe por ${canal}.`);
+    } finally {
+      setEnviandoInforme(false);
+    }
+  };
 
   const cargarPrevisualizacionPdf = async (
     historia: HistoriaClinica,
@@ -90,7 +129,7 @@ export default function HistoriasClinicasPage() {
     setHistoriaPdf(historia);
     setTipoInformePdf(tipoInicial);
     setModalPdfAbierto(true);
-    await cargarPrevisualizacionPdf(historia, tipoInicial);
+    await Promise.all([cargarPrevisualizacionPdf(historia, tipoInicial), cargarBitacoraEnvios(historia.id)]);
   };
 
   const descargarArchivoPdf = () => {
@@ -856,6 +895,17 @@ export default function HistoriasClinicasPage() {
                 </button>
               </div>
             </form>
+            {/* Bitácora de Auditoría de Entregas (HU-006 / Escenario 4) */}
+            {bitacoraEnvios.length > 0 && (
+              <div className="bg-white border-t border-gray-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <span className="font-bold text-[#136A7B]">
+                  Última entrega registrada:
+                </span>
+                <span className="text-gray-700 font-medium">
+                  {bitacoraEnvios[0].detalle}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1264,6 +1314,17 @@ export default function HistoriasClinicasPage() {
                 )}
               </div>
             </div>
+            {/* Bitácora de Auditoría de Entregas (HU-006 / Escenario 4) */}
+            {bitacoraEnvios.length > 0 && (
+              <div className="bg-white border-t border-gray-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <span className="font-bold text-[#136A7B]">
+                  Última entrega registrada:
+                </span>
+                <span className="text-gray-700 font-medium">
+                  {bitacoraEnvios[0].detalle}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1557,6 +1618,17 @@ export default function HistoriasClinicasPage() {
                 </div>
               )}
             </div>
+            {/* Bitácora de Auditoría de Entregas (HU-006 / Escenario 4) */}
+            {bitacoraEnvios.length > 0 && (
+              <div className="bg-white border-t border-gray-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <span className="font-bold text-[#136A7B]">
+                  Última entrega registrada:
+                </span>
+                <span className="text-gray-700 font-medium">
+                  {bitacoraEnvios[0].detalle}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1593,6 +1665,26 @@ export default function HistoriasClinicasPage() {
                   <option value="PROGRESO_TRIMESTRAL" className="text-gray-800">Informe de Progreso Trimestral (RN-05)</option>
                   <option value="ALTA" className="text-gray-800">Informe de Alta Fonoaudiológica</option>
                 </select>
+
+                <button
+                  onClick={() => handleCompartirInforme('WHATSAPP')}
+                  disabled={cargandoPdf || enviandoInforme || !pdfPreviewUrl}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-[#25D366] hover:bg-[#1ebe5d] text-white shadow disabled:opacity-50 transition cursor-pointer"
+                  title="Enviar mensaje formal prellenado con enlace seguro por WhatsApp"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  WhatsApp
+                </button>
+
+                <button
+                  onClick={() => handleCompartirInforme('CORREO')}
+                  disabled={cargandoPdf || enviandoInforme || !pdfPreviewUrl}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-[#DF9B78] hover:bg-[#cf8965] text-white shadow disabled:opacity-50 transition cursor-pointer"
+                  title="Enviar informe por correo electrónico"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  Correo
+                </button>
 
                 <button
                   onClick={descargarArchivoPdf}
@@ -1633,12 +1725,29 @@ export default function HistoriasClinicasPage() {
                 <p className="text-sm text-gray-500">No se pudo cargar la vista previa del documento.</p>
               )}
             </div>
+            {/* Bitácora de Auditoría de Entregas (HU-006 / Escenario 4) */}
+            {bitacoraEnvios.length > 0 && (
+              <div className="bg-white border-t border-gray-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <span className="font-bold text-[#136A7B]">
+                  Última entrega registrada:
+                </span>
+                <span className="text-gray-700 font-medium">
+                  {bitacoraEnvios[0].detalle}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
+
+
+
+
+
+
 
 
 

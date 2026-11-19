@@ -735,3 +735,22 @@ Object.assign(apiService, {
   },
 });
 
+
+// ==========================================
+// MÓDULO ENVÍO DE INFORMES PDF (HU-006 / #18)
+// ==========================================
+Object.assign(apiService, {
+  enviarInformePdf(
+    historiaId: string,
+    canal: 'WHATSAPP' | 'CORREO',
+    tipo: 'VALORACION_INICIAL' | 'PROGRESO_TRIMESTRAL' | 'ALTA' = 'VALORACION_INICIAL',
+  ): Promise<any> {
+    return fetchClinico<any>(`/historias/informes/${historiaId}/enviar`, {
+      method: 'POST',
+      body: JSON.stringify({ canal, tipo }),
+    });
+  },
+  listarBitacoraEnviosInforme(historiaId: string): Promise<any[]> {
+    return fetchClinico<any[]>(`/historias/informes/${historiaId}/bitacora-envios`);
+  },
+});
