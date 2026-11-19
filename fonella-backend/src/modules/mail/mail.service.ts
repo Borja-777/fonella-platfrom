@@ -1,4 +1,4 @@
-import {
+﻿import {
   Injectable,
   BadRequestException,
   HttpException,
@@ -23,7 +23,7 @@ export class MailService {
     const partes = emailLimpio.split("@");
 
     if (partes.length !== 2 || !partes[0] || !partes[1]) {
-      throw new BadRequestException("El formato del correo electrónico ingresado no es válido.");
+      throw new BadRequestException("El formato del correo electrÃ³nico ingresado no es vÃ¡lido.");
     }
 
     const dominio = partes[1];
@@ -47,7 +47,7 @@ export class MailService {
 
       if (!records || records.length === 0) {
         throw new BadRequestException(
-          `El dominio del correo ("@${dominio}") no cuenta con servidores de correo (registros MX) válidos para recibir mensajes.`,
+          `El dominio del correo ("@${dominio}") no cuenta con servidores de correo (registros MX) vÃ¡lidos para recibir mensajes.`,
         );
       }
       mxRecords = records;
@@ -62,7 +62,7 @@ export class MailService {
         error.code === "SERVFAIL"
       ) {
         throw new BadRequestException(
-          `El correo ingresado no es válido: el dominio "@${dominio}" no existe en internet o no está habilitado para recibir correos.`,
+          `El correo ingresado no es vÃ¡lido: el dominio "@${dominio}" no existe en internet o no estÃ¡ habilitado para recibir correos.`,
         );
       }
 
@@ -70,7 +70,7 @@ export class MailService {
       return;
     }
 
-    // 2. Verificación directa de existencia del buzón vía SMTP (RCPT TO)
+    // 2. VerificaciÃ³n directa de existencia del buzÃ³n vÃ­a SMTP (RCPT TO)
     mxRecords.sort((a, b) => a.priority - b.priority);
     const mxHost = mxRecords[0].exchange;
 
@@ -131,26 +131,26 @@ export class MailService {
         } else if (paso === 3) {
           // Evaluar respuesta al destinatario (RCPT TO)
           if (codigo === "250" || respuesta.startsWith("250")) {
-            this.logger.log(`✅ Casilla validada con éxito en ${mxHost}: ${email}`);
+            this.logger.log(`âœ… Casilla validada con Ã©xito en ${mxHost}: ${email}`);
             terminar();
           } else {
-            // Cualquier respuesta distinta de 250 (550 inexistente, 452 buzón lleno, etc.) indica que no puede recibir correos
-            this.logger.warn(`❌ Casilla no apta o rechazada por servidor ${mxHost}: ${respuesta}`);
-            let mensajeError = `El correo electrónico "${email}" no existe o no ha sido creado en el servidor de correo (${dominio}).`;
+            // Cualquier respuesta distinta de 250 (550 inexistente, 452 buzÃ³n lleno, etc.) indica que no puede recibir correos
+            this.logger.warn(`âŒ Casilla no apta o rechazada por servidor ${mxHost}: ${respuesta}`);
+            let mensajeError = `El correo electrÃ³nico "${email}" no existe o no ha sido creado en el servidor de correo (${dominio}).`;
 
             if (
               respuesta.includes("452") ||
               respuesta.toLowerCase().includes("storage space") ||
               respuesta.toLowerCase().includes("quota")
             ) {
-              mensajeError = `El correo electrónico "${email}" no puede recibir mensajes (su buzón de entrada no tiene espacio de almacenamiento disponible o no es válido).`;
+              mensajeError = `El correo electrÃ³nico "${email}" no puede recibir mensajes (su buzÃ³n de entrada no tiene espacio de almacenamiento disponible o no es vÃ¡lido).`;
             } else if (
               respuesta.includes("550") ||
               respuesta.includes("NoSuchUser") ||
               respuesta.toLowerCase().includes("does not exist") ||
               respuesta.toLowerCase().includes("user unknown")
             ) {
-              mensajeError = `El correo electrónico "${email}" no existe en ${dominio}. Por favor verifica que esté bien escrito.`;
+              mensajeError = `El correo electrÃ³nico "${email}" no existe en ${dominio}. Por favor verifica que estÃ© bien escrito.`;
             }
 
             terminar(new BadRequestException(mensajeError));
@@ -159,12 +159,12 @@ export class MailService {
       });
 
       socket.on("error", (err) => {
-        this.logger.warn(`Error de socket en verificación SMTP para ${email}: ${err.message}`);
-        terminar(); // Fallback silencioso si el puerto 25 está restringido
+        this.logger.warn(`Error de socket en verificaciÃ³n SMTP para ${email}: ${err.message}`);
+        terminar(); // Fallback silencioso si el puerto 25 estÃ¡ restringido
       });
 
       socket.on("timeout", () => {
-        this.logger.warn(`Timeout en verificación SMTP para ${email}`);
+        this.logger.warn(`Timeout en verificaciÃ³n SMTP para ${email}`);
         socket.destroy();
         terminar();
       });
@@ -180,10 +180,10 @@ export class MailService {
 
     if (!smtpUser || !smtpPass) {
       this.logger.error(
-        "❌ [Nodemailer] Credenciales SMTP no configuradas en el archivo .env (SMTP_USER o SMTP_PASS ausentes).",
+        "âŒ [Nodemailer] Credenciales SMTP no configuradas en el archivo .env (SMTP_USER o SMTP_PASS ausentes).",
       );
       throw new HttpException(
-        "El servicio de envío de correos no está configurado en el servidor.",
+        "El servicio de envÃ­o de correos no estÃ¡ configurado en el servidor.",
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
@@ -204,7 +204,7 @@ export class MailService {
   }
 
   /**
-   * Envía el correo electrónico con enlace de confirmación y activación de cuenta
+   * EnvÃ­a el correo electrÃ³nico con enlace de confirmaciÃ³n y activaciÃ³n de cuenta
    */
   async enviarEmailConfirmacion(
     destinatario: string,
@@ -218,11 +218,11 @@ export class MailService {
     const esFono = rol === RolUsuario.FONOAUDIOLOGA;
     const etiquetaRol = esFono
       ? "Especialista Titular y Administradora"
-      : "Asistente de Recepción y Coordinación";
+      : "Asistente de RecepciÃ³n y CoordinaciÃ³n";
 
     const asunto = esFono
-      ? "Confirma tu cuenta de Administradora - FONELLA Portal Clínico"
-      : "Activa tu cuenta de Colaborador(a) - FONELLA Portal Clínico";
+      ? "Confirma tu cuenta de Administradora - FONELLA Portal ClÃ­nico"
+      : "Activa tu cuenta de Colaborador(a) - FONELLA Portal ClÃ­nico";
 
     const plantillaHtml = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #FAF6F0; border-radius: 20px; overflow: hidden; border: 1px solid #DF9B78; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
@@ -232,16 +232,16 @@ export class MailService {
               <span style="color: #0AA896;">F</span><span style="color: #5A96C8;">O</span><span style="color: #0AA896;">N</span><span style="color: #DF9B78;">E</span><span style="color: #0AA896;">L</span><span style="color: #5A96C8;">L</span><span style="color: #0AA896;">A</span>
             </span>
           </div>
-          <h1 style="margin: 0; font-size: 20px; font-weight: 800;">Confirmación y Activación de Cuenta</h1>
-          <p style="margin: 4px 0 0 0; font-size: 12px; color: #EAF5F6; opacity: 0.9;">Centro Integral de Fonoaudiología</p>
+          <h1 style="margin: 0; font-size: 20px; font-weight: 800;">ConfirmaciÃ³n y ActivaciÃ³n de Cuenta</h1>
+          <p style="margin: 4px 0 0 0; font-size: 12px; color: #EAF5F6; opacity: 0.9;">Centro Integral de FonoaudiologÃ­a</p>
         </div>
         <div style="padding: 32px 28px; background-color: #FFFFFF;">
-          <p style="font-size: 15px; color: #1E293B; margin-top: 0;">¡Hola, <strong>${nombre}</strong>!</p>
+          <p style="font-size: 15px; color: #1E293B; margin-top: 0;">Â¡Hola, <strong>${nombre}</strong>!</p>
           <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-            Se ha creado una cuenta para ti en el <strong>Portal Clínico de FONELLA</strong> con el rol de <strong>${etiquetaRol}</strong>.
+            Se ha creado una cuenta para ti en el <strong>Portal ClÃ­nico de FONELLA</strong> con el rol de <strong>${etiquetaRol}</strong>.
           </p>
           <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-            Para verificar tu dirección de correo electrónico y activar de forma segura tu acceso al sistema, por favor haz clic en el siguiente botón:
+            Para verificar tu direcciÃ³n de correo electrÃ³nico y activar de forma segura tu acceso al sistema, por favor haz clic en el siguiente botÃ³n:
           </p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${enlace}" target="_blank" style="background: linear-gradient(to right, #136A7B, #0AA896); color: #FFFFFF; font-weight: 800; font-size: 14px; text-decoration: none; padding: 14px 30px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 14px rgba(19, 106, 123, 0.3);">
@@ -250,16 +250,16 @@ export class MailService {
           </div>
           <div style="background-color: #FAF6F0; border-left: 4px solid #DF9B78; padding: 12px 16px; border-radius: 0 10px 10px 0; margin-top: 24px;">
             <p style="margin: 0; font-size: 12px; color: #64748B; line-height: 1.5;">
-              🔒 <strong>Seguridad Clínica:</strong> Este enlace estará disponible durante <strong>24 horas</strong>. Una vez confirmado tu correo, tu cuenta quedará activa de inmediato para iniciar sesión.
+              ðŸ”’ <strong>Seguridad ClÃ­nica:</strong> Este enlace estarÃ¡ disponible durante <strong>24 horas</strong>. Una vez confirmado tu correo, tu cuenta quedarÃ¡ activa de inmediato para iniciar sesiÃ³n.
             </p>
           </div>
           <p style="font-size: 11px; color: #94A3B8; margin-top: 20px; line-height: 1.4;">
-            Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:<br />
+            Si el botÃ³n no funciona, copia y pega el siguiente enlace en tu navegador:<br />
             <a href="${enlace}" style="color: #0AA896; word-break: break-all;">${enlace}</a>
           </p>
         </div>
         <div style="background-color: #F5ECDD; padding: 16px; text-align: center; font-size: 11px; color: #78716C; border-top: 1px solid #DF9B78;">
-          © 2026 FONELLA • Centro Integral de Fonoaudiología • Portal Clínico Seguro
+          Â© 2026 FONELLA â€¢ Centro Integral de FonoaudiologÃ­a â€¢ Portal ClÃ­nico Seguro
         </div>
       </div>
     `;
@@ -268,27 +268,27 @@ export class MailService {
       await transporter.sendMail({
         from:
           process.env.SMTP_FROM ||
-          `"FONELLA Portal Clínico" <${smtpUser}>`,
+          `"FONELLA Portal ClÃ­nico" <${smtpUser}>`,
         to: destinatario,
         subject: asunto,
         html: plantillaHtml,
       });
 
-      this.logger.log(`✅ [Nodemailer] Correo de activación enviado con éxito a: ${destinatario}`);
+      this.logger.log(`âœ… [Nodemailer] Correo de activaciÃ³n enviado con Ã©xito a: ${destinatario}`);
     } catch (error: any) {
       this.logger.error(
-        `❌ [Nodemailer] Error al despachar correo a ${destinatario}: ${error.message}`,
+        `âŒ [Nodemailer] Error al despachar correo a ${destinatario}: ${error.message}`,
         error.stack,
       );
       throw new HttpException(
-        `Error al enviar el correo de activación: ${error.message}`,
+        `Error al enviar el correo de activaciÃ³n: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
   /**
-   * Envía el correo de recuperación de contraseña
+   * EnvÃ­a el correo de recuperaciÃ³n de contraseÃ±a
    */
   async enviarEmailRecuperacion(
     destinatario: string,
@@ -306,27 +306,27 @@ export class MailService {
               <span style="color: #0AA896;">F</span><span style="color: #5A96C8;">O</span><span style="color: #0AA896;">N</span><span style="color: #DF9B78;">E</span><span style="color: #0AA896;">L</span><span style="color: #5A96C8;">L</span><span style="color: #0AA896;">A</span>
             </span>
           </div>
-          <h1 style="margin: 0; font-size: 20px; font-weight: 800;">Recuperación de Contraseña</h1>
-          <p style="margin: 4px 0 0 0; font-size: 12px; color: #EAF5F6; opacity: 0.9;">Centro Integral de Fonoaudiología</p>
+          <h1 style="margin: 0; font-size: 20px; font-weight: 800;">RecuperaciÃ³n de ContraseÃ±a</h1>
+          <p style="margin: 4px 0 0 0; font-size: 12px; color: #EAF5F6; opacity: 0.9;">Centro Integral de FonoaudiologÃ­a</p>
         </div>
         <div style="padding: 32px 28px; background-color: #FFFFFF;">
           <p style="font-size: 15px; color: #1E293B; margin-top: 0;">Hola, <strong>${nombre}</strong></p>
           <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-            Hemos recibido una solicitud para restablecer la contraseña de acceso a tu cuenta en el <strong>Portal Clínico de FONELLA</strong>.
+            Hemos recibido una solicitud para restablecer la contraseÃ±a de acceso a tu cuenta en el <strong>Portal ClÃ­nico de FONELLA</strong>.
           </p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${enlace}" target="_blank" style="background: linear-gradient(to right, #136A7B, #0AA896); color: #FFFFFF; font-weight: 800; font-size: 14px; text-decoration: none; padding: 14px 30px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 14px rgba(19, 106, 123, 0.3);">
-              Restablecer mi Contraseña
+              Restablecer mi ContraseÃ±a
             </a>
           </div>
           <div style="background-color: #FAF6F0; border-left: 4px solid #DF9B78; padding: 12px 16px; border-radius: 0 10px 10px 0; margin-top: 24px;">
             <p style="margin: 0; font-size: 12px; color: #64748B; line-height: 1.5;">
-              ⏱️ <strong>Seguridad Clínica:</strong> Este enlace es de un solo uso y expirará en <strong>15 minutos</strong>. Si tú no solicitaste este cambio, puedes ignorar este mensaje.
+              â±ï¸ <strong>Seguridad ClÃ­nica:</strong> Este enlace es de un solo uso y expirarÃ¡ en <strong>15 minutos</strong>. Si tÃº no solicitaste este cambio, puedes ignorar este mensaje.
             </p>
           </div>
         </div>
         <div style="background-color: #F5ECDD; padding: 16px; text-align: center; font-size: 11px; color: #78716C; border-top: 1px solid #DF9B78;">
-          © 2026 FONELLA • Centro Integral de Fonoaudiología • Portal Clínico Seguro
+          Â© 2026 FONELLA â€¢ Centro Integral de FonoaudiologÃ­a â€¢ Portal ClÃ­nico Seguro
         </div>
       </div>
     `;
@@ -335,22 +335,103 @@ export class MailService {
       await transporter.sendMail({
         from:
           process.env.SMTP_FROM ||
-          `"FONELLA Portal Clínico" <${smtpUser}>`,
+          `"FONELLA Portal ClÃ­nico" <${smtpUser}>`,
         to: destinatario,
-        subject: "Recuperación de Contraseña - FONELLA Portal Clínico",
+        subject: "RecuperaciÃ³n de ContraseÃ±a - FONELLA Portal ClÃ­nico",
         html: plantillaHtml,
       });
 
-      this.logger.log(`✅ [Nodemailer] Correo de recuperación enviado con éxito a: ${destinatario}`);
+      this.logger.log(`âœ… [Nodemailer] Correo de recuperaciÃ³n enviado con Ã©xito a: ${destinatario}`);
     } catch (error: any) {
       this.logger.error(
-        `❌ [Nodemailer] Error al despachar correo a ${destinatario}: ${error.message}`,
+        `âŒ [Nodemailer] Error al despachar correo a ${destinatario}: ${error.message}`,
         error.stack,
       );
       throw new HttpException(
-        `Error al enviar el correo de recuperación: ${error.message}`,
+        `Error al enviar el correo de recuperaciÃ³n: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  async enviarInformeClinicoPdf(params: {
+    destinatario: string;
+    nombrePaciente: string;
+    numeroExpediente: string;
+    nombreTipoInforme: string;
+    diagnosticoCie10: string;
+    urlDescargaTemporal: string;
+    pdfBuffer: Buffer;
+    pdfFilename: string;
+  }): Promise<{ enviadoPorSmtp: boolean }> {
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+
+    if (!smtpUser || !smtpPass) {
+      this.logger.warn(
+        `SMTP no configurado; se usará fallback mailto para ${params.destinatario}`,
+      );
+      return { enviadoPorSmtp: false };
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: Number(process.env.SMTP_PORT || 587) === 465,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+
+    const plantillaHtml = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; border-radius: 16px; overflow: hidden; border: 1px solid #E5E7EB; background-color: #FFFFFF;">
+        <div style="background-color: #136A7B; padding: 24px 28px; border-bottom: 4px solid #DF9B78;">
+          <h1 style="margin: 0; color: #FFFFFF; font-size: 22px; letter-spacing: 1px;">FONELLA</h1>
+          <p style="margin: 4px 0 0; color: #D1FAE5; font-size: 12px;">Consultorio Especializado en Fonoaudiología Integral</p>
+        </div>
+        <div style="padding: 28px; color: #1F2937; line-height: 1.6; font-size: 14px;">
+          <p style="margin-top: 0;">Estimada familia de <strong>${params.nombrePaciente}</strong>,</p>
+          <p>Adjunto a este correo encontrará el <strong>${params.nombreTipoInforme}</strong> oficial emitido por Fonella.</p>
+          <div style="background-color: #FBF8F2; border-left: 4px solid #19AF9C; padding: 14px 16px; border-radius: 8px; margin: 18px 0; font-size: 13px;">
+            <div><strong>Expediente Clínico:</strong> ${params.numeroExpediente}</div>
+            <div><strong>Diagnóstico CIE-10:</strong> ${params.diagnosticoCie10}</div>
+            <div><strong>Archivo Adjunto:</strong> ${params.pdfFilename}</div>
+          </div>
+          <p style="font-size: 12.5px; color: #4B5563;">
+            También puede descargarlo directamente mediante este enlace seguro (válido por 15 minutos):<br/>
+            <a href="${params.urlDescargaTemporal}" style="color: #136A7B; font-weight: bold;">Descargar Informe Oficial PDF</a>
+          </p>
+          <p style="margin-bottom: 0; margin-top: 22px;">
+            Quedo atenta a cualquier inquietud.<br/>
+            Cordialmente,<br/>
+            <strong style="color: #136A7B;">Dra. Bárbara Ccucho Delgado</strong><br/>
+            <span style="font-size: 12px; color: #6B7280;">Fonoaudióloga Especialista • RETHUS 760014829</span>
+          </p>
+        </div>
+        <div style="background-color: #F5ECDD; padding: 14px; text-align: center; font-size: 11px; color: #78716C; border-top: 1px solid #DF9B78;">
+          © 2026 FONELLA • Documento Clínico Confidencial • Ley 1581 de 2012
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || `"FONELLA Portal Clínico" <${smtpUser}>`,
+      to: params.destinatario,
+      subject: `Informe Fonoaudiológico - ${params.nombrePaciente} - Fonella`,
+      html: plantillaHtml,
+      attachments: [
+        {
+          filename: params.pdfFilename,
+          content: params.pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+
+    this.logger.log(
+      `✅ Informe PDF (${params.pdfFilename}) enviado por correo a ${params.destinatario}`,
+    );
+    return { enviadoPorSmtp: true };
   }
 }

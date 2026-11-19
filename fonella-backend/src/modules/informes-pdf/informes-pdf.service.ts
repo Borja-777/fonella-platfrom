@@ -1,19 +1,30 @@
-﻿import {
+import * as crypto from 'crypto';
+import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
-const PDFDocument = require('pdfkit');
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
+
+const PDFDocument = require('pdfkit');
 
 export type TipoInformeClinico =
   | 'VALORACION_INICIAL'
   | 'PROGRESO_TRIMESTRAL'
   | 'ALTA';
 
+export type CanalEnvioInforme = 'WHATSAPP' | 'CORREO';
+
 @Injectable()
 export class InformesPdfService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
+  ) {}
 
   private calcularEdadTexto(fechaNacimiento: Date): string {
     const hoy = new Date();
@@ -36,6 +47,55 @@ export class InformesPdfService {
       .replace(/^_|_$/g, '');
   }
 
+  private normalizarTelefonoColombia(telefono?: string | null): string {
+    if (!telefono) return '';
+    const soloDigitos = telefono.replace(/\D/g, '');
+    if (!soloDigitos) return '';
+    if (soloDigitos.startsWith('57') && soloDigitos.length >= 12) {
+      return soloDigitos;
+    }
+    return `57${soloDigitos}`;
+  }
+
+  private readonly enlacesTemporales = new Map<
+    string,
+    { historiaId: string; tipo: TipoInformeClinico; expiraEn: number }
+  >();
+
+  generarCodigoTemporalDescarga(
+    historiaId: string,
+    tipo: TipoInformeClinico,
+  ): string {
+    const ahora = Date.now();
+    for (const [key, val] of this.enlacesTemporales.entries()) {
+      if (val.expiraEn < ahora) this.enlacesTemporales.delete(key);
+    }
+
+    const codigo = crypto.randomBytes(6).toString('hex');
+    this.enlacesTemporales.set(codigo, {
+      historiaId,
+      tipo,
+      expiraEn: ahora + 15 * 60 * 1000, // 15 minutos
+    });
+    return codigo;
+  }
+
+  validarCodigoTemporalDescarga(codigo: string): {
+    historiaId: string;
+    tipo: TipoInformeClinico;
+  } {
+    const registro = this.enlacesTemporales.get(codigo);
+    if (!registro || registro.expiraEn < Date.now()) {
+      this.enlacesTemporales.delete(codigo);
+      throw new UnauthorizedException(
+        'El enlace temporal de descarga del informe ha expirado o no es válido.',
+      );
+    }
+    return {
+      historiaId: registro.historiaId,
+      tipo: registro.tipo,
+    };
+  }
   async generarInformePdf(
     historiaId: string,
     tipo: TipoInformeClinico = 'VALORACION_INICIAL',
@@ -60,7 +120,6 @@ export class InformesPdfService {
       throw new NotFoundException('Historia clínica no encontrada.');
     }
 
-    // Escenario 3: Bloqueo de generación si no hay diagnóstico clínico registrado
     if (
       !historia.diagnosticoCie10Codigo?.trim() ||
       !historia.diagnosticoCie10Desc?.trim()
@@ -98,11 +157,10 @@ export class InformesPdfService {
       });
 
       const chunks: Buffer[] = [];
-      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      // Paleta Oficial Fonella
       const PETROLEO = '#136A7B';
       const TURQUESA = '#19AF9C';
       const TERRACOTA = '#DF9B78';
@@ -117,7 +175,6 @@ export class InformesPdfService {
       doc.rect(0, 0, pageWidth, 92).fill(PETROLEO);
       doc.rect(0, 92, pageWidth, 5).fill(TERRACOTA);
 
-      // Isotipo geométrico vectorial Fonella
       doc.circle(74, 46, 22).fill(TURQUESA);
       doc.circle(74, 46, 13).fill(CREMA);
       doc
@@ -149,7 +206,6 @@ export class InformesPdfService {
 
       doc.y = 114;
 
-      // Banda de Título del Informe
       doc.roundedRect(50, doc.y, contentWidth, 28, 5).fill(CREMA);
       doc
         .roundedRect(50, doc.y, contentWidth, 28, 5)
@@ -203,9 +259,7 @@ export class InformesPdfService {
         .font('Helvetica-Bold')
         .text('Paciente: ', 62, yDatos + 10, { continued: true })
         .font('Helvetica')
-        .text(
-          `${historia.paciente.nombres} ${historia.paciente.apellidos}`,
-        );
+        .text(`${historia.paciente.nombres} ${historia.paciente.apellidos}`);
 
       doc
         .font('Helvetica-Bold')
@@ -345,7 +399,7 @@ export class InformesPdfService {
         );
       doc.y = yDiag + 44;
 
-      // 5. EVOLUCIÓN TERAPÉUTICA (Si existen sesiones registradas)
+      // 5. EVOLUCIÓN TERAPÉUTICA
       if (historia.notasEvolucion.length > 0) {
         dibujarEncabezadoSeccion('4. SÍNTESIS DE EVOLUCIÓN TERAPÉUTICA');
 
@@ -377,7 +431,7 @@ export class InformesPdfService {
         });
       }
 
-      // 6. PLAN DE INTERVENCIÓN Y RECOMENDACIONES FAMILIA / ESCUELA
+      // 6. PLAN DE INTERVENCIÓN Y RECOMENDACIONES
       dibujarEncabezadoSeccion(
         historia.notasEvolucion.length > 0
           ? '5. CONCLUSIONES, PLAN DE INTERVENCIÓN Y RECOMENDACIONES'
@@ -412,12 +466,11 @@ export class InformesPdfService {
           { align: 'justify' },
         );
 
-      // 7. PIE DE FIRMA PROFESIONAL DIGITALIZADA Y REGISTRO RETHUS
+      // 7. PIE DE FIRMA PROFESIONAL
       if (doc.y > 630) doc.addPage();
       doc.moveDown(1.8);
       const yFirma = doc.y;
 
-      // Trazo caligráfico digitalizado de firma profesional
       doc
         .save()
         .moveTo(68, yFirma + 18)
@@ -447,7 +500,11 @@ export class InformesPdfService {
         .fillColor(TEXTO)
         .font('Helvetica')
         .fontSize(9)
-        .text('Fonoaudióloga Especialista • Directora Clínica Fonella', 50, yFirma + 45);
+        .text(
+          'Fonoaudióloga Especialista • Directora Clínica Fonella',
+          50,
+          yFirma + 45,
+        );
 
       doc
         .fillColor(TURQUESA)
@@ -455,7 +512,6 @@ export class InformesPdfService {
         .fontSize(9)
         .text(`Registro Nacional: ${rethus}`, 50, yFirma + 58);
 
-      // Sello de validez clínica
       doc.roundedRect(330, yFirma + 10, 230, 56, 5).fill(CREMA);
       doc
         .roundedRect(330, yFirma + 10, 230, 56, 5)
@@ -482,7 +538,209 @@ export class InformesPdfService {
 
     return { buffer, filename };
   }
+
+  async prepararYRegistrarEnvioInforme(
+    historiaId: string,
+    canal: CanalEnvioInforme,
+    tipo: TipoInformeClinico,
+    usuarioId: string,
+    baseUrlBackend: string,
+  ) {
+    const historia = await this.prisma.historiaClinica.findUnique({
+      where: { id: historiaId },
+      include: {
+        paciente: true,
+        creadoPor: { select: { nombreCompleto: true } },
+      },
+    });
+
+    if (!historia) {
+      throw new NotFoundException('Historia clínica no encontrada.');
+    }
+
+    if (
+      !historia.diagnosticoCie10Codigo?.trim() ||
+      !historia.diagnosticoCie10Desc?.trim()
+    ) {
+      throw new BadRequestException(
+        'No es posible compartir el informe: El paciente no cuenta con diagnóstico clínico registrado.',
+      );
+    }
+
+    const nombreTipoMap: Record<TipoInformeClinico, string> = {
+      VALORACION_INICIAL: 'Informe de Valoración Inicial',
+      PROGRESO_TRIMESTRAL: 'Informe de Progreso Trimestral',
+      ALTA: 'Informe de Alta Fonoaudiológica',
+    };
+    const nombreTipo = nombreTipoMap[tipo] || 'Informe Fonoaudiológico';
+
+    const nombrePaciente = `${historia.paciente.nombres} ${historia.paciente.apellidos}`;
+    const codigoCorto = this.generarCodigoTemporalDescarga(historiaId, tipo);
+    const urlDescargaTemporal = `${baseUrlBackend}/api/v1/historias/informes/pdf/${codigoCorto}`;
+
+    const fechaHoraTexto = new Date().toLocaleString('es-CO', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+
+    if (canal === 'WHATSAPP') {
+      const telefonoNormalizado = this.normalizarTelefonoColombia(
+        historia.paciente.telefonoContacto,
+      );
+
+      if (!telefonoNormalizado || telefonoNormalizado.length < 12) {
+        throw new BadRequestException(
+          'No es posible iniciar el chat: El paciente no cuenta con un número de teléfono móvil registrado',
+        );
+      }
+
+      const nombreLimpio = nombrePaciente.replace(/\s+/g, ' ').trim();
+      const mensajeWhatsApp = [
+        '*FONELLA* | Portal Cl\u00ednico Fonoaudiol\u00f3gico',
+        '',
+        'Cordial saludo, estimada familia de *' + nombreLimpio + '*.',
+        '',
+        'Desde *Fonella - Consultorio de Fonoaudiolog\u00eda*, compartimos el *' + nombreTipo + '* emitido hoy:',
+        '',
+        '\u2022 *Expediente:* ' + historia.numeroExpediente,
+        '\u2022 *Diagn\u00f3stico CIE-10:* ' + (historia.diagnosticoCie10Codigo || 'N/A'),
+        '',
+        '\u2022 *Descargar Informe PDF (v\u00e1lido por 15 min):*',
+        urlDescargaTemporal,
+        '',
+        '_(Tambi\u00e9n se adjunta el documento PDF en este chat para su archivo personal)._',
+        '',
+        'Quedo muy atenta a sus inquietudes.',
+        'Cordialmente,',
+        '*Dra. B\u00e1rbara Ccucho Delgado*',
+        'Fonoaudi\u00f3loga Especialista \u2022 RETHUS 760014829',
+      ].join('\n');
+
+      const whatsappUrl = `https://wa.me/${telefonoNormalizado}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+      const mensajeBitacora = `Informe PDF compartido vía WhatsApp el ${fechaHoraTexto} por Bárbara Ccucho`;
+
+      await this.prisma.$transaction([
+        this.prisma.notaEvolucion.create({
+          data: {
+            historiaClinicaId: historiaId,
+            creadoPorId: usuarioId || historia.creadoPorId,
+            numeroSesion: 0,
+            fechaHoraSesion: new Date(),
+            objetivoSesion: `[BITACORA_ENVIO_INFORME] ${mensajeBitacora}`,
+            actividadesDesarrolladas: `Canal: WHATSAPP | Destinatario: +${telefonoNormalizado} | Tipo: ${tipo}`,
+            desempenoObservado: mensajeBitacora,
+            planCaseroTareas: 'Entrega documental registrada automáticamente por el sistema.',
+            firmaProfesionalSnapshot: 'Dra. Bárbara Ccucho Delgado - RETHUS 760014829',
+          },
+        }),
+        this.prisma.paciente.update({
+          where: { id: historia.pacienteId },
+          data: { updatedAt: new Date() },
+        }),
+      ]);
+
+      return {
+        canal: 'WHATSAPP',
+        destinatario: `+${telefonoNormalizado}`,
+        whatsappUrl,
+        urlDescargaTemporal,
+        mensajeBitacora,
+      };
+    }
+
+    const correoDestino = historia.paciente.email?.trim();
+    if (!correoDestino) {
+      throw new BadRequestException(
+        'No es posible enviar el correo: El paciente o acudiente no cuenta con un correo electrónico registrado.',
+      );
+    }
+
+    const asunto = `Informe Fonoaudiológico - ${nombrePaciente} - Fonella`;
+    const cuerpoCorreo = [
+      `Estimada familia de ${nombrePaciente},`,
+      ``,
+      `Desde Fonella - Consultorio Especializado en Fonoaudiología, compartimos el ${nombreTipo} correspondiente al expediente ${historia.numeroExpediente}.`,
+      ``,
+      `Puede descargar el documento oficial en formato PDF desde el siguiente enlace seguro (vigencia de 15 minutos):`,
+      `${urlDescargaTemporal}`,
+      ``,
+      `Quedo muy atenta a cualquier inquietud.`,
+      `Cordialmente,`,
+      `Dra. Bárbara Ccucho Delgado`,
+      `Fonoaudióloga Especialista • RETHUS 760014829`,
+    ].join('\n');
+
+    const { buffer: pdfBuffer, filename: pdfFilename } =
+      await this.generarInformePdf(historiaId, tipo);
+
+    const resultadoSmtp = await this.mailService.enviarInformeClinicoPdf({
+      destinatario: correoDestino,
+      nombrePaciente,
+      numeroExpediente: historia.numeroExpediente,
+      nombreTipoInforme: nombreTipo,
+      diagnosticoCie10: `${historia.diagnosticoCie10Codigo} - ${historia.diagnosticoCie10Desc}`,
+      urlDescargaTemporal,
+      pdfBuffer,
+      pdfFilename,
+    });
+
+    const mailtoUrl = resultadoSmtp.enviadoPorSmtp
+      ? null
+      : `mailto:${encodeURIComponent(correoDestino)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpoCorreo)}`;
+
+    const mensajeBitacora = resultadoSmtp.enviadoPorSmtp
+      ? `Informe PDF (${pdfFilename}) enviado por Correo con adjunto el ${fechaHoraTexto} por Bárbara Ccucho`
+      : `Informe PDF compartido vía Correo el ${fechaHoraTexto} por Bárbara Ccucho`;
+
+    await this.prisma.$transaction([
+      this.prisma.notaEvolucion.create({
+        data: {
+          historiaClinicaId: historiaId,
+          creadoPorId: usuarioId || historia.creadoPorId,
+          numeroSesion: 0,
+          fechaHoraSesion: new Date(),
+          objetivoSesion: `[BITACORA_ENVIO_INFORME] ${mensajeBitacora}`,
+          actividadesDesarrolladas: `Canal: CORREO | Destinatario: ${correoDestino} | Tipo: ${tipo}`,
+          desempenoObservado: mensajeBitacora,
+          planCaseroTareas: 'Entrega documental registrada automáticamente por el sistema.',
+          firmaProfesionalSnapshot: 'Dra. Bárbara Ccucho Delgado - RETHUS 760014829',
+        },
+      }),
+      this.prisma.paciente.update({
+        where: { id: historia.pacienteId },
+        data: { updatedAt: new Date() },
+      }),
+    ]);
+
+    return {
+      canal: 'CORREO',
+      enviadoPorSmtp: resultadoSmtp.enviadoPorSmtp,
+      destinatario: correoDestino,
+      asunto,
+      mailtoUrl,
+      urlDescargaTemporal,
+      mensajeBitacora,
+    };
+  }
+
+  async listarBitacoraEnvios(historiaId: string) {
+    const registros = await this.prisma.notaEvolucion.findMany({
+      where: {
+        historiaClinicaId: historiaId,
+        objetivoSesion: { startsWith: '[BITACORA_ENVIO_INFORME]' },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    return registros.map((r) => ({
+      id: r.id,
+      detalle: `${r.desempenoObservado} (${r.actividadesDesarrolladas})`,
+      createdAt: r.createdAt,
+    }));
+  }
 }
+
 
 
 
