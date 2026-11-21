@@ -25,6 +25,10 @@ import {
   Mail,
   Eye,
   PlusCircle,
+  Paperclip,
+  UploadCloud,
+  ExternalLink,
+  Image as ImageIcon,
 } from 'lucide-react';
 import {
   apiService,
@@ -66,6 +70,142 @@ export default function HistoriasClinicasPage() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [cargando, setCargando] = useState(true);
+
+  // Estados y Handlers Archivos Médicos Adjuntos (HU-007 / #19)
+  const [modalAdjuntosAbierto, setModalAdjuntosAbierto] = useState(false);
+  const [historiaAdjuntos, setHistoriaAdjuntos] = useState<HistoriaClinica | null>(null);
+  const [listaAdjuntos, setListaAdjuntos] = useState<any[]>([]);
+  const [cargandoAdjuntos, setCargandoAdjuntos] = useState(false);
+  const [subiendoAdjunto, setSubiendoAdjunto] = useState(false);
+  const [mostrarFormAdjunto, setMostrarFormAdjunto] = useState(false);
+  const [errorAdjunto, setErrorAdjunto] = useState<string | null>(null);
+  const [exitoAdjunto, setExitoAdjunto] = useState<string | null>(null);
+  const [archivoSeleccionado, setArchivoSeleccionado] = useState<File | null>(null);
+  const [tituloAdjunto, setTituloAdjunto] = useState('');
+  const [fechaEstudioAdjunto, setFechaEstudioAdjunto] = useState(
+    () => obtenerFechaHoraActualColombia().split('T')[0],
+  );
+  const [previewAdjunto, setPreviewAdjunto] = useState<{
+    signedUrl: string;
+    titulo: string;
+    mimeType: string;
+    expiresIn: number;
+  } | null>(null);
+  const [generandoSignedId, setGenerandoSignedId] = useState<string | null>(null);
+
+  const cargarAdjuntosHistoria = async (historiaId: string) => {
+    setCargandoAdjuntos(true);
+    try {
+      const data = await (apiService as any).listarAdjuntosHistoria(historiaId);
+      setListaAdjuntos(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setErrorAdjunto(err?.message || 'No se pudieron cargar los archivos adjuntos.');
+      setListaAdjuntos([]);
+    } finally {
+      setCargandoAdjuntos(false);
+    }
+  };
+
+  const abrirModalAdjuntos = async (hc: HistoriaClinica, abrirFormulario = false) => {
+    setHistoriaAdjuntos(hc);
+    setModalAdjuntosAbierto(true);
+    setMostrarFormAdjunto(abrirFormulario);
+    setErrorAdjunto(null);
+    setExitoAdjunto(null);
+    setPreviewAdjunto(null);
+    setArchivoSeleccionado(null);
+    setTituloAdjunto('');
+    setFechaEstudioAdjunto(obtenerFechaHoraActualColombia().split('T')[0]);
+    await cargarAdjuntosHistoria(hc.id);
+  };
+
+  const handleSeleccionarArchivoAdjunto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setErrorAdjunto(null);
+    setExitoAdjunto(null);
+    const file = e.target.files?.[0];
+    if (!file) {
+      setArchivoSeleccionado(null);
+      return;
+    }
+
+    const MAX_BYTES = 10 * 1024 * 1024; // 10 MB (Escenario 2)
+    const MIMES_OK = ['application/pdf', 'image/png', 'image/jpeg'];
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const EXT_OK = ['pdf', 'png', 'jpg', 'jpeg'];
+
+    if (!MIMES_OK.includes(file.type) || !EXT_OK.includes(ext)) {
+      e.target.value = '';
+      setArchivoSeleccionado(null);
+      setErrorAdjunto(
+        'Formato no compatible: Solo se admiten documentos en formato PDF e imágenes médicas (PNG, JPG, JPEG)',
+      );
+      return;
+    }
+
+    if (file.size > MAX_BYTES) {
+      e.target.value = '';
+      setArchivoSeleccionado(null);
+      setErrorAdjunto(
+        'El archivo supera el límite máximo permitido de 10 MB. Por favor reduzca la resolución o el tamaño del PDF o imagen antes de subirlo',
+      );
+      return;
+    }
+
+    setArchivoSeleccionado(file);
+  };
+
+  const handleSubirAdjunto = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!historiaAdjuntos) return;
+    setErrorAdjunto(null);
+    setExitoAdjunto(null);
+
+    if (!archivoSeleccionado) {
+      setErrorAdjunto('Selecciona un documento PDF o imagen médica (PNG, JPG, JPEG) antes de confirmar.');
+      return;
+    }
+    if (!tituloAdjunto.trim()) {
+      setErrorAdjunto('Ingresa un título descriptivo para el examen o estudio médico.');
+      return;
+    }
+
+    setSubiendoAdjunto(true);
+    try {
+      await (apiService as any).subirAdjuntoHistoria(historiaAdjuntos.id, {
+        archivo: archivoSeleccionado,
+        titulo: tituloAdjunto.trim(),
+        fechaEstudio: fechaEstudioAdjunto,
+      });
+      setExitoAdjunto('Examen médico almacenado de forma segura y cifrada.');
+      setArchivoSeleccionado(null);
+      setTituloAdjunto('');
+      setMostrarFormAdjunto(false);
+      await cargarAdjuntosHistoria(historiaAdjuntos.id);
+      await cargarDatos();
+    } catch (err: any) {
+      setErrorAdjunto(err?.message || 'No se pudo subir el archivo médico.');
+    } finally {
+      setSubiendoAdjunto(false);
+    }
+  };
+
+  const handleVisualizarAdjunto = async (adjunto: any) => {
+    setGenerandoSignedId(adjunto.id);
+    setErrorAdjunto(null);
+    try {
+      const resp = await (apiService as any).obtenerSignedUrlAdjunto(adjunto.id);
+      setPreviewAdjunto({
+        signedUrl: resp.signedUrl,
+        titulo: adjunto.titulo,
+        mimeType: adjunto.mimeType,
+        expiresIn: resp.expiresIn || 300,
+      });
+    } catch (err: any) {
+      setErrorAdjunto(err?.message || 'No se pudo generar el enlace temporal seguro.');
+    } finally {
+      setGenerandoSignedId(null);
+    }
+  };
 
   // Estados y Handlers Modal Informe PDF (HU-005 / #17)
   const [modalPdfAbierto, setModalPdfAbierto] = useState(false);
@@ -692,6 +832,16 @@ export default function HistoriasClinicasPage() {
                       >
                         <FileDown className="w-3.5 h-3.5" />
                         <span>Informe PDF</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => abrirModalAdjuntos(hc, false)}
+                        className="px-3 py-1.5 rounded-xl bg-[#094A57] hover:bg-[#0d6273] text-white font-extrabold text-[11px] inline-flex items-center gap-1 transition-all cursor-pointer"
+                        title="Exámenes y Archivos Médicos Adjuntos"
+                      >
+                        <Paperclip className="w-3.5 h-3.5" />
+                        <span>Adjuntos ({hc._count?.archivosAnexos ?? 0})</span>
                       </button>
 
                       <button
@@ -1548,16 +1698,316 @@ export default function HistoriasClinicasPage() {
           </div>
         </div>
       )}
+      {/* MODAL 4: EXÁMENES Y ARCHIVOS MÉDICOS ADJUNTOS (HU - Clínica - 007 / #19) */}
+      {modalAdjuntosAbierto && historiaAdjuntos && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 shadow-2xl border border-gray-100 my-6 max-h-[92vh] overflow-y-auto">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-100 pb-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#094A57] text-white font-mono text-[10px] font-bold">
+                    {historiaAdjuntos.numeroExpediente}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> Almacenamiento Cifrado • Enlaces Efímeros (5 min)
+                  </span>
+                </div>
+                <h2 className="text-lg font-black text-[#094A57] mt-1">
+                  Exámenes y Archivos Adjuntos — {historiaAdjuntos.paciente.nombres}{' '}
+                  {historiaAdjuntos.paciente.apellidos}
+                </h2>
+                <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalAdjuntosAbierto(false);
+                      abrirEditarVerHistoria(historiaAdjuntos);
+                    }}
+                    className="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-[#094A57] font-bold text-[11px] transition cursor-pointer"
+                  >
+                    Anamnesis Inicial
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalAdjuntosAbierto(false);
+                      abrirEvoluciones(historiaAdjuntos, false);
+                    }}
+                    className="px-3 py-1 rounded-lg bg-gray-100 hover:bg-[#0AA896]/15 text-[#094A57] font-bold text-[11px] transition cursor-pointer"
+                  >
+                    Evoluciones
+                  </button>
+                  <span className="px-3 py-1 rounded-lg bg-[#094A57] text-white font-extrabold text-[11px] inline-flex items-center gap-1">
+                    <Paperclip className="w-3 h-3" />
+                    <span>Exámenes y Archivos Adjuntos ({listaAdjuntos.length})</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMostrarFormAdjunto(!mostrarFormAdjunto);
+                    setErrorAdjunto(null);
+                    setExitoAdjunto(null);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-[#0AA896] hover:bg-[#099686] text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>+ Adjuntar Archivo</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalAdjuntosAbierto(false);
+                    setPreviewAdjunto(null);
+                  }}
+                  className="p-2 rounded-xl hover:bg-gray-100 text-gray-500 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {errorAdjunto && (
+              <div className="mt-4 bg-red-50 border border-red-200 text-red-700 p-3.5 rounded-2xl text-xs font-bold flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{errorAdjunto}</span>
+              </div>
+            )}
+
+            {exitoAdjunto && (
+              <div className="mt-4 bg-emerald-50 border border-emerald-200 text-emerald-800 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{exitoAdjunto}</span>
+              </div>
+            )}
+
+            {/* FORMULARIO + ADJUNTAR ARCHIVO (Escenarios 1, 2 y 3) */}
+            {mostrarFormAdjunto && (
+              <form
+                onSubmit={handleSubirAdjunto}
+                className="mt-4 bg-[#FAF6F0] border border-[#DF9B78]/40 rounded-2xl p-4 space-y-3 text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="font-black text-[#094A57] flex items-center gap-1.5">
+                    <UploadCloud className="w-4 h-4 text-[#0AA896]" />
+                    <span>Cargar Examen Externo o Reporte Médico</span>
+                  </h3>
+                  <span className="text-[11px] font-bold text-gray-500">
+                    Formatos: PDF, PNG, JPG, JPEG • Máx. 10 MB
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-2">
+                    <label className="block font-bold text-gray-700 mb-1">
+                      Título Descriptivo del Estudio *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder='Ej. "Audiometría Tonal - Clínica Imbanaco"'
+                      value={tituloAdjunto}
+                      onChange={(e) => setTituloAdjunto(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white font-medium text-gray-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-gray-700 mb-1">
+                      Fecha del Examen *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      min={
+                        historiaAdjuntos?.paciente?.fechaNacimiento
+                          ? String(historiaAdjuntos.paciente.fechaNacimiento).split('T')[0]
+                          : undefined
+                      }
+                      max={obtenerFechaHoraActualColombia().split('T')[0]}
+                      value={fechaEstudioAdjunto}
+                      onChange={(e) => setFechaEstudioAdjunto(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white font-semibold text-gray-800"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    Seleccionar Archivo Médico (PDF, PNG, JPG, JPEG — máx. 10 MB) *
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                    onChange={handleSeleccionarArchivoAdjunto}
+                    className="w-full px-3 py-2 rounded-xl border border-dashed border-[#136A7B]/40 bg-white text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-extrabold file:bg-[#094A57] file:text-white hover:file:bg-[#0d6273] cursor-pointer"
+                  />
+                  {archivoSeleccionado && (
+                    <p className="mt-1.5 text-[11px] font-bold text-emerald-700">
+                      Archivo listo: {archivoSeleccionado.name} (
+                      {(archivoSeleccionado.size / (1024 * 1024)).toFixed(2)} MB)
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMostrarFormAdjunto(false);
+                      setErrorAdjunto(null);
+                    }}
+                    className="px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold hover:bg-gray-50 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={subiendoAdjunto}
+                    className="px-4 py-2 rounded-xl bg-[#094A57] hover:bg-[#0d6273] text-white font-extrabold inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                    <span>{subiendoAdjunto ? 'Subiendo...' : 'Confirmar Subida'}</span>
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* VISOR SEGURO CON SIGNED URL TEMPORAL DE 5 MINUTOS (Escenario 4) */}
+            {previewAdjunto && (
+              <div className="mt-4 border border-[#136A7B]/30 rounded-2xl overflow-hidden bg-gray-900">
+                <div className="bg-[#094A57] text-white px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-3.5 h-3.5 text-[#0AA896]" />
+                    <span className="font-black">{previewAdjunto.titulo}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-white/15 text-[10px] font-bold">
+                      Enlace firmado temporal • Expira en {previewAdjunto.expiresIn}s (5 min)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`${previewAdjunto.signedUrl}?download=1`}
+                      download
+                      className="px-2.5 py-1 rounded-lg bg-[#0AA896] hover:bg-[#099686] text-white font-bold text-[11px] inline-flex items-center gap-1"
+                    >
+                      <FileDown className="w-3 h-3" />
+                      <span>Descargar Archivo</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewAdjunto(null)}
+                      className="p-1 rounded-lg hover:bg-white/15 text-white cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-gray-100 flex items-center justify-center max-h-[55vh] overflow-auto">
+                  {previewAdjunto.mimeType === 'application/pdf' ? (
+                    <iframe
+                      src={previewAdjunto.signedUrl}
+                      title={previewAdjunto.titulo}
+                      className="w-full h-[52vh] border-0"
+                    />
+                  ) : (
+                    <img
+                      src={previewAdjunto.signedUrl}
+                      alt={previewAdjunto.titulo}
+                      className="max-h-[52vh] w-auto object-contain p-3"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TABLA DE ARCHIVOS MÉDICOS ADJUNTOS (Escenarios 1 y 4) */}
+            <div className="mt-5">
+              {cargandoAdjuntos ? (
+                <div className="py-10 text-center text-xs font-bold text-gray-500">
+                  Cargando exámenes y documentos clínicos...
+                </div>
+              ) : listaAdjuntos.length === 0 ? (
+                <div className="py-10 px-4 text-center border border-dashed border-gray-200 rounded-2xl bg-gray-50/60">
+                  <Paperclip className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-xs font-black text-[#094A57]">
+                    No hay exámenes ni archivos adjuntos en este expediente
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Haz clic en &quot;+ Adjuntar Archivo&quot; para subir audiometrías, reportes de neuropediatría (PDF) o fotos clínicas (PNG/JPG).
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto border border-gray-100 rounded-2xl">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-[#094A57] text-white text-[10px] uppercase tracking-wider">
+                        <th className="py-3 px-4 font-extrabold">Estudio / Documento</th>
+                        <th className="py-3 px-4 font-extrabold">Archivo Original</th>
+                        <th className="py-3 px-4 font-extrabold">Fecha Examen</th>
+                        <th className="py-3 px-4 font-extrabold">Tamaño</th>
+                        <th className="py-3 px-4 font-extrabold text-right">Visualización Segura</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {listaAdjuntos.map((adj) => (
+                        <tr
+                          key={adj.id}
+                          onClick={() => handleVisualizarAdjunto(adj)}
+                          className="hover:bg-[#EAF5F6]/50 transition cursor-pointer"
+                        >
+                          <td className="py-3 px-4 font-black text-[#094A57]">
+                            <div className="flex items-center gap-2">
+                              {adj.mimeType === 'application/pdf' ? (
+                                <FileText className="w-4 h-4 text-rose-600 shrink-0" />
+                              ) : (
+                                <ImageIcon className="w-4 h-4 text-[#0AA896] shrink-0" />
+                              )}
+                              <span>{adj.titulo}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-gray-600 font-medium">
+                            {adj.nombreArchivo}
+                          </td>
+                          <td className="py-3 px-4 font-semibold text-gray-700 whitespace-nowrap">
+                            {adj.fechaEstudio}
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 font-bold text-[11px]">
+                              {adj.tamanoMb} MB
+                            </span>
+                          </td>
+                          <td
+                            className="py-3 px-4 text-right whitespace-nowrap"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              disabled={generandoSignedId === adj.id}
+                              onClick={() => handleVisualizarAdjunto(adj)}
+                              className="px-3 py-1.5 rounded-xl bg-[#136A7B] hover:bg-[#094A57] text-white font-extrabold text-[11px] inline-flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>
+                                {generandoSignedId === adj.id
+                                  ? 'Generando enlace...'
+                                  : 'Visualizar / Descargar'}
+                              </span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-

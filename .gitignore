@@ -25,3 +25,4 @@ tsconfig.tsbuildinfo
 .idea/
 *.log
 npm-debug.log*
+fonella-backend/storage/

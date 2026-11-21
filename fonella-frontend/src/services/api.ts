@@ -983,3 +983,66 @@ Object.assign(apiService, {
     return fetchClinico<any[]>(`/historias/informes/${historiaId}/bitacora-envios`);
   },
 });
+
+
+// ==========================================
+// MÓDULO ARCHIVOS MÉDICOS ADJUNTOS (HU-007 / #19)
+// ==========================================
+export interface ArchivoAdjuntoClinico {
+  id: string;
+  historiaClinicaId: string;
+  titulo: string;
+  fechaEstudio: string;
+  nombreArchivo: string;
+  archivoUuid: string;
+  mimeType: string;
+  tamanoBytes: number;
+  tamanoMb: number;
+  subidoPor: string;
+  createdAt: string;
+}
+
+Object.assign(apiService, {
+  listarAdjuntosHistoria(historiaId: string): Promise<ArchivoAdjuntoClinico[]> {
+    return fetchClinico<ArchivoAdjuntoClinico[]>(`/historias/${historiaId}/adjuntos`);
+  },
+  async subirAdjuntoHistoria(
+    historiaId: string,
+    payload: { archivo: File; titulo: string; fechaEstudio: string },
+  ): Promise<ArchivoAdjuntoClinico> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('fonella_token') : null;
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const formData = new FormData();
+    formData.append('archivo', payload.archivo);
+    formData.append('titulo', payload.titulo);
+    formData.append('fechaEstudio', payload.fechaEstudio);
+
+    const res = await fetch(`${API_CLINICA}/historias/${historiaId}/adjuntos`, {
+      method: 'POST',
+      credentials: 'include',
+      headers,
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      const msg = Array.isArray(errData.message)
+        ? errData.message.join(', ')
+        : errData.message || `Error ${res.status}: No se pudo adjuntar el archivo`;
+      throw new Error(msg);
+    }
+
+    return res.json();
+  },
+  obtenerSignedUrlAdjunto(adjuntoId: string): Promise<{
+    signedUrl: string;
+    expiresIn: number;
+    expiraEn: string;
+    mimeType: string;
+    meta: ArchivoAdjuntoClinico;
+  }> {
+    return fetchClinico(`/historias/adjuntos/${adjuntoId}/signed-url`);
+  },
+});

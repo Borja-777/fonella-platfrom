@@ -1,4 +1,5 @@
-﻿import { InformesPdfModule } from './modules/informes-pdf/informes-pdf.module';
+import { ArchivosAdjuntosModule } from './modules/archivos-adjuntos/archivos-adjuntos.module';
+import { InformesPdfModule } from './modules/informes-pdf/informes-pdf.module';
 import { NotasEvolucionModule } from './modules/notas-evolucion/notas-evolucion.module';
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
@@ -18,6 +19,7 @@ import { HistoriasClinicasModule } from "./modules/historias-clinicas/historias-
     HistoriasClinicasModule,
     NotasEvolucionModule,
     InformesPdfModule,
+    ArchivosAdjuntosModule,
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     PrismaModule,
