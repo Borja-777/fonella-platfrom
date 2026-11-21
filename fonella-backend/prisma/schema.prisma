@@ -37,6 +37,7 @@ enum TipoDocumento {
 enum TipoRemision {
   PARTICULAR
   REMISION_EXTERNA
+  ESCOLAR
 }
 
 enum EstadoCita {
@@ -115,6 +116,7 @@ model Paciente {
   direccion            String?        @db.VarChar(200)
   tipoRemision         TipoRemision   @default(PARTICULAR) @map("tipo_remision")
   institucionRemitente String?        @map("institucion_remitente") @db.VarChar(150)
+  profesionalRemitente String?        @map("profesional_remitente") @db.VarChar(150)
   totalFaltasTardias   Int            @default(0) @map("total_faltas_tardias")
   estado               EstadoRegistro @default(ACTIVO)
   createdAt            DateTime       @default(now()) @map("created_at")

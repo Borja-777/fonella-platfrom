@@ -35,11 +35,35 @@ export default function LoginPage() {
   const [porInactividad, setPorInactividad] = useState(false);
 
   useEffect(() => {
+    let cancelado = false;
+    let esInactividad = false;
+
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      setPorInactividad(params.get('inactividad') === 'true');
+      esInactividad = params.get('inactividad') === 'true';
+      setPorInactividad(esInactividad);
     }
-  }, []);
+
+    // Si el usuario ya tiene sesión activa en backend, redirige al panel sin pedir credenciales
+    if (!esInactividad) {
+      apiService
+        .getMe()
+        .then((data) => {
+          if (cancelado || !data?.usuario) return;
+          document.cookie = `fonella_rol=${data.usuario.rol}; path=/; max-age=86400; SameSite=Lax`;
+          router.replace(
+            data.usuario.rol === 'ASISTENTE' ? '/agenda' : '/personal',
+          );
+        })
+        .catch(() => {
+          // Sin sesión activa: se mantiene en /login normalmente
+        });
+    }
+
+    return () => {
+      cancelado = true;
+    };
+  }, [router]);
 
   // Estados del Modal de Recuperación de Contraseña
   const [modalRecuperar, setModalRecuperar] = useState(false);

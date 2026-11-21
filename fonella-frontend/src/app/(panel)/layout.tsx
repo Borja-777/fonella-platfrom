@@ -1,10 +1,11 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Users,
+  ContactRound,
   Calendar,
   ClipboardList,
   Package,
@@ -47,7 +48,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       router.push(porInactividad ? '/login?inactividad=true' : '/login');
     }
   };
-  // Detector global de inactividad de 30 minutos (HU-04)
+
   const {
     mostrarModalAdvertencia,
     segundosRestantes,
@@ -74,10 +75,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen w-full flex bg-[#FAF6F0]">
-      {/* 1. SIDEBAR ADMINISTRATIVO: Fijo a toda la altura de la pantalla con degradado oficial */}
       <aside className="w-64 lg:w-72 fixed inset-y-0 left-0 h-screen bg-gradient-to-b from-[#094A57] via-[#106A7C] via-65% to-[#EAF5F6] text-white flex flex-col justify-between p-5 lg:p-6 border-r border-[#136A7B]/20 shadow-2xl z-30 overflow-y-auto">
         <div className="space-y-5 lg:space-y-6">
-          {/* Header Marca FONELLA con Cápsula Crema Oficial */}
           <div className="flex flex-col items-center pb-3 border-b border-white/20">
             <div className="bg-[#F5ECDD] border border-[#DF9B78]/40 shadow-sm px-4 lg:px-5 py-2 rounded-2xl flex items-center justify-center gap-1">
               <span className="font-black text-xl tracking-wider">
@@ -95,7 +94,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             </p>
           </div>
 
-          {/* Perfil de la Especialista / Usuario con Foto Dinámica */}
           <div className="flex items-center gap-3 bg-white/10 backdrop-blur-xs p-3 rounded-2xl border border-white/20 shadow-xs">
             <div className="w-11 h-11 lg:w-12 lg:h-12 rounded-2xl overflow-hidden shadow-md border-2 border-white/80 shrink-0 bg-white">
               <img
@@ -121,7 +119,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             </div>
           </div>
 
-          {/* Menú de Navegación Vertical */}
           <nav className="space-y-2 text-xs font-bold">
             {esFonoaudiologa && (
               <Link
@@ -135,10 +132,26 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                   <Users className="w-4 h-4 text-[#0AA896]" />
                   <span>Gestión de Personal</span>
                 </span>
-                <span className="w-2.5 h-2.5 rounded-full bg-[#0AA896] shadow-xs" />
+                {pathname.startsWith('/personal') && (
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#0AA896] shadow-xs" />
+                )}
               </Link>
             )}
-
+              <Link
+              href="/pacientes"
+              className={`px-3.5 py-3 rounded-2xl flex items-center justify-between transition-all ${pathname.startsWith('/pacientes')
+                ? 'bg-white text-[#0E5666] shadow-lg border border-white font-extrabold'
+                : 'text-white hover:bg-white/15'
+                }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <ContactRound className="w-4 h-4 text-[#0AA896]" />
+                <span>Directorio de Pacientes</span>
+              </span>
+              {pathname.startsWith('/pacientes') && (
+                <span className="w-2.5 h-2.5 rounded-full bg-[#0AA896] shadow-xs" />
+              )}
+            </Link>
             <Link
               href="/agenda"
               className={`px-3.5 py-3 rounded-2xl flex items-center justify-between transition-all ${pathname.startsWith('/agenda')
@@ -155,15 +168,23 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               )}
             </Link>
 
-            <div className="px-3.5 py-3 rounded-2xl bg-white/15 text-white/85 flex items-center justify-between border border-white/10 cursor-not-allowed">
-              <span className="flex items-center gap-2.5">
-                <ClipboardList className="w-4 h-4 text-white/70" />
-                <span>Historias Clínicas</span>
-              </span>
-              <span className="text-[9px] font-semibold bg-white/20 px-2 py-0.5 rounded-full text-white/90">
-                Próx.
-              </span>
-            </div>
+            {esFonoaudiologa && (
+              <Link
+                href="/historias-clinicas"
+                className={`px-3.5 py-3 rounded-2xl flex items-center justify-between transition-all ${pathname.startsWith('/historias-clinicas')
+                  ? 'bg-white text-[#0E5666] shadow-lg border border-white font-extrabold'
+                  : 'text-white hover:bg-white/15'
+                  }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <ClipboardList className="w-4 h-4 text-[#0AA896]" />
+                  <span>Historias Clínicas</span>
+                </span>
+                {pathname.startsWith('/historias-clinicas') && (
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#0AA896] shadow-xs" />
+                )}
+              </Link>
+            )}
 
             <Link
               href="/inventario"
@@ -183,7 +204,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           </nav>
         </div>
 
-        {/* Footer del Sidebar */}
         <div className="mt-6 pt-4 border-t border-[#136A7B]/20 shrink-0">
           <div className="flex items-center justify-center gap-2 text-[10.5px] font-semibold text-[#0E5666] mb-2.5">
             <Clock className="w-3.5 h-3.5 text-[#0AA896] animate-pulse" />
@@ -199,7 +219,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* Modal de Confirmación de Cierre de Sesión */}
       {modalConfirmarLogout && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center space-y-4 border border-[#136A7B]/10">
@@ -236,7 +255,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </div>
       )}
 
-      {/* Modal de Advertencia Preventiva de Inactividad (HU-04) */}
       {mostrarModalAdvertencia && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 text-center space-y-4 border border-amber-200">
@@ -256,7 +274,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               </p>
             </div>
 
-            {/* Contador regresivo grande */}
             <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 flex flex-col items-center justify-center">
               <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">
                 Tiempo restante para cierre seguro
@@ -287,9 +304,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </div>
       )}
 
-      {/* 2. ÁREA DE CONTENIDO PRINCIPAL: Con margen para el sidebar fijo y scroll natural */}
       <div className="flex-1 min-w-0 ml-64 lg:ml-72 relative flex flex-col min-h-screen overflow-x-hidden">
-        {/* Capa de Fotografía Clínica Oficial con Bárbara y la Niña enfrente */}
         <div
           className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none filter brightness-95"
           style={{
@@ -298,10 +313,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           }}
         />
 
-        {/* Capa de Difuminado Suave */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#FAF6F0]/75 via-[#F5ECDD]/60 to-[#FAF6F0]/80 backdrop-blur-[1.5px] pointer-events-none" />
 
-        {/* Contenido por encima de las capas con z-10 */}
         <main className="relative z-10 flex-1 w-full p-4 sm:p-6 lg:p-7 xl:p-8 max-w-[1600px] mx-auto">
           {children}
         </main>

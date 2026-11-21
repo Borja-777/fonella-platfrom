@@ -78,6 +78,92 @@ export interface VentaHistorial {
   };
 }
 
+export interface EvaluacionOfa {
+  labios: string;
+  lengua: string;
+  paladar: string;
+  dientesOclusion: string;
+  respiracion: string;
+  deglucion: string;
+  observacionesOfa?: string;
+}
+
+export interface Paciente {
+  id: string;
+  tipoDocumento: 'RC' | 'TI' | 'CC' | 'CE' | 'PA';
+  numeroDocumento: string;
+  nombres: string;
+  apellidos: string;
+  fechaNacimiento: string;
+  edad?: number;
+  genero?: string | null;
+  telefonoContacto: string;
+  email?: string | null;
+  ciudad?: string | null;
+  direccion?: string | null;
+  tipoRemision: TipoRemision;
+  institucionRemitente?: string | null;
+  profesionalRemitente?: string | null;
+  totalFaltasTardias: number;
+  estado?: 'ACTIVO' | 'INACTIVO';
+  activo?: boolean;
+  acudientes?: PacienteAcudienteRelacion[];
+  historiaClinica?: {
+    id: string;
+    numeroExpediente: string;
+    estado: 'BORRADOR' | 'CERRADA';
+    diagnosticoCie10Codigo?: string;
+    diagnosticoCie10Desc?: string;
+    fechaApertura?: string;
+  diasDesdeApertura?: number;
+    requiereReevaluacion?: boolean;
+  } | null;
+}
+
+export interface NotaEvolucion {
+  id: string;
+  historiaClinicaId: string;
+  profesionalId: string;
+  numeroSesion: number;
+  fechaSesion: string;
+  objetivosTrabajados: string;
+  descripcionEvolucion: string;
+  planSiguienteSesion?: string | null;
+  createdAt: string;
+}
+
+export interface HistoriaClinica {
+  id: string;
+  numeroExpediente: string;
+  pacienteId: string;
+  creadoPorId: string;
+  fechaApertura: string;
+  motivoConsulta: string;
+  antecedentesPerinatales?: string | null;
+  evaluacionOfa: EvaluacionOfa;
+  evaluacionHabla?: string | null;
+  evaluacionLenguaje?: string | null;
+  evaluacionVoz?: string | null;
+  diagnosticoCie10Codigo: string;
+  diagnosticoCie10Desc: string;
+  planTratamiento: string;
+  estado: 'BORRADOR' | 'CERRADA';
+  diasDesdeApertura?: number;
+  requiereReevaluacion?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  paciente: Paciente;
+  creadoPor?: {
+    id: string;
+    nombreCompleto: string;
+    registroRethus?: string | null;
+  };
+  _count?: {
+    notasEvolucion: number;
+    archivosAnexos: number;
+  };
+}
+
 export interface LoginResponse {
   mensaje: string;
   usuario: Usuario;
@@ -89,6 +175,137 @@ export interface RecuperacionResponse {
   nombreCompleto?: string;
 }
 
+// ----------------------------------------------------------------------------
+// Tipos del dominio de Pacientes y Agenda Clínica (Sprint 2)
+// ----------------------------------------------------------------------------
+
+export type TipoDocumento = 'RC' | 'TI' | 'CC' | 'CE' | 'PA';
+export type TipoRemision = 'PARTICULAR' | 'REMISION_EXTERNA' | 'ESCOLAR';
+export type EstadoCita =
+  | 'CONFIRMADA'
+  | 'ATENDIDA'
+  | 'CANCELADA_A_TIEMPO'
+  | 'CANCELADA_TARDIA'
+  | 'INASISTENCIA';
+
+export interface Acudiente {
+  id: string;
+  tipoDocumento: TipoDocumento;
+  numeroDocumento: string;
+  nombres: string;
+  apellidos: string;
+  telefonoPrincipal: string;
+  telefonoRespaldo?: string | null;
+  email?: string | null;
+}
+
+export interface PacienteAcudienteRelacion {
+  id: string;
+  parentesco: string;
+  esPrincipal: boolean;
+  acudiente: Acudiente;
+}
+
+export interface CrearPacienteData {
+  tipoDocumento: TipoDocumento;
+  numeroDocumento: string;
+  nombres: string;
+  apellidos: string;
+  fechaNacimiento: string;
+  genero?: string;
+  telefonoContacto?: string;
+  email?: string;
+  ciudad?: string;
+  direccion?: string;
+  tipoRemision?: TipoRemision;
+  institucionRemitente?: string;
+  profesionalRemitente?: string;
+  acudiente?: {
+    tipoDocumento: TipoDocumento;
+    numeroDocumento: string;
+    nombres: string;
+    apellidos: string;
+    parentesco: string;
+    telefonoPrincipal: string;
+    telefonoRespaldo?: string;
+    email?: string;
+  };
+}
+
+export interface ServicioTerapeutico {
+  id: string;
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  publicoObjetivo: string;
+  duracionMinutos: number;
+  precioReferencia: string | number;
+  estado: 'ACTIVO' | 'INACTIVO';
+}
+
+export interface Cita {
+  id: string;
+  pacienteId: string;
+  servicioId: string;
+  creadoPorId: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  estado: EstadoCita;
+  motivoCancelacion?: string | null;
+  fechaCancelacion?: string | null;
+  cancelacionTardia?: boolean;
+  paciente: Paciente;
+  servicio: ServicioTerapeutico;
+  creadoPor: {
+    id: string;
+    nombreCompleto: string;
+    rol: string;
+  };
+}
+
+export interface FranjaDisponibilidad {
+  horaInicio: string;
+  horaFin: string;
+  jornada: 'MANANA' | 'TARDE';
+  disponible: boolean;
+  motivoNoDisponible: 'OCUPADA' | 'PASADA' | null;
+  cita: Cita | null;
+}
+
+export interface DisponibilidadDia {
+  fecha: string;
+  abierto: boolean;
+  motivoCierre?: string;
+  duracionFranjaMinutos?: number;
+  bloqueReceso: { inicio: string; fin: string } | null;
+  franjas: FranjaDisponibilidad[];
+}
+
+/**
+ * Helper interno para centralizar peticiones autenticadas con cookie HttpOnly
+ * y normalizar mensajes de error del backend (NestJS puede devolver string o string[]).
+ */
+async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init.headers || {}),
+    },
+    credentials: 'include',
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const mensaje = Array.isArray(data.message)
+      ? data.message.join(' ')
+      : data.message;
+    throw new Error(mensaje || 'Error en la comunicación con el servidor.');
+  }
+  return data as T;
+}
+
 export const apiService = {
   async login(email: string, password: string): Promise<LoginResponse> {
     const res = await fetch(`${API_URL}/auth/login`, {
@@ -96,7 +313,7 @@ export const apiService = {
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include', // Imprescindible para cookies HttpOnly
+      credentials: 'include',
       body: JSON.stringify({ email, password }),
     });
 
@@ -299,7 +516,7 @@ export const apiService = {
   },
 
   // --------------------------------------------------------------------------
-  // MÓDULO DE INVENTARIO DIDÁCTICO Y MARGEN DE GANANCIA (HU-001, HU-002)
+  // MÓDULO DE INVENTARIO DIDÁCTICO Y MARGEN DE GANANCIA
   // --------------------------------------------------------------------------
   async getJuguetes(): Promise<Juguete[]> {
     const res = await fetch(`${API_URL}/inventario/juguetes`, {
@@ -427,6 +644,342 @@ export const apiService = {
     }
     return data;
   },
+
+  // --------------------------------------------------------------------------
+  // Endpoints de Pacientes y Acudientes (HU - Agenda - 001 / RN-06)
+  // --------------------------------------------------------------------------
+
+  /** Búsqueda predictiva de pacientes por nombre, apellido o número de documento. */
+  buscarPacientes(q?: string): Promise<Paciente[]> {
+    const query = q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : '';
+    return requestJson<Paciente[]>(`/pacientes${query}`);
+  },
+
+  /** Alias compatible para el módulo de historias clínicas. */
+  listarPacientes(q?: string): Promise<Paciente[]> {
+    return this.buscarPacientes(q);
+  },
+
+  /** Consulta un acudiente existente por documento para reutilizarlo entre hermanos. */
+  buscarAcudientePorDocumento(numeroDocumento: string): Promise<Acudiente> {
+    return requestJson<Acudiente>(
+      `/pacientes/acudiente/${encodeURIComponent(numeroDocumento.trim())}`,
+    );
+  },
+
+  /** Registra un nuevo paciente (y su acudiente obligatorio si es menor de 18 años). */
+  crearPaciente(datos: CrearPacienteData): Promise<Paciente> {
+    return requestJson<Paciente>('/pacientes', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    });
+  },
+
+  /** Actualiza los datos de un paciente existente (y su acudiente si aplica). */
+  actualizarPaciente(
+    id: string,
+    datos: Partial<CrearPacienteData>,
+  ): Promise<Paciente> {
+    return requestJson<Paciente>(`/pacientes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(datos),
+    });
+  },
+
+  // --------------------------------------------------------------------------
+  // Endpoints de Agenda Clínica y Citas (HU - Agenda - 001, 002 y 003)
+  // --------------------------------------------------------------------------
+
+  /** Lista el catálogo de servicios terapéuticos activos. */
+  listarServiciosCitas(): Promise<ServicioTerapeutico[]> {
+    return requestJson<ServicioTerapeutico[]>('/citas/servicios');
+  },
+
+  /** Obtiene las franjas de 45 min y el bloque de receso para una fecha (YYYY-MM-DD). */
+  obtenerDisponibilidadAgenda(fecha: string): Promise<DisponibilidadDia> {
+    return requestJson<DisponibilidadDia>(
+      `/citas/disponibilidad?fecha=${encodeURIComponent(fecha)}`,
+    );
+  },
+
+  /** Lista citas por fecha puntual o rango (desde / hasta). */
+  listarCitas(params?: {
+    fecha?: string;
+    desde?: string;
+    hasta?: string;
+  }): Promise<Cita[]> {
+    const search = new URLSearchParams();
+    if (params?.fecha) search.set('fecha', params.fecha);
+    if (params?.desde) search.set('desde', params.desde);
+    if (params?.hasta) search.set('hasta', params.hasta);
+    const qs = search.toString();
+    return requestJson<Cita[]>(`/citas${qs ? `?${qs}` : ''}`);
+  },
+
+  /** Agenda una nueva cita en consultorio. */
+  crearCita(datos: {
+    pacienteId: string;
+    servicioId: string;
+    fecha: string;
+    horaInicio: string;
+  }): Promise<Cita> {
+    return requestJson<Cita>('/citas', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    });
+  },
+
+  /** Reprograma fecha y hora de una cita CONFIRMADA. */
+  reprogramarCita(
+    id: string,
+    datos: { fecha: string; horaInicio: string },
+  ): Promise<Cita> {
+    return requestJson<Cita>(`/citas/${id}/reprogramar`, {
+      method: 'PATCH',
+      body: JSON.stringify(datos),
+    });
+  },
+
+  /** Cancela una cita CONFIRMADA registrando motivo y aplicando regla de 24 horas. */
+  cancelarCita(id: string, motivoCancelacion: string): Promise<Cita> {
+    return requestJson<Cita>(`/citas/${id}/cancelar`, {
+      method: 'PATCH',
+      body: JSON.stringify({ motivoCancelacion }),
+    });
+  },
+
+  /** Marca una cita CONFIRMADA como ATENDIDA o INASISTENCIA. */
+  actualizarEstadoCita(
+    id: string,
+    estado: 'ATENDIDA' | 'INASISTENCIA',
+  ): Promise<Cita> {
+    return requestJson<Cita>(`/citas/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado }),
+    });
+  },
+
+  // --------------------------------------------------------------------------
+  // Endpoints de Historias Clínicas / Anamnesis (HU - Clínica - 003)
+  // --------------------------------------------------------------------------
+
+  async listarHistoriasClinicas(q?: string): Promise<HistoriaClinica[]> {
+    const url = q
+      ? `${API_URL}/historias-clinicas?q=${encodeURIComponent(q)}`
+      : `${API_URL}/historias-clinicas`;
+    const res = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al obtener historias clínicas');
+    }
+    return data;
+  },
+
+  async obtenerHistoriaPorPaciente(pacienteId: string): Promise<HistoriaClinica> {
+    const res = await fetch(`${API_URL}/historias-clinicas/paciente/${pacienteId}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al obtener historia clínica del paciente');
+    }
+    return data;
+  },
+
+  async crearHistoriaClinica(datos: {
+    pacienteId: string;
+    motivoConsulta: string;
+    antecedentesPerinatales?: string;
+    evaluacionOfa: EvaluacionOfa;
+    evaluacionHabla?: string;
+    evaluacionLenguaje?: string;
+    evaluacionVoz?: string;
+    diagnosticoCie10Codigo: string;
+    diagnosticoCie10Desc: string;
+    planTratamiento: string;
+    estado?: 'BORRADOR' | 'CERRADA';
+  }): Promise<HistoriaClinica> {
+    const res = await fetch(`${API_URL}/historias-clinicas`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al crear historia clínica');
+    }
+    return data;
+  },
+
+  async actualizarHistoriaClinica(
+    id: string,
+    datos: {
+      motivoConsulta?: string;
+      antecedentesPerinatales?: string;
+      evaluacionOfa?: EvaluacionOfa;
+      evaluacionHabla?: string;
+      evaluacionLenguaje?: string;
+      evaluacionVoz?: string;
+      diagnosticoCie10Codigo?: string;
+      diagnosticoCie10Desc?: string;
+      planTratamiento?: string;
+      estado?: 'BORRADOR' | 'CERRADA';
+    },
+  ): Promise<HistoriaClinica> {
+    const res = await fetch(`${API_URL}/historias-clinicas/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(datos),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al actualizar historia clínica');
+    }
+    return data;
+  },
 };
 
 export const api = apiService;
+
+
+// ==========================================
+
+// ==========================================
+// MÉTODOS CLÍNICOS Y DE INFORMES PDF (HU-003, HU-004, HU-005)
+// ==========================================
+
+export interface NotaEvolucion {
+  id: string;
+  historiaClinicaId: string;
+  profesionalId: string;
+  numeroSesion: number;
+  fechaSesion: string;
+  objetivosTrabajados: string;
+  descripcionEvolucion: string;
+  planSiguienteSesion?: string | null;
+  createdAt: string;
+}
+
+export interface RespuestaEvoluciones {
+  historia: HistoriaClinica;
+  siguienteNumeroSesion: number;
+  notas: NotaEvolucion[];
+}
+
+const API_CLINICA = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+
+async function fetchClinico<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('fonella_token') : null;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_CLINICA}${endpoint}`, {
+    ...options,
+    credentials: 'include',
+    headers,
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    const msg = Array.isArray(errData.message)
+      ? errData.message.join(', ')
+      : errData.message || `Error ${res.status}: ${res.statusText}`;
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+Object.assign(apiService, {
+  listarPacientes(q?: string): Promise<any[]> {
+    const query = q ? `?q=${encodeURIComponent(q)}` : '';
+    return fetchClinico<any[]>(`/pacientes${query}`);
+  },
+  crearPaciente(data: any): Promise<any> {
+    return fetchClinico<any>('/pacientes', { method: 'POST', body: JSON.stringify(data) });
+  },
+  listarHistoriasClinicas(q?: string): Promise<any[]> {
+    const query = q ? `?q=${encodeURIComponent(q)}` : '';
+    return fetchClinico<any[]>(`/historias${query}`);
+  },
+  obtenerHistoriaPorPaciente(pacienteId: string): Promise<any> {
+    return fetchClinico<any>(`/historias/paciente/${pacienteId}`);
+  },
+  crearHistoriaClinica(data: any): Promise<any> {
+    return fetchClinico<any>('/historias', { method: 'POST', body: JSON.stringify(data) });
+  },
+  actualizarHistoriaClinica(id: string, data: any): Promise<any> {
+    return fetchClinico<any>(`/historias/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  },
+  listarEvoluciones(historiaId: string): Promise<any> {
+    return fetchClinico<any>(`/historias/${historiaId}/evoluciones`);
+  },
+  crearNotaEvolucion(historiaId: string, data: any): Promise<any> {
+    return fetchClinico<any>(`/historias/${historiaId}/evoluciones`, { method: 'POST', body: JSON.stringify(data) });
+  },
+  agregarAddendumEvolucion(historiaId: string, notaId: string, textoAddendum: string): Promise<any> {
+    return fetchClinico<any>(`/historias/${historiaId}/evoluciones/${notaId}/addendum`, {
+      method: 'POST',
+      body: JSON.stringify({ textoAddendum }),
+    });
+  },
+  async obtenerBlobInformePdf(
+    historiaId: string,
+    tipo: 'VALORACION_INICIAL' | 'PROGRESO_TRIMESTRAL' | 'ALTA' = 'VALORACION_INICIAL',
+  ): Promise<{ blob: Blob; filename: string }> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('fonella_token') : null;
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(
+      `${API_CLINICA}/historias/informes/${historiaId}/pdf?tipo=${encodeURIComponent(tipo)}`,
+      { credentials: 'include', headers },
+    );
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      const msg = Array.isArray(errData.message)
+        ? errData.message.join(', ')
+        : errData.message || `Error ${res.status}: No se pudo generar el informe PDF`;
+      throw new Error(msg);
+    }
+
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match ? match[1] : `Informe_Fonella_${new Date().toISOString().split('T')[0]}.pdf`;
+    const blob = await res.blob();
+    return { blob, filename };
+  },
+});
+
+
+// ==========================================
+// MÓDULO ENVÍO DE INFORMES PDF (HU-006 / #18)
+// ==========================================
+Object.assign(apiService, {
+  enviarInformePdf(
+    historiaId: string,
+    canal: 'WHATSAPP' | 'CORREO',
+    tipo: 'VALORACION_INICIAL' | 'PROGRESO_TRIMESTRAL' | 'ALTA' = 'VALORACION_INICIAL',
+  ): Promise<any> {
+    return fetchClinico<any>(`/historias/informes/${historiaId}/enviar`, {
+      method: 'POST',
+      body: JSON.stringify({ canal, tipo }),
+    });
+  },
+  listarBitacoraEnviosInforme(historiaId: string): Promise<any[]> {
+    return fetchClinico<any[]>(`/historias/informes/${historiaId}/bitacora-envios`);
+  },
+});
