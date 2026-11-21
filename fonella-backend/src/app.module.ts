@@ -1,3 +1,5 @@
+﻿import { InformesPdfModule } from './modules/informes-pdf/informes-pdf.module';
+import { NotasEvolucionModule } from './modules/notas-evolucion/notas-evolucion.module';
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ScheduleModule } from "@nestjs/schedule";
@@ -8,9 +10,14 @@ import { UsuariosModule } from "./modules/usuarios/usuarios.module";
 import { InventarioModule } from "./modules/inventario/inventario.module";
 import { PacientesModule } from "./modules/pacientes/pacientes.module";
 import { CitasModule } from "./modules/citas/citas.module";
+import { HistoriasClinicasModule } from "./modules/historias-clinicas/historias-clinicas.module";
 
 @Module({
   imports: [
+    PacientesModule,
+    HistoriasClinicasModule,
+    NotasEvolucionModule,
+    InformesPdfModule,
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     PrismaModule,
@@ -20,6 +27,10 @@ import { CitasModule } from "./modules/citas/citas.module";
     InventarioModule,
     PacientesModule,
     CitasModule,
+    HistoriasClinicasModule,
   ],
 })
 export class AppModule {}
+
+
+

@@ -84,6 +84,15 @@ export class PacientesService {
           },
           orderBy: { esPrincipal: "desc" },
         },
+        historiaClinica: {
+          select: {
+            id: true,
+            numeroExpediente: true,
+            estado: true,
+            diagnosticoCie10Codigo: true,
+            diagnosticoCie10Desc: true,
+          },
+        },
       },
       orderBy: [{ apellidos: "asc" }, { nombres: "asc" }],
       take: 20,
@@ -93,6 +102,24 @@ export class PacientesService {
       ...paciente,
       edad: this.calcularEdad(paciente.fechaNacimiento),
     }));
+  }
+
+  /** Consulta un paciente por su UUID incluyendo historia clínica y acudientes. */
+  async obtenerPorId(id: string) {
+    const paciente = await this.prisma.paciente.findUnique({
+      where: { id },
+      include: {
+        historiaClinica: true,
+        acudientes: { include: { acudiente: true }, orderBy: { esPrincipal: "desc" } },
+      },
+    });
+    if (!paciente) {
+      throw new NotFoundException("Paciente no encontrado.");
+    }
+    return {
+      ...paciente,
+      edad: this.calcularEdad(paciente.fechaNacimiento),
+    };
   }
 
   /**
@@ -270,26 +297,45 @@ export class PacientesService {
     }
 
     // 2b. Validar reglas colombianas de documento, edad y teléfonos
+
     this.validarDocumentoYEdad(dto.tipoDocumento, dto.numeroDocumento, edad);
-    if (edad >= 18 && !dto.telefonoContacto?.trim()) {
+
+    if (!dto.genero?.trim()) {
       throw new BadRequestException(
-        "El teléfono de contacto es obligatorio para pacientes mayores de edad.",
+        "El género del paciente es obligatorio.",
       );
     }
-    if (dto.telefonoContacto?.trim()) {
-      this.validarTelefonoColombia(dto.telefonoContacto, "El teléfono de contacto");
+
+    if (!dto.telefonoContacto?.trim()) {
+      throw new BadRequestException(
+        "El teléfono de contacto del paciente es obligatorio.",
+      );
     }
+
+    if (!dto.ciudad?.trim()) {
+      throw new BadRequestException(
+        "La ciudad del paciente es obligatoria.",
+      );
+    }
+
+    this.validarTelefonoColombia(
+      dto.telefonoContacto,
+      "El teléfono de contacto",
+    );
+
     if (dto.acudiente) {
       this.validarDocumentoFormato(
         dto.acudiente.tipoDocumento,
         dto.acudiente.numeroDocumento,
         "El documento del acudiente",
       );
+
       this.validarTelefonoColombia(
         dto.acudiente.telefonoPrincipal,
         "El teléfono principal del acudiente",
       );
     }
+
 
     // 3. Validar existencia real de los correos si fueron suministrados
     await this.validarCorreos(dto.email, dto.acudiente?.email);
@@ -316,13 +362,14 @@ export class PacientesService {
           nombres: dto.nombres.trim(),
           apellidos: dto.apellidos.trim(),
           fechaNacimiento,
-          genero: dto.genero?.trim() || null,
-          telefonoContacto: dto.telefonoContacto?.trim() || "",
+          genero: dto.genero.trim(),
+          telefonoContacto: dto.telefonoContacto.trim(),
           email: dto.email?.trim().toLowerCase() || null,
-          ciudad: dto.ciudad?.trim() || "Palmira",
+          ciudad: dto.ciudad.trim(),
           direccion: dto.direccion?.trim() || null,
           tipoRemision: dto.tipoRemision ?? TipoRemision.PARTICULAR,
           institucionRemitente: dto.institucionRemitente?.trim() || null,
+          profesionalRemitente: dto.profesionalRemitente?.trim() || null,
         },
       });
 
@@ -377,33 +424,52 @@ export class PacientesService {
     }
 
     // 2b. Validar reglas colombianas de documento, edad y teléfonos
+
     const tipoDocEfectivo = dto.tipoDocumento ?? actual.tipoDocumento;
     const numDocEfectivo = dto.numeroDocumento ?? actual.numeroDocumento;
     this.validarDocumentoYEdad(tipoDocEfectivo, numDocEfectivo, edad);
 
-    const telefonoEfectivo =
-      dto.telefonoContacto !== undefined
-        ? dto.telefonoContacto.trim()
-        : actual.telefonoContacto;
-    if (edad >= 18 && !telefonoEfectivo) {
+    if (dto.genero !== undefined && !dto.genero.trim()) {
       throw new BadRequestException(
-        "El teléfono de contacto es obligatorio para pacientes mayores de edad.",
+        "El género del paciente no puede estar vacío.",
       );
     }
-    if (dto.telefonoContacto?.trim()) {
-      this.validarTelefonoColombia(dto.telefonoContacto, "El teléfono de contacto");
+
+    if (
+      dto.telefonoContacto !== undefined &&
+      !dto.telefonoContacto.trim()
+    ) {
+      throw new BadRequestException(
+        "El teléfono de contacto del paciente no puede estar vacío.",
+      );
     }
+
+    if (dto.ciudad !== undefined && !dto.ciudad.trim()) {
+      throw new BadRequestException(
+        "La ciudad del paciente no puede estar vacía.",
+      );
+    }
+
+    if (dto.telefonoContacto?.trim()) {
+      this.validarTelefonoColombia(
+        dto.telefonoContacto,
+        "El teléfono de contacto",
+      );
+    }
+
     if (dto.acudiente) {
       this.validarDocumentoFormato(
         dto.acudiente.tipoDocumento,
         dto.acudiente.numeroDocumento,
         "El documento del acudiente",
       );
+
       this.validarTelefonoColombia(
         dto.acudiente.telefonoPrincipal,
         "El teléfono principal del acudiente",
       );
     }
+
 
     // 3. Validar existencia real de correos si se enviaron en la edición
     await this.validarCorreos(dto.email, dto.acudiente?.email);
@@ -439,7 +505,7 @@ export class PacientesService {
           }),
           ...(dto.fechaNacimiento !== undefined && { fechaNacimiento }),
           ...(dto.genero !== undefined && {
-            genero: dto.genero.trim() || null,
+            genero: dto.genero.trim(),
           }),
           ...(dto.telefonoContacto !== undefined && {
             telefonoContacto: dto.telefonoContacto.trim(),
@@ -448,7 +514,7 @@ export class PacientesService {
             email: dto.email.trim().toLowerCase() || null,
           }),
           ...(dto.ciudad !== undefined && {
-            ciudad: dto.ciudad.trim() || "Palmira",
+            ciudad: dto.ciudad.trim(),
           }),
           ...(dto.direccion !== undefined && {
             direccion: dto.direccion.trim() || null,
@@ -458,6 +524,9 @@ export class PacientesService {
           }),
           ...(dto.institucionRemitente !== undefined && {
             institucionRemitente: dto.institucionRemitente.trim() || null,
+          }),
+          ...(dto.profesionalRemitente !== undefined && {
+            profesionalRemitente: dto.profesionalRemitente.trim() || null,
           }),
         },
       });

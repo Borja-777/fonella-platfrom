@@ -61,6 +61,7 @@ export class AcudienteInputDto {
  * Payload de entrada para registrar un nuevo paciente.
  * ValidationPipe (con whitelist: true) descarta cualquier propiedad no declarada aquí.
  */
+
 export class CrearPacienteDto {
   @IsEnum(TipoDocumento, {
     message: "El tipo de documento debe ser RC, TI, CC, CE o PA.",
@@ -88,25 +89,25 @@ export class CrearPacienteDto {
   )
   fechaNacimiento: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty({ message: "El género del paciente es obligatorio." })
   @MaxLength(30)
-  genero?: string;
+  genero: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty({ message: "El teléfono de contacto del paciente es obligatorio." })
   @MaxLength(25)
-  telefonoContacto?: string;
+  telefonoContacto: string;
 
   @IsOptional()
   @IsEmail({}, { message: "El correo electrónico del paciente no es válido." })
   @MaxLength(150)
   email?: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty({ message: "La ciudad del paciente es obligatoria." })
   @MaxLength(100)
-  ciudad?: string;
+  ciudad: string;
 
   @IsOptional()
   @IsString()
@@ -115,7 +116,7 @@ export class CrearPacienteDto {
 
   @IsOptional()
   @IsEnum(TipoRemision, {
-    message: "El tipo de remisión debe ser PARTICULAR o REMISION_EXTERNA.",
+    message: "El tipo de remisión debe ser PARTICULAR, REMISION_EXTERNA o ESCOLAR.",
   })
   tipoRemision?: TipoRemision;
 
@@ -124,12 +125,18 @@ export class CrearPacienteDto {
   @MaxLength(150)
   institucionRemitente?: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  profesionalRemitente?: string;
+
   // Acudiente opcional en el DTO; el servicio lo exige si edad < 18 (RN-06)
   @IsOptional()
   @ValidateNested()
   @Type(() => AcudienteInputDto)
   acudiente?: AcudienteInputDto;
 }
+
 
 /**
  * Payload de entrada para actualizar los datos de un paciente existente.
@@ -195,7 +202,7 @@ export class ActualizarPacienteDto {
 
   @IsOptional()
   @IsEnum(TipoRemision, {
-    message: "El tipo de remisión debe ser PARTICULAR o REMISION_EXTERNA.",
+    message: "El tipo de remisión debe ser PARTICULAR, REMISION_EXTERNA o ESCOLAR.",
   })
   tipoRemision?: TipoRemision;
 
@@ -203,6 +210,11 @@ export class ActualizarPacienteDto {
   @IsString()
   @MaxLength(150)
   institucionRemitente?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  profesionalRemitente?: string;
 
   @IsOptional()
   @ValidateNested()

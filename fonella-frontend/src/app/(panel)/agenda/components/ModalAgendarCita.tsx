@@ -73,10 +73,13 @@ export default function ModalAgendarCita({
   const [nombres, setNombres] = useState('');
   const [apellidos, setApellidos] = useState('');
   const [fechaNacimiento, setFechaNacimiento] = useState('');
+  const [genero, setGenero] = useState('');
   const [telefonoContacto, setTelefonoContacto] = useState('');
+  const [ciudad, setCiudad] = useState('');
   const [emailPaciente, setEmailPaciente] = useState('');
   const [tipoRemision, setTipoRemision] = useState<TipoRemision>('PARTICULAR');
   const [institucionRemitente, setInstitucionRemitente] = useState('');
+  const [profesionalRemitente, setProfesionalRemitente] = useState('');
 
   // Campos de acudiente (obligatorios si edad < 18 años por RN-06)
   const [acudTipoDoc, setAcudTipoDoc] = useState<TipoDocumento>('CC');
@@ -249,10 +252,13 @@ export default function ModalAgendarCita({
     setNombres('');
     setApellidos('');
     setFechaNacimiento('');
+    setGenero('');
     setTelefonoContacto('');
+    setCiudad('');
     setEmailPaciente('');
     setTipoRemision('PARTICULAR');
     setInstitucionRemitente('');
+    setProfesionalRemitente('');
     setAcudTipoDoc('CC');
     setAcudNumDoc('');
     setAcudNombres('');
@@ -273,10 +279,13 @@ export default function ModalAgendarCita({
     setNombres(p.nombres);
     setApellidos(p.apellidos);
     setFechaNacimiento(p.fechaNacimiento.slice(0, 10));
+    setGenero(p.genero || '');
     setTelefonoContacto(p.telefonoContacto);
+    setCiudad(p.ciudad || '');
     setEmailPaciente(p.email || '');
     setTipoRemision(p.tipoRemision);
     setInstitucionRemitente(p.institucionRemitente || '');
+    setProfesionalRemitente(p.profesionalRemitente || '');
 
     const relPrincipal = p.acudientes?.[0];
     if (relPrincipal) {
@@ -337,16 +346,30 @@ export default function ModalAgendarCita({
       return;
     }
 
-    // Para mayores de edad el teléfono del paciente es obligatorio; para menores es opcional
-    if (!requiereAcudiente || telefonoContacto.trim()) {
-      const errorTelPaciente = validarTelefonoColombia(
-        telefonoContacto,
-        'El teléfono de contacto',
-      );
-      if (errorTelPaciente) {
-        setErrorMsg(errorTelPaciente);
-        return;
-      }
+    // El teléfono de contacto del paciente es obligatorio para todas las edades.
+    if (!genero.trim()) {
+      setErrorMsg('El género del paciente es obligatorio.');
+      return;
+    }
+
+    if (!ciudad.trim()) {
+      setErrorMsg('La ciudad del paciente es obligatoria.');
+      return;
+    }
+
+    if (!telefonoContacto.trim()) {
+      setErrorMsg('El teléfono de contacto del paciente es obligatorio.');
+      return;
+    }
+
+    const errorTelPaciente = validarTelefonoColombia(
+      telefonoContacto,
+      'El teléfono de contacto',
+    );
+
+    if (errorTelPaciente) {
+      setErrorMsg(errorTelPaciente);
+      return;
     }
 
     const parentescoFinal =
@@ -415,12 +438,18 @@ export default function ModalAgendarCita({
         nombres: nombres.trim(),
         apellidos: apellidos.trim(),
         fechaNacimiento,
+        genero: genero.trim(),
         telefonoContacto: telefonoContacto.trim(),
         email: emailPaciente.trim() || undefined,
+        ciudad: ciudad.trim(),
         tipoRemision,
         institucionRemitente:
-          tipoRemision === 'REMISION_EXTERNA'
+          tipoRemision !== 'PARTICULAR'
             ? institucionRemitente.trim() || undefined
+            : undefined,
+        profesionalRemitente:
+          tipoRemision !== 'PARTICULAR'
+            ? profesionalRemitente.trim() || undefined
             : undefined,
         acudiente: requiereAcudiente
           ? {
@@ -791,17 +820,13 @@ export default function ModalAgendarCita({
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                      {requiereAcudiente
-                        ? 'Teléfono Contacto (Opcional)'
-                        : 'Teléfono Contacto *'}
+                      Teléfono de contacto *
                     </label>
                     <input
                       type="tel"
-                      required={!requiereAcudiente}
+                      required
                       maxLength={10}
-                      placeholder={
-                        requiereAcudiente ? 'Opcional (10 dígitos)' : 'Ej. 3001234567'
-                      }
+                      placeholder="Ej. 3001234567"
                       value={telefonoContacto}
                       onChange={(e) =>
                         setTelefonoContacto(limpiarEntradaTelefono(e.target.value))
@@ -844,7 +869,39 @@ export default function ModalAgendarCita({
                     )}
                   </div>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                      Género *
+                    </label>
+                    <select
+                      required
+                      value={genero}
+                      onChange={(e) => setGenero(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
+                    >
+                      <option value="">Seleccionar género</option>
+                      <option value="Femenino">Femenino</option>
+                      <option value="Masculino">Masculino</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
 
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                      Ciudad *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={100}
+                      value={ciudad}
+                      onChange={(e) => setCiudad(e.target.value)}
+                      placeholder="Ej. Palmira"
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
+                    />
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-600 mb-1">
@@ -856,22 +913,48 @@ export default function ModalAgendarCita({
                       className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold"
                     >
                       <option value="PARTICULAR">Particular</option>
-                      <option value="REMISION_EXTERNA">Remisión Externa</option>
+                      <option value="REMISION_EXTERNA">Remisión médica</option>
+                      <option value="ESCOLAR">Remisión escolar</option>
                     </select>
                   </div>
-                  {tipoRemision === 'REMISION_EXTERNA' && (
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                        Institución Remitente
-                      </label>
-                      <input
-                        type="text"
-                        value={institucionRemitente}
-                        onChange={(e) => setInstitucionRemitente(e.target.value)}
-                        placeholder="Ej. Clínica Palma Real"
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
-                      />
-                    </div>
+                  {tipoRemision !== 'PARTICULAR' && (
+                  <>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                          {tipoRemision === 'ESCOLAR'
+                            ? 'Institución educativa'
+                            : 'Institución remitente'}
+                        </label>
+                        <input
+                          type="text"
+                          value={institucionRemitente}
+                          onChange={(e) => setInstitucionRemitente(e.target.value)}
+                          placeholder={
+                            tipoRemision === 'ESCOLAR'
+                              ? 'Ej. Colegio San José'
+                              : 'Ej. Clínica Palma Real'
+                          }
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                          Profesional que remite
+                        </label>
+                        <input
+                          type="text"
+                          value={profesionalRemitente}
+                          onChange={(e) => setProfesionalRemitente(e.target.value)}
+                          placeholder={
+                            tipoRemision === 'ESCOLAR'
+                              ? 'Ej. Docente o psicólogo escolar'
+                              : 'Ej. Médico tratante'
+                          }
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs"
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
 
