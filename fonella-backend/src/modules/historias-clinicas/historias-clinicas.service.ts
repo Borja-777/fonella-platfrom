@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   ConflictException,
   Injectable,
@@ -58,7 +58,7 @@ export class HistoriasClinicasService {
           select: { id: true, nombreCompleto: true, registroRethus: true },
         },
         _count: {
-          select: { notasEvolucion: true, archivosAnexos: true },
+          select: { notasEvolucion: { where: { numeroSesion: { gt: 0 } } }, archivosAnexos: true },
         },
       },
       orderBy: { updatedAt: 'desc' },

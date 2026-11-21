@@ -1338,9 +1338,15 @@ export default function HistoriasClinicasPage() {
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-100">
                         <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-0.5 rounded-full bg-[#0AA896] text-white font-black text-[11px]">
-                            Sesión #{nota.numeroSesion}
-                          </span>
+                          {nota.numeroSesion === 0 || nota.objetivosTrabajados?.startsWith('[BITACORA_ENVIO_INFORME]') ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-800 border border-amber-300 font-black text-[11px]">
+                              Bitácora de Envío
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full bg-[#0AA896] text-white font-black text-[11px]">
+                              Sesión #{nota.numeroSesion}
+                            </span>
+                          )}
                           <span className="font-bold text-gray-700">
                             {new Date(nota.fechaSesion).toLocaleString('es-CO', {
                               dateStyle: 'medium',

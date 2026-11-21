@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   Injectable,
   NotFoundException,
@@ -65,7 +65,7 @@ export class NotasEvolucionService {
         ...historia,
         ...hito,
       },
-      siguienteNumeroSesion: notas.length + 1,
+      siguienteNumeroSesion: notas.filter((n) => n.numeroSesion > 0).length + 1,
       notas: notas.map((n) => this.mapearNotaFrontend(n)),
     };
   }
@@ -85,7 +85,7 @@ export class NotasEvolucionService {
     }
 
     const totalPrevias = await this.prisma.notaEvolucion.count({
-      where: { historiaClinicaId },
+      where: { historiaClinicaId, numeroSesion: { gt: 0 } },
     });
 
     const numeroSesion = totalPrevias + 1;
@@ -95,7 +95,7 @@ export class NotasEvolucionService {
         historiaClinicaId,
         creadoPorId,
         numeroSesion,
-        fechaHoraSesion: dto.fechaSesion ? new Date(dto.fechaSesion) : new Date(),
+        fechaHoraSesion: new Date(),
         objetivoSesion: dto.objetivosTrabajados.trim(),
         actividadesDesarrolladas: dto.objetivosTrabajados.trim(),
         desempenoObservado: dto.descripcionEvolucion.trim(),

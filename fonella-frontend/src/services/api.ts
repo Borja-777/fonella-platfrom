@@ -116,9 +116,7 @@ export interface Paciente {
     diagnosticoCie10Desc?: string;
     fechaApertura?: string;
   diasDesdeApertura?: number;
-  requiereReevaluacion?: boolean;
-    diagnosticoCie10Codigo: string;
-    diagnosticoCie10Desc: string;
+    requiereReevaluacion?: boolean;
   } | null;
 }
 
@@ -152,8 +150,6 @@ export interface HistoriaClinica {
   estado: 'BORRADOR' | 'CERRADA';
   diasDesdeApertura?: number;
   requiereReevaluacion?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
   createdAt: string;
   updatedAt: string;
   paciente: Paciente;

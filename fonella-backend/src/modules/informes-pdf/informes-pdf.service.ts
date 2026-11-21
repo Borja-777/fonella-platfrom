@@ -103,7 +103,14 @@ export class InformesPdfService {
     const historia = await this.prisma.historiaClinica.findUnique({
       where: { id: historiaId },
       include: {
-        paciente: true,
+        paciente: {
+          include: {
+            acudientes: {
+              include: { acudiente: true },
+              orderBy: { esPrincipal: 'desc' },
+            },
+          },
+        },
         creadoPor: {
           select: {
             nombreCompleto: true,
@@ -111,6 +118,7 @@ export class InformesPdfService {
           },
         },
         notasEvolucion: {
+          where: { numeroSesion: { gt: 0 } },
           orderBy: { numeroSesion: 'asc' },
         },
       },
@@ -251,8 +259,19 @@ export class InformesPdfService {
         historia.paciente.fechaNacimiento,
       ).toLocaleDateString('es-CO');
 
+      const vinculoPrincipal =
+        historia.paciente.acudientes?.find((a) => a.esPrincipal) ??
+        historia.paciente.acudientes?.[0];
+      const acudiente = vinculoPrincipal?.acudiente;
+      const esMenorEdad =
+        (Date.now() - new Date(historia.paciente.fechaNacimiento).getTime()) /
+          (1000 * 60 * 60 * 24 * 365.25) <
+        18;
+      const mostrarBloqueAcudiente = Boolean(acudiente || esMenorEdad);
+      const altoCajaDatos = mostrarBloqueAcudiente ? 126 : 90;
+
       const yDatos = doc.y;
-      doc.roundedRect(50, yDatos, contentWidth, 74, 4).fill(CREMA);
+      doc.roundedRect(50, yDatos, contentWidth, altoCajaDatos, 4).fill(CREMA);
 
       doc.fillColor(TEXTO).fontSize(9.5);
       doc
@@ -285,6 +304,12 @@ export class InformesPdfService {
 
       doc
         .font('Helvetica-Bold')
+        .text('Correo Electrónico: ', 62, yDatos + 74, { continued: true })
+        .font('Helvetica')
+        .text(historia.paciente.email || 'No registrado');
+
+      doc
+        .font('Helvetica-Bold')
         .text('Remisión: ', 330, yDatos + 10, { continued: true })
         .font('Helvetica')
         .text(historia.paciente.tipoRemision.replace('_', ' '));
@@ -292,7 +317,7 @@ export class InformesPdfService {
       if (historia.paciente.institucionRemitente) {
         doc
           .font('Helvetica-Bold')
-          .text('Entidad / Acudiente: ', 330, yDatos + 26, { continued: true })
+          .text('Entidad Remitente: ', 330, yDatos + 26, { continued: true })
           .font('Helvetica')
           .text(historia.paciente.institucionRemitente);
       }
@@ -309,9 +334,54 @@ export class InformesPdfService {
         .font('Helvetica-Bold')
         .text('Sesiones Registradas: ', 330, yDatos + 58, { continued: true })
         .font('Helvetica')
-        .text(`${historia.notasEvolucion.length} sesiones`);
+        .text(
+          `${historia.notasEvolucion.length} ${historia.notasEvolucion.length === 1 ? 'sesión' : 'sesiones'}`,
+        );
 
-      doc.y = yDatos + 84;
+      if (mostrarBloqueAcudiente) {
+        doc
+          .moveTo(62, yDatos + 91)
+          .lineTo(50 + contentWidth - 12, yDatos + 91)
+          .strokeColor('#E2D9C8')
+          .lineWidth(0.8)
+          .stroke();
+
+        if (acudiente) {
+          doc
+            .fillColor(TEXTO)
+            .font('Helvetica-Bold')
+            .text('Acudiente / Responsable: ', 62, yDatos + 97, {
+              continued: true,
+            })
+            .font('Helvetica')
+            .text(
+              `${acudiente.nombres} ${acudiente.apellidos} (${vinculoPrincipal.parentesco}) • ${acudiente.tipoDocumento} ${acudiente.numeroDocumento}`,
+            );
+
+          doc
+            .font('Helvetica-Bold')
+            .text('Contacto Acudiente: ', 62, yDatos + 112, {
+              continued: true,
+            })
+            .font('Helvetica')
+            .text(
+              `${acudiente.telefonoPrincipal}${acudiente.email ? ' • ' + acudiente.email : ''}`,
+            );
+        } else {
+          doc
+            .fillColor('#92400E')
+            .font('Helvetica-Bold')
+            .text('Acudiente / Responsable Legal: ', 62, yDatos + 102, {
+              continued: true,
+            })
+            .font('Helvetica')
+            .text(
+              'Paciente menor de edad sin acudiente vinculado en directorio',
+            );
+        }
+      }
+
+      doc.y = yDatos + altoCajaDatos + 10;
 
       // 3. MOTIVO DE CONSULTA Y VALORACIÓN CLÍNICA
       dibujarEncabezadoSeccion('2. MOTIVO DE CONSULTA Y VALORACIÓN CLÍNICA');
@@ -549,7 +619,14 @@ export class InformesPdfService {
     const historia = await this.prisma.historiaClinica.findUnique({
       where: { id: historiaId },
       include: {
-        paciente: true,
+        paciente: {
+          include: {
+            acudientes: {
+              include: { acudiente: true },
+              orderBy: { esPrincipal: 'desc' },
+            },
+          },
+        },
         creadoPor: { select: { nombreCompleto: true } },
       },
     });
@@ -648,7 +725,11 @@ export class InformesPdfService {
       };
     }
 
-    const correoDestino = historia.paciente.email?.trim();
+    const acudienteCorreo =
+      historia.paciente.acudientes?.find((a) => a.esPrincipal)?.acudiente ??
+      historia.paciente.acudientes?.[0]?.acudiente;
+    const correoDestino =
+      acudienteCorreo?.email?.trim() || historia.paciente.email?.trim();
     if (!correoDestino) {
       throw new BadRequestException(
         'No es posible enviar el correo: El paciente o acudiente no cuenta con un correo electrónico registrado.',
